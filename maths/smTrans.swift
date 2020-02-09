@@ -143,11 +143,11 @@ struct SmTrans {
         a = 0.75 + popFact * 0.2
         b = -0.43 + popFact * 0.43
     }
-    private enum TransEnum: UInt8 {
-        case isDown = 0
-        case isUp = 1
-        case goingUp = 2
-        case goingDown = 3
+    private enum TransEnum {
+        case isDown
+        case isUp
+        case goingUp
+        case goingDown
     }
     private static var popFact: Float = 0.2
     private static var semiFact: Float = 0.4

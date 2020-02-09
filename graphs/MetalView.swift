@@ -32,8 +32,6 @@ class MetalView: MTKView {
             printerror("Pas de fenêtre attachée."); return
         }
         window.makeFirstResponder(self)
-//        window.contentAspectRatio = NSSize(width: 16, height: 10)
-//        window.title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as! String
         
         NotificationCenter.default.addObserver(forName: NSWindow.willEnterFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.pause()
@@ -42,8 +40,6 @@ class MetalView: MTKView {
         NotificationCenter.default.addObserver(forName: NSWindow.didEnterFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.touch()
             print("did enter fullScreen.(set keyStore)")
-            AppState.state |= AppState.isFullScreen
-            UserDefaults().set(AppState.state, forKey: "AppState")
         }
         NotificationCenter.default.addObserver(forName: NSWindow.willExitFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.pause()
@@ -52,17 +48,14 @@ class MetalView: MTKView {
         NotificationCenter.default.addObserver(forName: NSWindow.didExitFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.touch()
             print("did exit fullscreen.")
-            AppState.state &= ~AppState.isFullScreen
-            UserDefaults().set(AppState.state, forKey: "AppState")
         }
+        print("fin awake MetalView")
     }
     
     required init(coder: NSCoder) {
-        print("Init MetalView")
         super.init(coder: coder)
         renderer = Renderer(metalView: self)
     }
-    
     override func updateTrackingAreas() {
         if trackingArea != nil {
             self.removeTrackingArea(trackingArea!)
@@ -75,17 +68,29 @@ class MetalView: MTKView {
     
     override func mouseEntered(with event: NSEvent) {
         print("MV mouseEntered.")
-        NSCursor.hide()
+        //        NSCursor.hide()
     }
     override func mouseExited(with event: NSEvent) {
         print("MV mouseExited.")
-        NSCursor.unhide()
+//        NSCursor.unhide()
     }
     override func mouseMoved(with event: NSEvent) {
         touch()
     }
     override func mouseDown(with event: NSEvent) {
         touch()
-        eventsHandler?.singleTap(pos: Renderer.getPositionFrom(event.locationInWindow, invertedY: false))
+        eventsHandler?.singleTap(pos: renderer.getPositionFrom(event.locationInWindow, invertedY: false))
+    }
+    override func keyUp(with event: NSEvent) {
+        touch()
+        eventsHandler?.keyUp(key:
+            KeyData(scancode: Int(event.keyCode), keycode: Int(event.keyCode),
+                    keymode: Int(event.modifierFlags.rawValue), isVirtual: false))
+    }
+    override func keyDown(with event: NSEvent) {
+        touch()
+        eventsHandler?.keyDown(key:
+            KeyData(scancode: Int(event.keyCode), keycode: Int(event.keyCode),
+                    keymode: Int(event.modifierFlags.rawValue), isVirtual: false))
     }
 }

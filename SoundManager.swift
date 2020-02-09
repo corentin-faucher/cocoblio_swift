@@ -9,37 +9,55 @@
 import AVFoundation
 
 enum SoundManager {
-    static private(set) var isMute: Bool = false
+    static var isMute = false
     
-    static func loadSounds() {
-        for soundName in SoundEnum.allCases {
-            if let url = Bundle.main.url(forResource: "\(soundName)", withExtension: "wav", subdirectory: "Sounds") {
-                do {
-                    let sound = try AVAudioPlayer(contentsOf: url)
-                    soundsList.append(sound)
-                } catch {
-                    printerror("Ne peut charger \(soundName)")
-                }
-            } else {
-                printerror("Pas de sons \(soundName)")
-            }
-            
+    static func initWavSound(wavID: String) {
+        guard soundIDtoAudioPlayer[wavID] == nil else {
+            printerror("Texture du png \(wavID) déjà init.")
+            return
+        }
+        guard let url = Bundle.main.url(
+            forResource: "\(wavID)", withExtension: "wav", subdirectory: "wavs") else {
+            printerror("Wav file \(wavID) not found.")
+            return
+        }
+        do {
+            let audioPlayer = try AVAudioPlayer(contentsOf: url)
+            soundIDtoAudioPlayer[wavID] = audioPlayer
+        } catch {
+            printerror("Ne peut charger \(wavID).")
         }
     }
-    
-    static func toggleMute() {
-        isMute = !isMute
+    static func getWavSound(wavID: String) -> AVAudioPlayer? {
+        guard let audioPlayer = soundIDtoAudioPlayer[wavID] else {
+            printerror("Son du wav \(wavID) pas encore init.")
+            return nil
+        }
+        return audioPlayer
     }
-    
-    static func play(sound: SoundEnum, pitch: Int = 0, volume: Float = 1) {
-        if isMute {return}
-        if sound.rawValue >= soundsList.count { printerror("Son \(sound) pas loadé."); return }
-        soundsList[sound.rawValue]?.rate = powf(2, Float(pitch)/12)
-        soundsList[sound.rawValue]?.volume = volume
-        soundsList[sound.rawValue]?.enableRate = true
-        soundsList[sound.rawValue]?.prepareToPlay()
-        soundsList[sound.rawValue]?.play()
+    static func playWavSound(wavID: String, pitch: Int = 0, volume: Float = 1) {
+        guard let audioPlayer = soundIDtoAudioPlayer[wavID] else {
+            printerror("Son du wav \(wavID) pas encore init.")
+            return
+        }
+        if SoundManager.isMute {return}
+        audioPlayer.rate = powf(2, Float(pitch)/12)
+        audioPlayer.volume = volume
+        audioPlayer.enableRate = true
+        audioPlayer.prepareToPlay()
+        audioPlayer.play()
     }
-    
-    private static var soundsList: [AVAudioPlayer?] = []
+    static private var soundIDtoAudioPlayer: [String : AVAudioPlayer] = [:]
+}
+
+
+extension AVAudioPlayer {
+    func play(pitch: Int, volume: Float = 1) {
+        if SoundManager.isMute {return}
+        rate = powf(2, Float(pitch)/12)
+        self.volume = volume
+        enableRate = true
+        prepareToPlay()
+        play()
+    }
 }

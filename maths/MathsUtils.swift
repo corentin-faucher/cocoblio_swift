@@ -12,14 +12,19 @@
 
 import simd
 
+typealias Vector2 = SIMD2<Float>
+typealias Vector3 = SIMD3<Float>
+typealias Vector4 = SIMD4<Float>
+
+
 extension float4x4 {
-    mutating func scale(with scale: float3) {
+    mutating func scale(with scale: Vector3) {
         self.columns.0 *= scale.x
         self.columns.1 *= scale.y
         self.columns.2 *= scale.z
     }
     
-    mutating func translate(with t: float3) {
+    mutating func translate(with t: Vector3) {
         self.columns.3.x += self.columns.0.x * t.x + self.columns.1.x * t.y + self.columns.2.x * t.z
         self.columns.3.y += self.columns.0.y * t.x + self.columns.1.y * t.y + self.columns.2.y * t.z
         self.columns.3.z += self.columns.0.z * t.x + self.columns.1.z * t.y + self.columns.2.z * t.z
@@ -29,8 +34,8 @@ extension float4x4 {
         let c = cosf(theta)
         let s = sinf(theta)
         
-        let v0: float4 = self.columns.0
-        let v2: float4 = self.columns.2
+        let v0: Vector4 = self.columns.0
+        let v2: Vector4 = self.columns.2
         
         self.columns.0 = c*v0 - s*v2 // Ou au long x,y,z ? et pas w ?
         
@@ -41,14 +46,40 @@ extension float4x4 {
         let c = cosf(theta)
         let s = sinf(theta)
         
-        let v0: float4 = self.columns.0
-        let v1: float4 = self.columns.1
+        let v0: Vector4 = self.columns.0
+        let v1: Vector4 = self.columns.1
         
         self.columns.0 = c*v0 - s*v1 // Ou au long x,y,z ? et pas w ?
         self.columns.1 = s*v0 + c*v1
     }
+    mutating func rotateYandTranslateYZ(thetaY: Float, ty: Float, tz: Float) {
+        let c = cosf(thetaY)
+        let s = sinf(thetaY)
+        
+        let v0: Vector4 = self.columns.0
+        let v2: Vector4 = self.columns.2
+        
+        self.columns.0 = c*v0 - s*v2 // Ou au long x,y,z ? et pas w ?
+        self.columns.2 = s*v0 + c*v2
+        
+        self.columns.3.x += self.columns.1.x * ty + self.columns.2.x * tz
+        self.columns.3.y += self.columns.1.y * ty + self.columns.2.y * tz
+        self.columns.3.z += self.columns.1.z * ty + self.columns.2.z * tz
+    }
     
-    mutating func makePerspective(fovRadian theta: Float, aspect ratio: Float,
+    mutating func setToLookAt(eye: Vector3, center: Vector3, up: Vector3)
+    {
+        let n: Vector3 = normalize(eye - center)
+        let u: Vector3 = normalize(cross(up, n))
+        let v: Vector3 = cross(n, u)
+        
+        self.columns = ([u.x, v.x, n.x, 0],
+                     [u.y, v.y, n.y, 0],
+                     [u.z, v.z, n.z, 0],
+                     [-dot(u, eye), -dot(v, eye), -dot(n, eye), 1])
+    }
+    
+    mutating func setToPerspective(fovRadian theta: Float, aspect ratio: Float,
                                   nearZ: Float, farZ: Float) {
         let cotan = 1.0 / tanf(theta/2.0)
         self.columns = ([cotan / ratio, 0, 0, 0],
@@ -58,7 +89,7 @@ extension float4x4 {
     }
     
     
-    mutating func makePerspective(nearZ: Float, farZ: Float, middleZ: Float,
+    mutating func setToPerspective(nearZ: Float, farZ: Float, middleZ: Float,
                          deltaX: Float, deltaY: Float)
     {
         self.columns = ([2 * middleZ / deltaX, 0, 0, 0],
@@ -67,46 +98,61 @@ extension float4x4 {
                         [0, 0, (2 * farZ * nearZ) / (nearZ - farZ), 0])
     }
     
-    mutating func makeLookAt(eye: float3, center: float3, up: float3)
-    {
-        let n: float3 = normalize(eye - center)
-        let u: float3 = normalize(cross(up, n))
-        let v: float3 = cross(n, u)
-        
-        self.columns = ([u.x, v.x, n.x, 0],
-                     [u.y, v.y, n.y, 0],
-                     [u.z, v.z, n.z, 0],
-                     [-dot(u, eye), -dot(v, eye), -dot(n, eye), 1])
-    }
 }
 
+enum Digit: Int {
+    case zero
+    case one
+    case two
+    case three
+    case four
+    case five
+    case six
+    case seven
+    case eight
+    case nine
+    case space
+    case unused1
+    case underscore
+    case plus
+    case minus
+    case mult
+    case div
+    case dot
+    case comma
+    case second
+    case percent
+    case equal
+    case question
+    case unused2
+}
 
 extension Float {
     static func random(mean: Float, delta: Float) -> Float {
         return Float.random(in: mean-delta...mean+delta)
     }
     /// Retourne une angle dans l'interval [-pi, pi].
-    mutating func normalizeAngle() {
-        self = self - floorf((self + .pi) / (2 * .pi)) * 2 * .pi
+    func toNormalizedAngle() -> Float {
+        return self - ceilf((self - .pi) / (2 * .pi)) * 2 * .pi
     }
 }
 
-extension Int {
+extension UInt {
     func getHighestDecimal() -> Int {
-        let highestDecimal = Int.pow2numberOfDigit[(self != 0) ? 31 - self.leadingZeroBitCount : 0]
-        return highestDecimal + ((self > Int.pow10m1[highestDecimal]) ? 1 : 0)
+        let highestDecimal = UInt.pow2numberOfDigit[(self != 0) ? 31 - self.leadingZeroBitCount : 0]
+        return highestDecimal + ((self > UInt.pow10m1[highestDecimal]) ? 1 : 0)
     }
     
-    func getTheDigitAt(_ decimal: Int) -> Int {
-        return (self / Int.pow10[decimal]) % 10
+    func getTheDigitAt(_ decimal: Int) -> UInt {
+        return (self / UInt.pow10[decimal]) % 10
     }
     
-    private static let pow10: [Int] = [
+    private static let pow10: [UInt] = [
         1,       10,       100,
         1000,    10000,    100000,
         1000000, 10000000, 100000000,
         1000000000]
-    private static let pow10m1: [Int] = [
+    private static let pow10m1: [UInt] = [
         9,       99,       999,
         9999,    99999,    999999,
         9999999, 99999999, 999999999,

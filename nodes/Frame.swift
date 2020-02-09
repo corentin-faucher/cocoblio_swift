@@ -8,87 +8,94 @@
 
 import Foundation
 
+/** Noeud racine servant de cadre à une surface.
+* (La surface étant placé en petit-frère.)
+* Les enfants de Frame sont 9 surfaces créant le cadre. */
 final class Frame : Node {
-    let delta: Float
-    let lambda: Float
-    let tex: Texture
+    private let delta: Float
+    private let lambda: Float
+    private let pngID: String
+    private let isInside: Bool
     
     @discardableResult
-    init(_ refNode: Node?, delta: Float, lambda: Float,
-         texEnum: TexEnum) {
+    init(_ refNode: Node?, isInside: Bool = false,
+         delta: Float = 0.1, lambda: Float = 0,
+         framePngID: String = "frame_mocha", flags: Int = 0) {
         self.delta = delta
         self.lambda = lambda
-        self.tex = TexEnum.texFor(texEnum)
-        super.init(refNode, 0, 0, delta, delta)
+        self.pngID = framePngID
+        self.isInside = isInside
+        super.init(refNode, 0, 0, delta, delta, lambda: lambda, flags: flags)
     }
     
     /** Constructeur de copie. */
     required internal init(refNode: Node?, toCloneNode: Node,
          asParent: Bool, asElderBigbro: Bool) {
-        delta = (toCloneNode as! Frame).delta
-        lambda = (toCloneNode as! Frame).lambda
-        tex = (toCloneNode as! Frame).tex
+        let toCloneFrame = toCloneNode as! Frame
+        delta = toCloneFrame.delta
+        lambda = toCloneFrame.lambda
+        pngID = toCloneFrame.pngID
+        isInside = toCloneFrame.isInside
         super.init(refNode: refNode, toCloneNode: toCloneNode,
                    asParent: asParent, asElderBigbro: asElderBigbro)
     }
     
     /** Init ou met à jour un noeud frame
      * (Ajoute les descendants si besoin) */
-    func update(width: Float, height: Float,
-                fix: Bool, inside: Bool = false) {
-        let refSurf = Surface(nil, tex, 0, 0, delta, lambda: lambda)
+    func update(width: Float, height: Float, fix: Bool) {
+        let refSurf = Surface(nil, pngID: pngID, 0, 0, delta, lambda: lambda)
         
         let sq = Squirrel(at: self)
-        let deltaX = inside ? max(width/2 - delta/2, delta/2) : (width/2 + delta/2)
-        let deltaY = inside ? max(height/2 - delta/2, delta/2) : (height/2 + delta/2)
-        let smallWidth = inside ? max(width - delta, 0) : width
-        let smallHeight = inside ? max(height - delta, 0) : height
+        let deltaX = isInside ? max(width/2 - delta/2, delta/2) : (width/2 + delta/2)
+        let deltaY = isInside ? max(height/2 - delta/2, delta/2) : (height/2 + delta/2)
+        let smallWidth = isInside ? max(width - delta, 0) : width
+        let smallHeight = isInside ? max(height - delta, 0) : height
         
         // Mise à jour des dimensions.
-        self.width.setPos(smallWidth + 2 * delta, true, true)
-        self.height.setPos(smallHeight + 2 * delta, true, true)
+        self.width.set(smallWidth + 2 * delta, true, true)
+        self.height.set(smallHeight + 2 * delta, true, true)
         
         sq.goDownForced(refSurf) // tl
         (sq.pos as? Surface)?.updateTile(0, 0)
-        sq.pos.x.setPos(-deltaX, fix, true)
-        sq.pos.y.setPos(deltaY, fix, true)
+        sq.pos.x.set(-deltaX, fix, true)
+        sq.pos.y.set(deltaY, fix, true)
         sq.goRightForced(refSurf) // t
         (sq.pos as? Surface)?.updateTile(1, 0)
-        sq.pos.x.setPos(0, fix, true)
-        sq.pos.y.setPos(deltaY, fix, true)
-        sq.pos.width.setPos(smallWidth, fix, true)
+        sq.pos.x.set(0, fix, true)
+        sq.pos.y.set(deltaY, fix, true)
+        sq.pos.width.set(smallWidth, fix, true)
         sq.goRightForced(refSurf) // tr
         (sq.pos as? Surface)?.updateTile(2, 0)
-        sq.pos.x.setPos(deltaX, fix, true)
-        sq.pos.y.setPos(deltaY, fix, true)
+        sq.pos.x.set(deltaX, fix, true)
+        sq.pos.y.set(deltaY, fix, true)
         sq.goRightForced(refSurf) // l
         (sq.pos as? Surface)?.updateTile(3, 0)
-        sq.pos.x.setPos(-deltaX, fix, true)
-        sq.pos.y.setPos(0, fix, true)
-        sq.pos.height.setPos(smallHeight, fix, true)
+        sq.pos.x.set(-deltaX, fix, true)
+        sq.pos.y.set(0, fix, true)
+        sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // c
         (sq.pos as? Surface)?.updateTile(4, 0)
-        sq.pos.x.setPos(0, fix, true)
-        sq.pos.y.setPos(0, fix, true)
-        sq.pos.width.setPos(smallWidth, fix, true)
-        sq.pos.height.setPos(smallHeight, fix, true)
+        sq.pos.x.set(0, fix, true)
+        sq.pos.y.set(0, fix, true)
+        sq.pos.width.set(smallWidth, fix, true)
+        sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // r
         (sq.pos as? Surface)?.updateTile(5, 0)
-        sq.pos.x.setPos(deltaX, fix, true)
-        sq.pos.y.setPos(0, fix, true)
-        sq.pos.height.setPos(smallHeight, fix, true)
+        sq.pos.x.set(deltaX, fix, true)
+        sq.pos.y.set(0, fix, true)
+        sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // bl
         (sq.pos as? Surface)?.updateTile(6, 0)
-        sq.pos.x.setPos(-deltaX, fix, true)
-        sq.pos.y.setPos(-deltaY, fix, true)
+        sq.pos.x.set(-deltaX, fix, true)
+        sq.pos.y.set(-deltaY, fix, true)
         sq.goRightForced(refSurf) // b
         (sq.pos as? Surface)?.updateTile(7, 0)
-        sq.pos.x.setPos(0, fix, true)
-        sq.pos.y.setPos(-deltaY, fix, true)
-        sq.pos.width.setPos(smallWidth, fix, true)
+        sq.pos.x.set(0, fix, true)
+        sq.pos.y.set(-deltaY, fix, true)
+        sq.pos.width.set(smallWidth, fix, true)
         sq.goRightForced(refSurf) // br
         (sq.pos as? Surface)?.updateTile(8, 0)
-        sq.pos.x.setPos(deltaX, fix, true)
-        sq.pos.y.setPos(-deltaY, fix, true)
+        sq.pos.x.set(deltaX, fix, true)
+        sq.pos.y.set(-deltaY, fix, true)
     }
 }

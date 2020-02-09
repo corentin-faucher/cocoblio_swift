@@ -1,158 +1,218 @@
-extension Node {
+
+
+protocol KotlinLikeScope {}
+
+extension KotlinLikeScope {
     @discardableResult
-    func also(_ block: (Node) -> Void) -> Self {
+    @inline(__always) func also(_ block: (Self) -> Void) -> Self {
         block(self)
         return self
     }
-    /** Ajout d'une surface simple à un noeud racine.
-     * Sa hauteur devient 1 et ses scales deviennent sa hauteur. */
-    func alsoAddSurf(texEnum: TexEnum, i: Int, flags: Int = 0) -> Self {
-        if (firstChild != nil) { printerror("A déjà quelque chose."); return self }
-        addFlags(Flag1.getChildSurfaceRatio)
-        scaleX.realPos = height.realPos
-        scaleY.realPos = height.realPos
-        height.realPos = 1
-        width.realPos = 1
-        Surface(self, texEnum, 0, 0, 1, lambda: 0, i: i, flags: flags)
+    @discardableResult
+    @inline(__always) func `let`<R>(_ block: (Self) -> R) -> R {
+        return block(self)
+    }
+}
+
+extension Optional where Wrapped: KotlinLikeScope {
+    @inline(__always) func also(_ block: (Wrapped) -> Void) -> Self? {
+        guard let self = self else {return nil}
+        block(self)
+        return self
+    }
+    @inline(__always) func `let`<R>(_ block: (Wrapped) -> R) -> R? {
+        guard let self = self else {return nil}
+        return block(self)
+    }
+}
+
+extension Node : KotlinLikeScope {}
+
+extension Node {
+    /** Ajout d'un frame et string à un noeud.
+     * La hauteur devient 1 et ses scales deviennent sa hauteur. Delta est un pourcentage. */
+    func alsoAddLocStrWithFrame(stringID: String, framePngID: String = "frame_mocha",
+                                delta: Float = 0.4, ceiledWidth: Float? = nil) -> Self {
+        if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
+        
+        scaleX.set(height.realPos)
+        scaleY.set(height.realPos)
+        
+        let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
+        
+        width.set(1)
+        height.set(1)
+        Frame(self, isInside: false, delta: delta, lambda: 0,
+              framePngID: framePngID, flags: Flag1.giveSizesToParent)
+        LocStrSurf(self, stringID: stringID, 0, 0, 1, lambda: 0,
+                   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
         
         return self
     }
-    /** Ajout d'un frame et string à un noeud.
-     * La hauteur devient 1 et ses scales deviennent sa hauteur. Delta est un pourcentage. */
-    func alsoAddFrameAndStrCst(_ string: String, _ texEnum: TexEnum,
-                               delta: Float = 0.25) -> Self {
+    func alsoAddCstStrWithFrame(string: String, framePngID: String = "frame_mocha",
+                                delta: Float = 0.4) -> Self {
         if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
-        addFlags(Flag1.getChildSurfaceRatio)
-        scaleX.realPos = height.realPos
-        scaleY.realPos = height.realPos
-        height.realPos = 1
-        width.realPos = 1
         
-        Frame(self, delta: delta, lambda: 0, texEnum: texEnum)
-        SurfStrCst(self, string, 0, 0, 1)
+        scaleX.set(height.realPos)
+        scaleY.set(height.realPos)
+        width.set(1)
+        height.set(1)
+        Frame(self, isInside: false, delta: delta, lambda: 0,
+              framePngID: framePngID, flags: Flag1.giveSizesToParent)
+        CstStrSurf(self, string: string, 0, 0, 1, lambda: 0, flags: Flag1.giveSizesToBigBroFrame)
         
         return self
     }
-    /** Ajout d'un frame et string à un noeud.
-     * La hauteur devient 1 et ses scales deviennent sa hauteur. Delta est un pourcentage. */
-    func alsoAddFrameAndStrLoc(_ stringID: String, _ texEnum: TexEnum,
-                               delta: Float = 0.25) -> Self {
+    func alsoAddEdtStrWithFrame(id: Int, framePngID: String = "frame_mocha",
+                                delta: Float = 0.4) -> Self {
         if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
-        addFlags(Flag1.getChildSurfaceRatio)
-        scaleX.realPos = height.realPos
-        scaleY.realPos = height.realPos
-        height.realPos = 1
-        width.realPos = 1
         
-        Frame(self, delta: delta, lambda: 0, texEnum: texEnum)
-        SurfStrLoc(self, stringID, 0, 0, 1)
-        
-        return self
-    }
-    /** Ajout d'un frame et string à un noeud.
-     * La hauteur devient 1 et ses scales deviennent sa hauteur. Delta est un pourcentage. */
-    func alsoAddFrameAndStrEdt(_ id: Int, _ texEnum: TexEnum,
-                               delta: Float = 0.25) -> Self {
-        if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
-        addFlags(Flag1.getChildSurfaceRatio)
-        scaleX.realPos = height.realPos
-        scaleY.realPos = height.realPos
-        height.realPos = 1
-        width.realPos = 1
-        
-        Frame(self, delta: delta, lambda: 0, texEnum: texEnum)
-        SurfStrEdt(self, id, 0, 0, 1)
+        scaleX.set(height.realPos)
+        scaleY.set(height.realPos)
+        width.set(1)
+        height.set(1)
+        Frame(self, isInside: false, delta: delta, lambda: 0,
+              framePngID: framePngID, flags: Flag1.giveSizesToParent)
+        EdtStrSurf(self, id: id, 0, 0, 1, lambda: 0, flags: Flag1.giveSizesToBigBroFrame)
         
         return self
     }
     
-    /** Aligner les descendants d'un noeud. */
-    func alignTheChildren(alignOpt: Int, ratio: Float) {
+    /** !Debug Option!
+     * Ajout d'une surface "frame" pour visualiser la taille d'un "bloc".
+     * L'option Node.showFrame doit être "true". */
+    func tryToAddFrame() {
+        guard Node.showFrame else {return}
+        TestFrame(self)
+    }
+    
+    
+    func adjustWidthAndHeightFromChildren() {
+        var w: Float = 0
+        var h: Float = 0
+        var htmp: Float
+        var wtmp: Float
         let sq = Squirrel(at: self)
-        if (!sq.goDownToUnhidden()) {printerror("pas de child.");return}
+        if !sq.goDownWithout(flag: Flag1.hidden) { return}
+        repeat {
+            htmp = (sq.pos.deltaY + abs(sq.pos.y.realPos)) * 2
+            if (htmp > h) {
+                h = htmp
+            }
+            wtmp = (sq.pos.deltaX + abs(sq.pos.x.realPos)) * 2
+            if (wtmp > w) {
+                w = wtmp
+            }
+        } while (sq.goRightWithout(flag: Flag1.hidden))
+        width.set(w)
+        height.set(h)
+    }
+    
+    /** Aligner les descendants d'un noeud. */
+    @discardableResult
+    func alignTheChildren(alignOpt: Int, ratio: Float = 1, spacingRef: Float = 1) -> Int {
+        var sq = Squirrel(at: self)
+        guard sq.goDownWithout(flag: Flag1.hidden) else {
+            printerror("pas de child."); return 0
+        }
+        // 0. Les options
+        let fix = (alignOpt & AlignOpt.fixPos != 0)
+        let horizontal = (alignOpt & AlignOpt.vertically == 0)
+        let setAsDef = (alignOpt & AlignOpt.setAsDefPos != 0)
+        let setSecondaryToDefPos = (alignOpt & AlignOpt.setSecondaryToDefPos != 0)
         // 1. Setter largeur/hauteur
         var w: Float = 0
         var h: Float = 0
-        var N: Int = 0
-        if (alignOpt & AlignOpt.vertically == 0) {
+        var n: Int = 0
+        if (horizontal) {
             repeat {
-                w += sq.pos.deltaX * 2
-                N += 1
+                w += sq.pos.deltaX * 2 * spacingRef
+                n += 1
                 if (sq.pos.deltaY*2 > h) {
                     h = sq.pos.deltaY*2
                 }
-            } while (sq.goRightToUnhidden())
+            } while sq.goRightWithout(flag: Flag1.hidden)
         } else {
             repeat {
-                h += sq.pos.deltaY * 2
-                N += 1
+                h += sq.pos.deltaY * 2 * spacingRef
+                n += 1
                 if (sq.pos.deltaX * 2 > w) {
                     w = sq.pos.deltaX * 2
                 }
-            } while (sq.goRightToUnhidden())
+            } while sq.goRightWithout(flag: Flag1.hidden)
         }
         // 2. Ajuster l'espacement
         var spacing: Float = 0
         if (alignOpt & AlignOpt.respectRatio != 0) {
-            if(alignOpt & AlignOpt.vertically == 0) {
+            if(horizontal) {
                 if  (w/h < ratio) {
-                    spacing = (ratio * h - w) / Float(N)
+                    spacing = (ratio * h - w) / Float(n)
                     w = ratio * h
                 }
             } else {
                 if (w/h > ratio) {
-                    spacing = (w/ratio - h) / Float(N)
+                    spacing = (w/ratio - h) / Float(n)
                     h = w / ratio
                 }
             }
         }
         // 3. Setter les dims.
-        let fix = (alignOpt & AlignOpt.fixPos != 0)
-        let setDef = (alignOpt & AlignOpt.dontSetAsDef == 0)
-        if (alignOpt & AlignOpt.dontChangeParSizes == 0) {
-            width.setPos(w, fix, setDef)
-            height.setPos(h, fix, setDef)
+        if (alignOpt & AlignOpt.dontUpdateSizes == 0) {
+            width.set(w, fix, setAsDef)
+            height.set(h, fix, setAsDef)
         }
         // 4. Aligner les éléments
-        sq.reinit(at: self)
-        if (!sq.goDownToUnhidden()) {printerror("pas de child2.");return}
-        if(alignOpt & AlignOpt.vertically == 0) {
+        sq = Squirrel(at: self)
+        guard sq.goDownWithout(flag: Flag1.hidden) else {
+            printerror("pas de child2.");return 0
+            
+        }
+        if(horizontal) {
             var x = -w / 2
             repeat {
-                x += sq.pos.deltaX + spacing/2
+                x += sq.pos.deltaX * spacingRef + spacing/2
                 
-                sq.pos.x.setPos(x, fix, setDef)
-                if(setDef) {
-                    sq.pos.y.setPos(0, fix, setDef)
+                sq.pos.x.set(x, fix, setAsDef)
+                if setSecondaryToDefPos {
+                    sq.pos.y.setRelToDef(shift: 0, fix: fix)
+                } else {
+                    sq.pos.y.set(0, fix, false)
                 }
-                else {
-                    sq.pos.y.setToDef()
-                }
-                x += sq.pos.deltaX + spacing/2
-            } while (sq.goRightToUnhidden())
-            return
+                
+                x += sq.pos.deltaX * spacingRef + spacing/2
+            } while (sq.goRightWithout(flag: Flag1.hidden))
+            return n
         }
         
         var y = -h / 2
         repeat {
-            y += sq.pos.deltaY + spacing/2
+            y += sq.pos.deltaY * spacingRef + spacing/2
             
-            if(setDef) {
-                sq.pos.x.setPos(0, fix, setDef)
+            sq.pos.y.set(y, fix, setAsDef)
+            if setSecondaryToDefPos {
+                sq.pos.x.setRelToDef(shift: 0, fix: fix)
             } else {
-                sq.pos.x.setToDef()
+                sq.pos.x.set(0, fix, false)
             }
-            sq.pos.y.setPos(y, fix, setDef)
             
-            y += sq.pos.deltaY + spacing / 2
-        } while (sq.goRightToUnhidden())
+            y += sq.pos.deltaY * spacingRef + spacing / 2
+        } while (sq.goRightWithout(flag: Flag1.hidden))
+        
+        return n
     }
 }
 
 enum AlignOpt {
     static let vertically = 1
-    static let dontChangeParSizes = 2
+    static let dontUpdateSizes = 2
     static let respectRatio = 4
     static let fixPos = 8
-    static let dontSetAsDef = 16
+    /** En horizontal, le "primary" est "x" des children,
+     * le "secondary" est "y". (En vertical prim->"y", sec->"x".)
+     * Place la position "alignée" comme étant la position par défaut pour le primary des children
+     * et pour le width/height du parent. Ne touche pas à defPos du secondary des children. */
+    static let setAsDefPos = 16
+    /** S'il y a "setSecondaryToDefPos", on place "y" à sa position par défaut,
+     * sinon, on le place à zéro. */
+    static let setSecondaryToDefPos = 32
 }

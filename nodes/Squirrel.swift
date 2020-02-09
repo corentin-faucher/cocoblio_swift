@@ -16,8 +16,8 @@ class Squirrel {
     /// Position dans l'arbre (noeud) de l'écureuil.
     private(set) var pos: Node
     private let root: Node
-    private(set) var v: float2
-    private(set) var vS: float2
+    private(set) var v: Vector2
+    private(set) var vS: Vector2
     /// Vérifie si on tombe dans le cadre du noeud présent (pos).
     var isIn: Bool {
         return (fabsf(v.x - pos.x.realPos) <= pos.deltaX) &&
@@ -25,48 +25,42 @@ class Squirrel {
     }
     /** Convertir une position en position relative par rapport
      *  a la position présente (et scaling présent) */
-    func getRelPosOf(_ pos: float2) -> float2 {
-        return float2((pos.x - v.x) / vS.x, (pos.y - v.y) / vS.y)
+    func getRelPosOf(_ pos: Vector2) -> Vector2 {
+        return Vector2((pos.x - v.x) / vS.x, (pos.y - v.y) / vS.y)
     }
-    func getRelDeltaOf(_ delta: float2) -> float2 {
-        return float2(delta.x / vS.x, delta.y / vS.y)
+    func getRelDeltaOf(_ delta: Vector2) -> Vector2 {
+        return Vector2(delta.x / vS.x, delta.y / vS.y)
     }
     
     /*-- Constructeurs... --*/
-    // Superflu, si on veut vraiment reinit c'est plus clair de prendre un var sq:Squirrel...
-    /*func reinit(at pos: Node) {
-        self.pos = pos
-        v = float2(pos.x.realPos, pos.y.realPos)
-        vS = float2(1,1)
-    } */
     init(at pos: Node) {
         self.pos = pos
         root = pos
-        v = float2(pos.x.realPos, pos.y.realPos)
-        vS = float2(1,1)
+        v = Vector2(pos.x.realPos, pos.y.realPos)
+        vS = Vector2(1,1)
     }
     init(at pos: Node, scaleInit: RelativeScaleInit) {
         self.pos = pos
         root =  pos
-        v = float2(pos.x.realPos, pos.y.realPos)
+        v = Vector2(pos.x.realPos, pos.y.realPos)
         switch scaleInit {
-        case .ones: vS = float2(1,1)
-        case .scales: vS = float2(pos.scaleX.realPos, pos.scaleY.realPos)
-            //        case .sizes: vS = float2(pos.width.realPos, pos.height.realPos)
-            //        case .scaledSizes: vS = float2(pos.deltaX * 2, pos.deltaY * 2)
+        case .ones: vS = Vector2(1,1)
+        case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
+            //        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
+            //        case .scaledSizes: vS = Vector2(pos.deltaX * 2, pos.deltaY * 2)
         }
     }
     /// Initialise avec une position relative au lieu de la position du noeud.
     /// La postion relative est dans le reférentiel de pos.parent (comme l'est la position du noeud).
-    init(at pos: Node, relPos: float2, scaleInit: RelativeScaleInit) {
+    init(at pos: Node, relPos: Vector2, scaleInit: RelativeScaleInit) {
         self.pos = pos
         root = pos
         v = relPos
         switch scaleInit {
-        case .ones: vS = float2(1,1)
-        case .scales: vS = float2(pos.scaleX.realPos, pos.scaleY.realPos)
-            //        case .sizes: vS = float2(pos.width.realPos, pos.height.realPos)
-            //        case .scaledSizes: vS = float2(pos.deltaX * 2, pos.deltaY * 2)
+        case .ones: vS = Vector2(1,1)
+        case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
+            //        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
+            //        case .scaledSizes: vS = Vector2(pos.deltaX * 2, pos.deltaY * 2)
         }
     }
     
@@ -117,15 +111,6 @@ class Squirrel {
         } while pos.containsAFlag(flag)
         return true
     }
-    /** Va au petit-frère non-caché et du type voulu. */
-    // Pas eu besoin...
-    /*
-    func goRightWithoutTyped<T>(flag: Int) -> T? {
-        repeat {
-            if !goRight() {return nil}
-        } while ((pos !is T) || pos.containsAFlag(flag))
-        return nil
-    }*/
     /// Va au grand-frère. S'arrête et retourne false si ne peut y aller (dépassé l'ainé)
     @discardableResult func goLeft() -> Bool {
         guard let bigBro = pos.bigBro else {return false}

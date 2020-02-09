@@ -13,9 +13,6 @@ struct GlobalChrono {
     /// Active/désactive le chrono du temps écoulé.
     /// Setter à true a pour effet de "toucher" le chrono (évite de s'endormir).
     static var isPaused: Bool {
-        get {
-            return !isActive
-        }
         set {
             if !newValue { // isPaused == false -> isActive == true
                 isActive = true
@@ -26,6 +23,7 @@ struct GlobalChrono {
                 isActive = false
             }
         }
+        get { return !isActive }
     }
     static var shouldSleep: Bool {
         return touchElapsed > 8000
@@ -118,11 +116,21 @@ struct Chrono {
         }
     }
     mutating func add(sec: Float) {
-        var sec = sec
-        if sec < 0 {
-            sec = 0
+        if sec > 0 {
+            add(millisec: Int64(sec*1000))
         }
-        add(millisec: Int64(sec*1000))
+    }
+    mutating func remove(millisec: Int64) {
+        if (isActive) { // time est le starting time.
+            time = (elapsedMS > millisec) ? time + millisec : GlobalChrono.elapsedMS
+        } else { // time est le temps écoulé.
+            time = (time > millisec) ? time - millisec : 0
+        }
+    }
+    mutating func remove(sec: Float) {
+        if sec > 0 {
+            remove(millisec: Int64(sec*1000))
+        }
     }
     
     // Membres privés

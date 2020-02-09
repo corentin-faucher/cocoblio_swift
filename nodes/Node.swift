@@ -47,7 +47,7 @@ class Node : CopyableNode {
         return containsAFlag(Flag1.show | Flag1.branchToDisplay)
     }
     /** Positions, tailles, etc. */
-    var x, y, z, width, height, scaleX, scaleY: SmPos
+    var x, y, z, width, height, scaleX, scaleY: SmoothPos
     /** Demi espace occupé en x. (width * scaleX) / 2 */
     var deltaX: Float {
         return width.realPos * scaleX.realPos / 2
@@ -69,7 +69,7 @@ class Node : CopyableNode {
     
     /*-- Fonctions d'accès et Computed properties --*/
     /// Obtenir la position absolue d'un noeud.
-    func getAbsPos() -> float2 {
+    func getAbsPos() -> Vector2 {
         let sq = Squirrel(at: self)
         while sq.goUpP() {}
         return sq.v
@@ -78,13 +78,13 @@ class Node : CopyableNode {
      *  i.e. au niveau des node.children.
      * (Si node == nil -> retourne absPos tel quel,
      * cas où node est aNode.parent et parent peut être nul.)*/
-    func relativePosOf(absPos: float2) -> float2 {
+    func relativePosOf(absPos: Vector2) -> Vector2 {
         let sq = Squirrel(at: self, scaleInit: .scales)
         while sq.goUpPS() {}
         // Maintenant, sq contient la position absolue de theNode.
         return sq.getRelPosOf(absPos)
     }
-    func relativeDeltaOf(absDelta: float2) -> float2 {
+    func relativeDeltaOf(absDelta: Vector2) -> Vector2 {
         let sq = Squirrel(at: self, scaleInit: .scales)
         while sq.goUpPS() {}
         return sq.getRelDeltaOf(absDelta)
@@ -93,13 +93,13 @@ class Node : CopyableNode {
     /** Noeud "vide" et "seul" */
     init(parent: Node?) {
         flags = 0
-        x = SmPos(0)
-        y = SmPos(0)
-        z = SmPos(0)
-        width = SmPos(4)
-        height = SmPos(4)
-        scaleX = SmPos(1)
-        scaleY = SmPos(1)
+        x = SmoothPos(0)
+        y = SmoothPos(0)
+        z = SmoothPos(0)
+        width = SmoothPos(4)
+        height = SmoothPos(4)
+        scaleX = SmoothPos(1)
+        scaleY = SmoothPos(1)
         piu = Renderer.PerInstanceUniforms()
         if let theParent = parent {
             connectToParent(theParent, asElder: false)
@@ -111,13 +111,13 @@ class Node : CopyableNode {
          flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
         // 1. Données de base
         self.flags = flags
-        self.x = SmPos(x, lambda)
-        self.y = SmPos(y, lambda)
-        self.z = SmPos(0, lambda)
-        self.width = SmPos(width, lambda)
-        self.height = SmPos(height, lambda)
-        scaleX = SmPos(1, lambda)
-        scaleY = SmPos(1, lambda)
+        self.x = SmoothPos(x, lambda)
+        self.y = SmoothPos(y, lambda)
+        self.z = SmoothPos(0, lambda)
+        self.width = SmoothPos(width, lambda)
+        self.height = SmoothPos(height, lambda)
+        scaleX = SmoothPos(1, lambda)
+        scaleY = SmoothPos(1, lambda)
         piu = Renderer.PerInstanceUniforms()
         // 2. Ajustement des références
         if let theRef = refNode {
@@ -176,7 +176,7 @@ class Node : CopyableNode {
     }
     /** Deconnexion d'un descendant, i.e. Effacement direct.
      *  Retourne "true" s'il y a un descendant a effacer. */
-    @discardableResult func deconnectChild(elder: Bool) -> Bool {
+    @discardableResult func disconnectChild(elder: Bool) -> Bool {
         guard let child = elder ? firstChild : lastChild else {
             return false
         }
@@ -185,7 +185,7 @@ class Node : CopyableNode {
     }
     /// Deconnexion d'un frère, i.e. Effacement direct.
     /// Retourne "true" s'il y a un frère a effacer.
-    @discardableResult func deconnectBro(big: Bool) -> Bool {
+    @discardableResult func disconnectBro(big: Bool) -> Bool {
         guard let bro = big ? bigBro : littleBro else {return false}
         bro.disconnect()
         return true
@@ -420,139 +420,8 @@ class Node : CopyableNode {
             height.newReferentialAsDelta(posScale: sqP.vS.y, destScale: sqQ.vS.y)
         }
     }
+    
+    // Option de debbuging (ajouter des frame aux noeuds).
+    static var showFrame = false
 }
 
-/*---------------------------------------*/
-/*-- Les interfaces / protocoles. -------*/
-/*---------------------------------------*/
-
-protocol KeyboardKey {
-    var scancode: Int { get }
-    var keycode: Int { get }
-    var keymode: Int { get }
-    var isVirtual: Bool { get }
-}
-
-protocol DraggableNode {
-    func grab(posInit: float2) -> Bool
-    func drag(posNow: float2) -> Bool
-    func letGo(speed: float2) -> Bool
-}
-
-protocol OpenableNode {
-    func open()
-}
-
-protocol ActionableNode {
-    func action()
-}
-
-/*---------------------------------------*/
-/*-- Les sous-classes importantes. ------*/
-/*---------------------------------------*/
-
-class ScreenBase : Node, OpenableNode {
-    let escapeAction: (()->Void)?
-    let enterAction: (()->Void)?
-    
-    init(_ refNode: Node?, flags: Int = 0) {
-        super.init(refNode, 0, 0, 4, 4, lambda: 0, flags: flags)
-    }
-    func open() {
-        reshape(isOpening: true)
-    }
-    func reshape(isOpening: Bool) {
-        if !containsAFlag(Flag1.dontAlignScreenElements) {
-            let ceiledScreenRatio = Renderer.frameUsableWidth / Renderer.frameUsableHeight
-            var alignOpt = AlignOpt.respectRatio | AlignOpt.dontSetAsDef
-            if (ceiledScreenRatio < 1) {
-                alignOpt |= AlignOpt.vertically
-            }
-            if (isOpening) {
-                alignOpt |= AlignOpt.fixPos
-            }
-            
-            self.alignTheChildren(alignOpt: alignOpt, ratio: ceiledScreenRatio)
-            
-            let scale = min(Renderer.frameUsableWidth / width.realPos,
-                            Renderer.frameUsableHeight / height.realPos)
-            scaleX.setPos(scale, isOpening)
-            scaleY.setPos(scale, isOpening)
-        } else {
-            scaleX.setPos(1, isOpening)
-            scaleY.setPos(1, isOpening)
-            width.setPos(Renderer.frameUsableWidth, isOpening)
-            height.setPos(Renderer.frameUsableHeight, isOpening)
-        }
-    }
-    
-    required internal init(refNode: Node?, toCloneNode: Node,
-                           asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneScreen = toCloneNode as! ScreenBase
-        self.escapeAction = toCloneScreen.escapeAction
-        self.enterAction = toCloneScreen.enterAction
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-    }
-}
-
-
-final class Button : Node {
-    var bi: ButtonInfo
-    init(refNode: Node?, bi: ButtonInfo,
-         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
-        self.bi = bi
-        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-        addFlags(Flag1.selectable)
-        addRootFlag(Flag1.selectableRoot)
-    }
-    
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node,
-         asParent: Bool = true, asElderBigbro: Bool = false) {
-        self.bi = (toCloneNode as! Button).bi
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-        addFlags(Flag1.selectable)
-        addRootFlag(Flag1.selectableRoot)
-    }
-}
-
-
-/** Les flags "de base" pour les noeuds. */
-enum Flag1 {
-    static let show = 1
-    static let hidden = 1<<1
-    static let exposed = 1<<2
-    static let selectableRoot = 1<<3
-    static let selectable = 1<<4
-    /** Noeud qui apparaît en grossisant. */
-    static let poping = 1<<5
-    
-    /*-- Pour les surfaces --*/
-    /** La tile est l'id de la langue actuelle. */
-    //static let languageSurface = 1<<6
-    /** Par défaut on ajuste la largeur pour respecter les proportion d'une image. */
-    static let surfaceDontRespectRatio = 1<<7
-    static let surfaceWithCeiledWidth = 1<<6
-    /** String dont il faut vérifier le contenu et le ratio
-     *  (fonction de la langue ou éditable). */
-//    static let mutableStringSurface = 1<<8
-    /** Ajustement du ratio width/height d'un parent en fonction d'un enfant.
-     * Par exemple, bouton qui prend les proportions du frame après sa mise à jour. */
-//    static let getChildSurfaceRatio = 1<<9
-    
-    static let giveSizesToBigBroFrame = 1<<8
-    static let giveSizesToParent = 1<<9
-    
-    /*-- Pour les screens --*/
-    static let dontAlignScreenElements = 1<<10
-    
-    /** Paur l'affichage. La branche a encore des descendant à afficher. */
-    static let branchToDisplay = 1<<11
-    
-    /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<12
-}

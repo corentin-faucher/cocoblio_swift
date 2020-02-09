@@ -10,30 +10,29 @@ import simd
 import Foundation
 
 protocol EventsHandler {
-    func everyFrameAction()
+    func singleTap(pos: Vector2)
     func initTouchDrag()
-    func touchDrag(posNow: float2)
-    func letTouchDrag(vit: float2)
-    func singleTap(pos: float2)
+    func touchDrag(posNow: Vector2)
+    func letTouchDrag(vit: Vector2)
+    
     func keyDown(key: KeyboardKey)
     func keyUp(key: KeyboardKey)
-    func reshapeAction()
+    
+    func willDrawFrame()
+    func viewReshaped()
+    func configurationChanged()
+    func appPaused()
 }
 
-@objc class GameEngineBase : NSObject {
+class GameEngineBase {
     /* Les trois noeuds clefs d'un projet. */
-    let root: Node = Node(nil, 0, 0, 4, 4, lambda: 0, flags:
-        Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot)
+    let root: RootNode = RootNode()
     private(set) var activeScreen: ScreenBase? = nil
-    private(set) var selectedNode: Node? = nil
-    
-    /* Action supplémentaire à l'ouverture/fermeture pour les noeuds. */
-    let extraCheckNodeAtOpening: ((Node) -> Void)? = nil
-    let extraCheckNodeAtClosing: ((Node) -> Void)? = nil
-    
+    var selectedNode: Node? = nil
+        
     /* Implémentation par défaut lors d'un reshape -> Redimensionner l'écran. */
-    func reshapeAction() {
-        activeScreen?.reshape(isOpening: false)
+    func viewReshaped() {
+        root.reshapeBranch()
     }
     
     func changeActiveScreen(newScreen: ScreenBase?) {
@@ -44,7 +43,7 @@ protocol EventsHandler {
             return
         }
         // 1. Si besoin, fermer l'écran actif.
-        activeScreen?.closeBranch(extraCheck: extraCheckNodeAtClosing)
+        activeScreen?.closeBranch()
         
         // 2. Si null -> fermeture de l'app.
         guard let theNewScreen = newScreen else {
@@ -57,8 +56,10 @@ protocol EventsHandler {
             return
         }
         // 3. Ouverture du nouvel écran.
+        print("Opening")
         activeScreen = theNewScreen
-        theNewScreen.openBranch(extraCheck: extraCheckNodeAtOpening)
+        theNewScreen.openBranch()
     }
+    
 }
 

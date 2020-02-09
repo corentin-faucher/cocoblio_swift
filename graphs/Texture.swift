@@ -55,13 +55,14 @@ class Texture {
         setDims()
     }
     private func initAsPng() {
-        guard let url = Bundle.main.url(forResource: string, withExtension: "png", subdirectory: "Surfaces") else {
+        guard let url = Bundle.main.url(forResource: string, withExtension: "png", subdirectory: "pngs") else {
             printerror("Ne peut pas charger la surface \(string).")
             initAsString()
             return
         }
         mtlTexture = try!
             Texture.textureLoader.newTexture(URL: url, options: [MTKTextureLoader.Option.SRGB : false])
+
         setDims()
     }
     private func setDims() {
@@ -73,7 +74,7 @@ class Texture {
     
     /*-- Les textures de png --*/
     static func initPngTex(pngID: String, m: Int, n: Int) {
-        if pngList[pngID] != nil {
+        guard pngList[pngID] == nil else {
             printerror("Texture du png \(pngID) déjà init.")
             return
         }
@@ -82,11 +83,11 @@ class Texture {
         pngList[pngID] = newTex
     }
     static func getPngTex(pngID: String) -> Texture {
-        if let tex = pngList[pngID] {
-            return tex
+        guard let tex = pngList[pngID] else {
+            printerror("Texture du png \(pngID) pas encore init.")
+            return getConstantStringTex(string: pngID)
         }
-        printerror("Texture du png \(pngID) pas encore init.")
-        return getConstantStringTex(string: pngID)
+        return tex
     }
     private static var pngList: [String: Texture] = [:]
     /*-- Les strings constantes --*/
@@ -137,11 +138,11 @@ class Texture {
         return newTexture
     }
     static func getEditableString(id: Int) -> String {
-        if let it = editableStringList[id] {
-            return it.string
+        guard let tex = editableStringList[id] else {
+            printerror("EditableString pas dans la liste.")
+            return "I am error"
         }
-        printerror("EditableString pas dans la liste.")
-        return "I am error"
+        return tex.string
     }
     static func getNewEditableStringID() -> Int {
         while editableStringList[currentFreeEditableStringID] != nil {

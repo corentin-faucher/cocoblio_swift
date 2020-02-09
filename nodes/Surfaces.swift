@@ -1,9 +1,11 @@
+
 class Surface : Node {
     var tex: Texture
     let mesh: Mesh
     var trShow: SmTrans
     
     /** Init comme une surface ordinaire (png) */
+    @discardableResult
     init(_ refNode: Node?, pngID: String,
          _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
          i: Int = 0, flags: Int = 0,
@@ -19,13 +21,16 @@ class Surface : Node {
     /** Init avec la texture directement. */
     init(_ refNode: Node?, texture: Texture,
          _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-        i: Int = 0, flags: Int = 0,
+         i: Int = 0, flags: Int = 0, ceiledWidth: Float? = nil,
         asParent: Bool = true, asElderBigbro: Bool = false, mesh: Mesh = Mesh.sprite) {
         self.tex = texture
         self.mesh = mesh
         self.trShow = SmTrans()
-        super.init(refNode, x, y, height, height, lambda: lambda,
+        super.init(refNode, x, y, ceiledWidth ?? height, height, lambda: lambda,
                    flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
+        if ceiledWidth != nil {
+            addFlags(Flag1.surfaceWithCeiledWidth)
+        }
         updateTile(i, 0)
         updateRatio()
     }
@@ -61,38 +66,66 @@ class Surface : Node {
     /** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
      * Sinon, on ne fait que vérifier le frame voisin
      * et le parent. */
-    func updateRatio() {
+    func updateRatio(fix: Bool = true) {
         if !containsAFlag(Flag1.surfaceDontRespectRatio) {
             if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-                width.setPos(min(height.realPos * tex.ratio, width.defPos), true, false)
+                width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
             } else {
-                width.setPos(height.realPos * tex.ratio, true, true)
+                width.set(height.realPos * tex.ratio, fix, true)
             }
         }
         if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
             bigBroFrame.update(width: width.realPos, height: height.realPos, fix: true)
         }
         if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
-            theParent.width.setPos(width.realPos)
-            theParent.height.setPos(height.realPos)
+            theParent.width.set(width.realPos)
+            theParent.height.set(height.realPos)
         }
     }
 }
 
-class LanguageSurface : Surface, OpenableNode {
+class LanguageSurface : Surface, Openable {
     func open() {
         updateTile(Language.currentLanguageID, 0)
     }
     // (C'est tout! on garde le reste comme Surface)
 }
 
+final class TestFrame : Surface, Reshapable, Openable {
+    @discardableResult
+    init(_ refNode: Node) {
+        super.init(refNode, pngID: "test_frame", 0, 0, refNode.height.realPos, lambda: 10, i: 0, flags: Flag1.surfaceDontRespectRatio)
+        width.set(refNode.width.realPos)
+    }
+    
+    func open() {
+        guard let theParent = parent else { printerror("TestFrame sans parent."); return}
+        height.pos = theParent.height.realPos
+        width.pos = theParent.width.realPos
+    }
+    
+    func reshape() -> Bool {
+        guard let theParent = parent else { printerror("TestFrame sans parent."); return false}
+        height.pos = theParent.height.realPos
+        width.pos = theParent.width.realPos
+        return false
+    }
+    
+    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
+        fatalError("init(refNode:toCloneNode:asParent:asElderBigbro:) has not been implemented")
+    }
+}
+
 /** Surface d'une string constante. (non localisée, définie "on the fly".) */
 final class CstStrSurf : Surface {
-    init(_ refNode: Node?, _ string: String,
+    @discardableResult
+    init(_ refNode: Node?, string: String,
          _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
+         flags: Int = 0, ceiledWidth: Float? = nil,
+         asParent: Bool = true, asElderBigbro: Bool = false) {
         super.init(refNode, texture: Texture.getConstantStringTex(string: string),
-                   x, y, height, lambda: lambda, i: 0, flags: flags,
+                   x, y, height, lambda: lambda, i: 0,
+                   flags: flags, ceiledWidth: ceiledWidth,
                    asParent: asParent, asElderBigbro: asElderBigbro)
         piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
     }
@@ -111,18 +144,28 @@ final class CstStrSurf : Surface {
 
 /** Surface d'une string localisable.
  * (ne garde en mémoire ni la string ni la locStrID) */
-final class LocStrSurf : Surface, OpenableNode {
+final class LocStrSurf : Surface, Openable {
+    @discardableResult
+    init(_ refNode: Node?, stringID: String,
+         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
+         flags: Int = 0, ceiledWidth: Float? = nil,
+         asParent: Bool = true, asElderBigbro: Bool = false) {
+        super.init(refNode, texture: Texture.getLocalizedStringTex(textID: stringID),
+                   x, y, height, lambda: lambda, i: 0,
+                   flags: flags, ceiledWidth: ceiledWidth,
+                   asParent: asParent, asElderBigbro: asElderBigbro)
+        piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
+    }
+    
     func open() {
         updateRatio()
     }
-    @discardableResult
-    init(_ refNode: Node?, _ stringID: String,
-         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
-        super.init(refNode, texture: Texture.getLocalizedStringTex(textID: stringID),
-                   x, y, height, lambda: lambda, i: 0, flags: flags,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
+    /** Changement d'une string localisée. */
+    func updateForLocStr(stringID: String) {
+        self.tex = Texture.getLocalizedStringTex(textID: stringID)
+        updateRatio()
     }
+    
     /** Constructeur de copie. */
     required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool, asElderBigbro: Bool) {
         super.init(refNode: refNode, toCloneNode: toCloneNode,
@@ -130,25 +173,39 @@ final class LocStrSurf : Surface, OpenableNode {
     }
 }
 
-final class EdtStrSurf : Surface, OpenableNode {
-    func open() {
-        updateRatio()
-    }
+final class EdtStrSurf : Surface, Openable {
     @discardableResult
     init(_ refNode: Node?, id: Int,
          _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
+         flags: Int = 0, ceiledWidth: Float? = nil,
+         asParent: Bool = true, asElderBigbro: Bool = false) {
         super.init(refNode, texture: Texture.getEditableStringTex(id: id),
-                   x, y, height, lambda: lambda, i: 0, flags: flags,
+                   x, y, height, lambda: lambda, i: 0,
+                   flags: flags, ceiledWidth: ceiledWidth,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+        piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
     }
     init(_ refNode: Node?, id: Int, with string: String,
          _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
+         flags: Int = 0, ceiledWidth: Float? = nil,
+         asParent: Bool = true, asElderBigbro: Bool = false) {
         super.init(refNode, texture: Texture.getEditableStringTex(id: id),
-                   x, y, height, lambda: lambda, i: 0, flags: flags,
+                   x, y, height, lambda: lambda, i: 0,
+                   flags: flags, ceiledWidth: ceiledWidth,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+        piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
         Texture.setEditableString(id: id, newString: string)
+    }
+    func open() {
+        updateRatio()
+    }
+    /** Changement pour une autre string editable */
+    func updateForEdtStr(id: Int) {
+        self.tex = Texture.getEditableStringTex(id: id)
+        updateRatio()
+    }
+    func update() {
+        updateRatio()
     }
     /** Constructeur de copie. */
     required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool, asElderBigbro: Bool) {

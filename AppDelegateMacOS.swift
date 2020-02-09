@@ -15,7 +15,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var metalView: MetalView!
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        SoundManager.loadSounds()
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

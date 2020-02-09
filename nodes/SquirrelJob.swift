@@ -86,24 +86,19 @@ extension Node {
     
     /**  Pour chaque noeud :
      * 1. Applique open pour les openable,
-     * 2. exécute le lambda supplémentaire,
-     * 3. ajoute "show" si non caché,
-     * 4. visite si est une branche avec "show".
+     * 2. ajoute "show" si non caché,
+     * 3. visite si est une branche avec "show".
+     * (show peut être ajouté manuellement avant pour afficher une branche cachée)
      * (show peut avoir été ajouté exterieurement) */
-    func openBranch(extraCheck: ((Node) -> Void)? = nil) {
-        (self as? OpenableNode)?.open()
-        extraCheck?(self)
+    func openBranch() {
+        (self as? Openable)?.open()
         if !containsAFlag(Flag1.hidden) {
             addFlags(Flag1.show)
         }
-        if !containsAFlag(Flag1.show) {
-            return
-        }
-        guard let firstChild = firstChild else {return}
+        guard containsAFlag(Flag1.show), let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
         while true {
-            (sq.pos as? OpenableNode)?.open()
-            extraCheck?(sq.pos)
+            (sq.pos as? Openable)?.open()
             if !sq.pos.containsAFlag(Flag1.hidden) {
                 sq.pos.addFlags(Flag1.show)
             }
@@ -119,17 +114,17 @@ extension Node {
     }
     
     /// Enlever "show" aux noeud de la branche (sauf les alwaysShow) et appliquer la "closure".
-    func closeBranch(extraCheck: ((Node) -> Void)? = nil) {
+    func closeBranch() {
         if !containsAFlag(Flag1.exposed) {
             removeFlags(Flag1.show)
-            extraCheck?(self)
+            (self as? Closeable)?.close()
         }
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
         while true {
             if !sq.pos.containsAFlag(Flag1.exposed) {
                 sq.pos.removeFlags(Flag1.show)
-                extraCheck?(sq.pos)
+                (sq.pos as? Closeable)?.close()
             }
             
             if sq.goDown() {continue}
@@ -141,14 +136,32 @@ extension Node {
         }
     }
     
+    func reshapeBranch() {
+        guard containsAFlag(Flag1.show), let reshapable = (self as? Reshapable),
+            reshapable.reshape(), containsAFlag(Flag1.reshapableRoot),
+            let firstChild = firstChild
+        else {return}
+        let sq = Squirrel(at: firstChild)
+        while true {
+            if sq.pos.containsAFlag(Flag1.show), let reshapable = sq.pos as? Reshapable,
+                reshapable.reshape(), sq.pos.containsAFlag(Flag1.reshapableRoot),
+                sq.goDown() {continue}
+            while !sq.goRight() {
+                if !sq.goUp() {
+                    printerror("Pas de branch."); return
+                } else if sq.pos === self {return}
+            }
+        }
+    }
+    
     /// Recherche d'un noeud selectionnable dans "root". Retourne nil si rien trouvé.
-    func searchNodeToSelect(absPos: float2, nodeToAvoid: Node?) -> Node? {
+    func searchBranchForSelectable(absPos: Vector2, nodeToAvoid: Node?) -> Node? {
         let relPos = parent?.relativePosOf(absPos: absPos) ?? absPos
-        return searchNodeToSelectPrivate(relPos: relPos, nodeToAvoid: nodeToAvoid)
+        return searchBranchForSelectablePrivate(relPos: relPos, nodeToAvoid: nodeToAvoid)
     }
     
     /*-- Private stuff --*/
-    private func searchNodeToSelectPrivate(relPos: float2, nodeToAvoid: Node?) -> Node? {
+    private func searchBranchForSelectablePrivate(relPos: Vector2, nodeToAvoid: Node?) -> Node? {
         let sq = Squirrel(at: self, relPos: relPos, scaleInit: .ones)
         var candidate: Node? = nil
         
