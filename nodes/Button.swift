@@ -11,26 +11,23 @@ import Foundation
 /** Classe de base des boutons.
  * Par défaut un bouton n'est qu'un carré sans surface.
  * Un bouton n'est qu'un SearchableNode (selectable) avec action (Actionable). */
-class Button : SearchableNode, Actionable {
-    func action() {printerror("Some button says: Override Me!")}
-    
+class Button : Node, Actionable {
     init(_ refNode: Node?, _ x: Float, _ y: Float, _ height: Float,
-         lambda: Float = 0, flags: Int = 0
-    ) {
-        super.init(refNode,
-                   rootFlag: Flag1.selectableRoot, findFlag: Flag1.selectable,
-                   x, y, height, height,
-                   lambda: lambda, flags: flags)
+         lambda: Float = 0, flags: Int = 0) {
+        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
+        makeSelectable()
     }
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node,
-         asParent: Bool = true, asElderBigbro: Bool = false) {
+    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
         super.init(refNode: refNode, toCloneNode: toCloneNode,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+        makeSelectable()
+    }
+    func action() {
+        printerror("Empty button! (override...)")
     }
 }
 
-class SwitchButton : Button, Draggable {
+class SwitchButton : Node, Actionable, Draggable {
     private var back: Surface!
     private var nub: Surface!
     private var isOn: Bool
@@ -39,7 +36,8 @@ class SwitchButton : Button, Draggable {
          _ x: Float, _ y: Float, _ height: Float,
          lambda: Float = 0, flags: Int = 0) {
         self.isOn = isOn
-        super.init(refNode, x, y, height, lambda: lambda, flags: flags)
+        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
+        makeSelectable()
         scaleX.set(height)
         scaleY.set(height)
         self.height.set(1)
@@ -54,9 +52,14 @@ class SwitchButton : Button, Draggable {
         self.isOn = (toCloneNode as! SwitchButton).isOn
         super.init(refNode: refNode, toCloneNode: toCloneNode,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+        makeSelectable()
         back = Surface(self, pngID: "switch_back", 0, 0, 1)
         nub = Surface(self, pngID: "switch_front", isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
         setBackColor()
+    }
+    
+    func action() {
+        printerror("Empty switchButton! (override...)")
     }
     
     func fix(isOn: Bool) {

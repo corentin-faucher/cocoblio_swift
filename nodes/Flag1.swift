@@ -16,7 +16,7 @@ enum Flag1 {
     static let exposed = 1<<2
     static let selectableRoot = 1<<3
     static let selectable = 1<<4
-    static let reshapableRoot = 1<<5
+    //static let reshapableRoot = 1<<5
     /** Noeud qui apparaît en grossisant. */
     static let poping = 1<<6
     
@@ -33,6 +33,10 @@ enum Flag1 {
     
     /** Paur l'affichage. La branche a encore des descendant à afficher. */
     static let branchToDisplay = 1<<12
+    
+    static let relativeToRight = 1<<13
+    static let relativeToLeft = 1<<14
+    static let relativeToTop = 1<<15
     
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
     static let firstCustomFlag = 1<<13

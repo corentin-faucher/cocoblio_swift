@@ -14,7 +14,7 @@ import Foundation
 final class Frame : Node {
     private let delta: Float
     private let lambda: Float
-    private let pngID: String
+    private var pngID: String
     private let isInside: Bool
     
     @discardableResult
@@ -43,7 +43,9 @@ final class Frame : Node {
     /** Init ou met à jour un noeud frame
      * (Ajoute les descendants si besoin) */
     func update(width: Float, height: Float, fix: Bool) {
-        let refSurf = Surface(nil, pngID: pngID, 0, 0, delta, lambda: lambda)
+        let refSurf = Surface(nil, pngID: pngID, 0, 0,
+                              delta, lambda: lambda,
+                              flags: Flag1.surfaceDontRespectRatio)
         
         let sq = Squirrel(at: self)
         let deltaX = isInside ? max(width/2 - delta/2, delta/2) : (width/2 + delta/2)
@@ -97,5 +99,17 @@ final class Frame : Node {
         (sq.pos as? Surface)?.updateTile(8, 0)
         sq.pos.x.set(deltaX, fix, true)
         sq.pos.y.set(-deltaY, fix, true)
+    }
+    
+    func updatePng(newPngId: String) {
+        if newPngId == pngID {
+            return
+        }
+        pngID = newPngId
+        guard let theFirstChild = firstChild else {printerror("Frame pas init."); return}
+        let sq = Squirrel(at: theFirstChild)
+        repeat {
+            (sq.pos as? Surface)?.updateForTex(pngID: pngID)
+        } while sq.goRight()
     }
 }

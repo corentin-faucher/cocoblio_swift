@@ -29,53 +29,75 @@ extension Optional where Wrapped: KotlinLikeScope {
 extension Node : KotlinLikeScope {}
 
 extension Node {
-    /** Ajout d'un frame et string à un noeud.
-     * La hauteur devient 1 et ses scales deviennent sa hauteur. Delta est un pourcentage. */
-    func alsoAddLocStrWithFrame(stringID: String, framePngID: String = "frame_mocha",
-                                delta: Float = 0.4, ceiledWidth: Float? = nil) -> Self {
-        if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
+    /** Rempli un noeud avec une surface. (e.g. remplir un bouton.) */
+    func fillWithSurface(_ pngId: String, i: Int = 0) {
+        guard firstChild == nil else { printerror("A déjà quelque chose."); return }
         
         scaleX.set(height.realPos)
         scaleY.set(height.realPos)
+        width.set(1)
+        height.set(1)
+        Surface(self, pngID: pngId, 0, 0, 1, lambda: 0,
+                i: i, flags: Flag1.giveSizesToParent)
+    }
+    /** Rempli un noeud avec une languageSurface . (e.g. remplir un bouton.) */
+    func fillWithLanguageSurface(_ pngId: String) {
+        guard firstChild == nil else { printerror("A déjà quelque chose."); return }
         
+        scaleX.set(height.realPos)
+        scaleY.set(height.realPos)
+        width.set(1)
+        height.set(1)
+        LanguageSurface(self, pngID: pngId, 0, 0, 1, lambda: 0,
+                i: 0, flags: Flag1.giveSizesToParent)
+    }
+    
+    /** Ajout d'un frame et string à un noeud. (e.g. remplir un bouton.)
+    * La hauteur devient 1 et ses scales deviennent sa hauteur.
+    * (Pour avoir les objets (label...) relatif au noeud.)
+    * Delta est un pourcentage de la hauteur. */
+    func fillWithFrameAndLocStr(_ locStrId: String, framePngId: String = "frame_mocha",
+                                ceiledWidth: Float? = nil, delta: Float = 0.4) {
+        guard firstChild == nil else { printerror("A déjà quelque chose."); return }
+        
+        scaleX.set(height.realPos)
+        scaleY.set(height.realPos)
         let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
-        
         width.set(1)
         height.set(1)
         Frame(self, isInside: false, delta: delta, lambda: 0,
-              framePngID: framePngID, flags: Flag1.giveSizesToParent)
-        LocStrSurf(self, stringID: stringID, 0, 0, 1, lambda: 0,
+              framePngID: framePngId, flags: Flag1.giveSizesToParent)
+        LocStrSurf(self, stringID: locStrId, 0, 0, 1, lambda: 0,
                    flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
-        
-        return self
     }
-    func alsoAddCstStrWithFrame(string: String, framePngID: String = "frame_mocha",
-                                delta: Float = 0.4) -> Self {
-        if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
+    func fillWithFrameAndEdtStr(_ edtStrId: Int, framePngId: String = "frame_mocha",
+                                delta: Float = 0.4, ceiledWidth: Float? = nil) {
+        guard firstChild == nil else { printerror("A déjà quelque chose."); return }
         
         scaleX.set(height.realPos)
         scaleY.set(height.realPos)
+        let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
         width.set(1)
         height.set(1)
         Frame(self, isInside: false, delta: delta, lambda: 0,
-              framePngID: framePngID, flags: Flag1.giveSizesToParent)
-        CstStrSurf(self, string: string, 0, 0, 1, lambda: 0, flags: Flag1.giveSizesToBigBroFrame)
-        
-        return self
+              framePngID: framePngId, flags: Flag1.giveSizesToParent)
+        EdtStrSurf(self, id: edtStrId, 0, 0, 1, lambda: 0,
+                   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
     }
-    func alsoAddEdtStrWithFrame(id: Int, framePngID: String = "frame_mocha",
-                                delta: Float = 0.4) -> Self {
-        if (firstChild != nil) { printerror("A déjà quelque chose."); return self}
-        
-        scaleX.set(height.realPos)
-        scaleY.set(height.realPos)
-        width.set(1)
-        height.set(1)
-        Frame(self, isInside: false, delta: delta, lambda: 0,
-              framePngID: framePngID, flags: Flag1.giveSizesToParent)
-        EdtStrSurf(self, id: id, 0, 0, 1, lambda: 0, flags: Flag1.giveSizesToBigBroFrame)
-        
-        return self
+    
+    func addSurface(_ pngId: String, _ x: Float, _ y: Float, _ height: Float,
+                    lambda: Float = 0, i: Int = 0, flags: Int = 0) {
+        Surface(self, pngID: pngId, x, y, height,
+                lambda: lambda, i: i, flags: flags)
+    }
+    func addFramedLocStr(_ locStrId: String, framePngId: String,
+                         _ x: Float, _ y: Float, _ height: Float,
+                         lambda: Float = 0, flags: Int = 0,
+                         ceiledWidth: Float? = nil, delta: Float = 0.4) {
+        Node(self, x, y, ceiledWidth ?? height, height,
+             lambda: lambda, flags: flags).also { nd in
+                nd.fillWithFrameAndLocStr(locStrId, framePngId: framePngId, ceiledWidth: ceiledWidth, delta: delta)
+        }
     }
     
     /** !Debug Option!

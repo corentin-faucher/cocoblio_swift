@@ -18,8 +18,6 @@ protocol EventsHandler {
     func keyDown(key: KeyboardKey)
     func keyUp(key: KeyboardKey)
     
-    func willDrawFrame()
-    func viewReshaped()
     func configurationChanged()
     func appPaused()
 }
@@ -29,13 +27,19 @@ class GameEngineBase {
     let root: RootNode = RootNode()
     private(set) var activeScreen: ScreenBase? = nil
     var selectedNode: Node? = nil
-        
+     
+    func willDrawFrame(fullWidth: Float, fullHeight: Float) {
+        root.fullWidth = fullWidth
+        root.fullHeight = fullHeight
+    }
     /* Implémentation par défaut lors d'un reshape -> Redimensionner l'écran. */
-    func viewReshaped() {
+    func viewReshaped(usableWidth: Float, usableHeight: Float) {
+        root.width.set(usableWidth)
+        root.height.set(usableHeight)
         root.reshapeBranch()
     }
     
-    func changeActiveScreen(newScreen: ScreenBase?) {
+    final func changeActiveScreen(newScreen: ScreenBase?) {
         // 0. Cas réouverture
         if activeScreen === newScreen {
             newScreen?.closeBranch()
@@ -60,6 +64,5 @@ class GameEngineBase {
         activeScreen = theNewScreen
         theNewScreen.openBranch()
     }
-    
 }
 

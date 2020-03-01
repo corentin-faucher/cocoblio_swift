@@ -8,21 +8,19 @@
 
 import Foundation
 
-class ScreenBase : SearchableNode, Reshapable, Openable {
+class ScreenBase : Node, Reshapable, Openable {
     let escapeAction: (()->Void)?
     let enterAction: (()->Void)?
     
-    init(_ refNode: Node?,
+    init(_ refNode: Node,
          escapeAction: (()->Void)?,
          enterAction: (()->Void)?,
          flags: Int = 0) {
         self.escapeAction = escapeAction
         self.enterAction = enterAction
-        super.init(refNode, rootFlag: Flag1.reshapableRoot, findFlag: 0,
-                   0, 0, 4, 4, lambda: 0, flags: flags)
+        super.init(refNode, 0, 0, 4, 4, lambda: 0, flags: flags)
     }
     func open() {
-        print("opening screen")
         alignScreenElements(isOpening: true)
     }
     func reshape() -> Bool {

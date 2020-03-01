@@ -30,38 +30,23 @@ protocol Closeable : Node {
     func close()
 }
 
-
-/** Noeuds pouvant être retrouvé dans l'arborescence.
-* Doit être utilisé avec les interfaces Dragable, Actionable ou Reshapable.
-* rootFlag: identifie les noeud racine pour remontner jusqu'à lui.
-* findFlag: signale sa présence (pas besoin pour Reshapable. */
-class SearchableNode : Node {
-    private let rootFlag: Int
-    init(_ refNode: Node?,
-                  rootFlag: Int, findFlag: Int,
-                  _ x: Float, _ y: Float, _ width: Float, _ height: Float,
-                  lambda: Float = 0, flags: Int = 0,
-                  asParent: Bool = true, asElderBigbro: Bool = false) {
-        self.rootFlag = rootFlag
-        super.init(refNode, x, y, width, height, lambda: lambda,
-                   flags: flags|findFlag, asParent: asParent, asElderBigbro: asElderBigbro)
-        addRootFlag(rootFlag)
-    }
-    
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneSearchable = toCloneNode as! SearchableNode
-        self.rootFlag = toCloneSearchable.rootFlag
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-        addRootFlag(rootFlag)
-    }
-    
+/** Pour les noeuds "déplaçable".
+* 1. On prend le noeud : "grab",
+* 2. On le déplace : "drag",
+* 3. On le relâche : "letGo".
+* Retourne s'il y a une "action / event".
+* On utilise les flags selectable et selectableRoot pour les trouver.
+* (On peut être draggable mais pas actionable, e.g. le sliding menu.) */
+protocol Draggable : Node {
+    func grab(posInit: Vector2) -> Bool
+    func drag(posNow: Vector2) -> Bool
+    func letGo(speed: Vector2?) -> Bool
 }
 
+
 /** Un noeud pouvant être activé (e.g. les boutons).
-* Un noeud Actionable doit être dans une classe descendante de SearchableNode.
 * On utilise les flags selectable et selectableRoot pour les trouver. */
-protocol Actionable : SearchableNode {
+protocol Actionable : Node {
     func action()
 }
 
@@ -70,20 +55,49 @@ protocol Actionable : SearchableNode {
 * Un noeud reshapable doit être dans une classe descendante de SearchableNode.
 * On utilise les flags reshapable et reshapableRoot pour les trouver.
 * Return: True s'il y a eu changement du cadre, i.e. besoin d'un reshape pour les enfants. */
-protocol Reshapable {
+protocol Reshapable : Node {
     func reshape() -> Bool
 }
 
-/** Pour les noeuds "déplaçable".
-* 1. On prend le noeud : "grab",
-* 2. On le déplace : "drag",
-* 3. On le relâche : "letGo".
-* Retourne s'il y a une "action / event".
-* Un noeud Draggable doit être dans une classe descendante de SearchableNode.
-* On utilise les flags selectable et selectableRoot pour les trouver.
-* (On peut être draggable mais pas actionable, e.g. le sliding menu.) */
-protocol Draggable : SearchableNode {
-    func grab(posInit: Vector2) -> Bool
-    func drag(posNow: Vector2) -> Bool
-    func letGo(speed: Vector2?) -> Bool
+protocol Fading : Openable, Closeable {}
+extension Fading {
+    func open() {
+        open_fading()
+    }
+    func close() {
+        x.fadeOut()
+    }
+    // Version "static" de open()
+    // (open() est dynamique, i.e. sera overridé en cas de conflit...)
+    func open_fading() {
+        x.fadeIn()
+    }
+}
+
+// Incompatible avec Fading (les deux utilisent defPos de manière différente)
+// Au pire faire une structure du type (node,RelativeToParent) -> (node,Fading).
+protocol RelativeToParent : Reshapable, Openable {}
+extension RelativeToParent {
+    func reshape() -> Bool {
+        setRelativelyToParent(isOpening: false)
+        return false
+    }
+    func open() {
+        setRelativelyToParent(isOpening: true)
+    }
+    func setRelativelyToParent(isOpening: Bool) {
+        guard let theParent = parent else {return}
+        var xDec: Float = 0
+        var yDec: Float = 0
+        if (containsAFlag(Flag1.relativeToRight)) {
+            xDec = theParent.width.realPos * 0.5
+        } else if (containsAFlag(Flag1.relativeToLeft)) {
+            xDec = -theParent.width.realPos * 0.5
+        }
+        if (containsAFlag(Flag1.relativeToTop)) {
+            yDec = theParent.height.realPos * 0.5
+        }
+        x.setRelToDef(shift: xDec, fix: isOpening)
+        y.setRelToDef(shift: yDec, fix: isOpening)
+    }
 }

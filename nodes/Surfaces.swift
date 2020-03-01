@@ -94,7 +94,8 @@ class LanguageSurface : Surface, Openable {
 final class TestFrame : Surface, Reshapable, Openable {
     @discardableResult
     init(_ refNode: Node) {
-        super.init(refNode, pngID: "test_frame", 0, 0, refNode.height.realPos, lambda: 10, i: 0, flags: Flag1.surfaceDontRespectRatio)
+        super.init(refNode, pngID: "test_frame", 0, 0, refNode.height.realPos, lambda: 10,
+                   i: 0, flags: Flag1.surfaceDontRespectRatio)
         width.set(refNode.width.realPos)
     }
     
@@ -105,9 +106,7 @@ final class TestFrame : Surface, Reshapable, Openable {
     }
     
     func reshape() -> Bool {
-        guard let theParent = parent else { printerror("TestFrame sans parent."); return false}
-        height.pos = theParent.height.realPos
-        width.pos = theParent.width.realPos
+        open()
         return false
     }
     

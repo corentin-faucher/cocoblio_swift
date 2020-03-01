@@ -34,11 +34,8 @@ class Renderer : NSObject {
     }
     
     /*-- Doivent être initialisé pour qu'il se passe quelque chose... */
-    var eventsHandler: EventsHandler!
-    var root: RootNode!
+    var gameEngine: GameEngineBase!
     var setForDrawing = Node.defaultSetForDrawing
-    
-    
     
     init(metalView: MTKView) {
         /*-- EventHandler et root de structure. --*/
@@ -85,6 +82,7 @@ class Renderer : NSObject {
         depthStencilDescriptor.isDepthWriteEnabled = true
         depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
     }
+    
     func initClearColor(rgb: Vector3) {
         smR.set(rgb.x); smG.set(rgb.y); smB.set(rgb.z)
     }
@@ -95,53 +93,11 @@ class Renderer : NSObject {
         return Vector2((Float(locationInWindow.x) / width - 0.5) * frameFullWidth,
                       (invertedY ? -1 : 1) * (Float(locationInWindow.y) / height - 0.5) * frameFullHeight)
     }
-    private func updatePerFrameUniforms() {
-        // 2. Mise à jour de la matrice de projection
-        if width > height { // Landscape
-            frameFullHeight = 2 / heightRatio.pos
-            frameFullWidth = width / height * frameFullHeight
-        } else {
-            frameFullWidth = 2 / widthRatio.pos
-            frameFullHeight = height / width * frameFullWidth
-        }
-        PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
-        PerFrameUniforms.pfu.projection.setToPerspective(
-            nearZ: 0.1, farZ: 50, middleZ: root.z.pos,
-            deltaX: frameFullWidth, deltaY: frameFullHeight)
-    }
-    private func updateViewDims(_ view: MTKView, _ widthUsedRatio: Float, _ heightUsedRatio: Float) {
-        width = Float(view.bounds.size.width)
-        height = Float(view.bounds.size.height)
-        let ratio = width / height
-        
-        // TODO: À réviser avec la "safe zone des appareil type "iPhoneX" et plus.
-        if width > height { // Landscape
-            heightRatio.pos = Renderer.bordRatio
-            widthRatio.pos = Renderer.bordRatio * min(1, Renderer.usableRatioMax/ratio)
-            frameUsableHeight = 2
-            frameUsableWidth = 2 * ratio * (widthRatio.realPos / heightRatio.realPos)
-            
-        } else {
-            widthRatio.pos = Renderer.bordRatio
-            heightRatio.pos = Renderer.bordRatio * min(1, ratio / Renderer.usableRatioMin)
-            frameUsableWidth = 2
-            frameUsableHeight = 2 * (heightRatio.realPos / widthRatio.realPos) / ratio
-        }
-        root.width.set(frameUsableWidth)
-        root.height.set(frameUsableHeight)
-    }
     
     /*-- Private stuff --*/
-    /*-- Metal Stuff --*/
-    private let commandQueue: MTLCommandQueue!
-    private let pipelineState: MTLRenderPipelineState!
-    private let samplerState: MTLSamplerState!
-    private var depthStencilState: MTLDepthStencilState?
     /*-- Dimensions de la vue --*/
     private var width: Float = 1 // En pixels
     private var height: Float = 1
-    private var frameUsableWidth: Float = 2
-    private var frameUsableHeight: Float = 2
     private var frameFullWidth: Float = 2
     private var frameFullHeight: Float = 2
     private var smR: SmoothPos = SmoothPos(1, 8)
@@ -152,6 +108,11 @@ class Renderer : NSObject {
     static private var bordRatio: Float = 0.95
     static private let usableRatioMin: Float = 0.54
     static private let usableRatioMax: Float = 1.85
+    /*-- Metal Stuff --*/
+    private let commandQueue: MTLCommandQueue!
+    private let pipelineState: MTLRenderPipelineState!
+    private let samplerState: MTLSamplerState!
+    private var depthStencilState: MTLDepthStencilState?
 }
 
 
@@ -159,14 +120,45 @@ class Renderer : NSObject {
 extension Renderer: MTKViewDelegate {
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        print("Reshaping...")
-        updateViewDims(view, 1, 1)
-        eventsHandler.viewReshaped()
+        width = Float(view.bounds.size.width)
+        height = Float(view.bounds.size.height)
+        let ratio = width / height
+        let usableWidth: Float
+        let usableHeight: Float
+        // TODO: À réviser avec la "safe zone des appareil type "iPhoneX" et plus.
+        if width > height { // Landscape
+            heightRatio.pos = Renderer.bordRatio
+            widthRatio.pos = Renderer.bordRatio * min(1, Renderer.usableRatioMax/ratio)
+            usableHeight = 2
+            usableWidth = 2 * ratio * (widthRatio.realPos / heightRatio.realPos)
+            
+        } else {
+            widthRatio.pos = Renderer.bordRatio
+            heightRatio.pos = Renderer.bordRatio * min(1, ratio / Renderer.usableRatioMin)
+            usableWidth = 2
+            usableHeight = 2 * (heightRatio.realPos / widthRatio.realPos) / ratio
+        }
+        
+        gameEngine.viewReshaped(usableWidth: usableWidth, usableHeight: usableHeight)
         view.isPaused = false
         GlobalChrono.isPaused = false
     }
     
     func draw(in view: MTKView) {
+        func updatePerFrameUniforms() {
+            // 2. Mise à jour de la matrice de projection
+            if width > height { // Landscape
+                frameFullHeight = 2 / heightRatio.pos
+                frameFullWidth = width / height * frameFullHeight
+            } else {
+                frameFullWidth = 2 / widthRatio.pos
+                frameFullHeight = height / width * frameFullWidth
+            }
+            PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
+            PerFrameUniforms.pfu.projection.setToPerspective(
+                nearZ: 0.1, farZ: 50, middleZ: gameEngine.root.z.pos,
+                deltaX: frameFullWidth, deltaY: frameFullHeight)
+        }
         // 0. Init du commandEncoder/commandBuffer, mesh, text...
         guard let drawable = view.currentDrawable,
             let renderPassDescriptor = view.currentRenderPassDescriptor
@@ -192,13 +184,13 @@ extension Renderer: MTKViewDelegate {
         commandEncoder.setVertexBytes(&PerFrameUniforms.pfu, length: MemoryLayout.size(ofValue: PerFrameUniforms.pfu), index: 2)
         
         // 3. Action du game engine avant l'affichage.
-        eventsHandler.willDrawFrame()
+        gameEngine.willDrawFrame(fullWidth: frameFullWidth, fullHeight: frameFullHeight)
         
         // 4. Mise à jour de la couleur de fond.
         view.clearColor = MTLClearColorMake(Double(smR.pos), Double(smG.pos), Double(smB.pos), 1)
         
         // 5. Boucle d'affichage (parcourt l'arbre de noeud de la structure)
-        let sq = Squirrel(at: root)
+        let sq = Squirrel(at: gameEngine.root)
         repeat {
             if let surface = setForDrawing(sq.pos)() {
                 surface.draw(with: commandEncoder)
@@ -266,6 +258,7 @@ private extension Node {
         piu.color[3] = alpha
         // Rien à afficher...
         if alpha == 0 { return nil }
+
         piu.model.translate(with: [x.pos, y.pos, z.pos])
         if (containsAFlag(Flag1.poping)) {
             piu.model.scale(with: [width.pos * alpha, height.pos * alpha, 1])

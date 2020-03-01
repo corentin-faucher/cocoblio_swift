@@ -83,7 +83,13 @@ extension Node {
             sq.pos.addFlags(flag)
         }
     }
-    
+
+    /** Flag le noeud comme "selectable" et trace sont chemin dans l'arbre pour être retrouvable. */
+    func makeSelectable() {
+        addRootFlag(Flag1.selectableRoot)
+        addFlags(Flag1.selectable)
+    }
+
     /**  Pour chaque noeud :
      * 1. Applique open pour les openable,
      * 2. ajoute "show" si non caché,
@@ -138,14 +144,12 @@ extension Node {
     
     func reshapeBranch() {
         guard containsAFlag(Flag1.show), let reshapable = (self as? Reshapable),
-            reshapable.reshape(), containsAFlag(Flag1.reshapableRoot),
-            let firstChild = firstChild
+            reshapable.reshape(), let firstChild = firstChild
         else {return}
         let sq = Squirrel(at: firstChild)
         while true {
             if sq.pos.containsAFlag(Flag1.show), let reshapable = sq.pos as? Reshapable,
-                reshapable.reshape(), sq.pos.containsAFlag(Flag1.reshapableRoot),
-                sq.goDown() {continue}
+                reshapable.reshape(), sq.goDown() {continue}
             while !sq.goRight() {
                 if !sq.goUp() {
                     printerror("Pas de branch."); return

@@ -15,7 +15,7 @@ import Foundation
 * checkItem : Methode/ext de noeud pour mettre à jour les noeud-boutons.
 * getIndicesRangeAtOpening : exécuter à l'ouverture du sliding menu et retourne le range attendu des items.
 * getPosIndex : la position de l'indice où on est centré à l'ouverture. */
-class SlidingMenu : SearchableNode, Draggable, Openable {
+class SlidingMenu : Node, Draggable, Openable {
     private let nDisplayed: Int
     private let spacing: Float
     private let addNewItem: ((_ menu: Node, _ index: Int) -> Void)
@@ -48,8 +48,8 @@ class SlidingMenu : SearchableNode, Draggable, Openable {
         self.getPosIndex = getPosIndex
         
         super.init(refNode,
-                   rootFlag: Flag1.selectableRoot, findFlag: Flag1.selectable,
                    x, y, width, height, lambda: 10)
+        makeSelectable()
         menu = Node(self, 0, 0, width, height, lambda: 20)
         tryToAddFrame()
     }
@@ -205,5 +205,6 @@ class SlidingMenu : SearchableNode, Draggable, Openable {
         self.getPosIndex = toCloneMenu.getPosIndex
         super.init(refNode: refNode, toCloneNode: toCloneNode,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+        makeSelectable()
     }
 }

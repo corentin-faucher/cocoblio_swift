@@ -24,6 +24,10 @@ enum Language: Int, CaseIterable {
     case portuguese
     case korean
     
+    static let defaultLanguage = english
+    /** Debug... à présenter mieux... ? */
+    static let forcedLanguage: Language? = japanese
+    
     static private var _presentLanguage: Language = loadPresentLanguage()
     static var currentLanguage: Language {
         set {
@@ -41,7 +45,7 @@ enum Language: Int, CaseIterable {
         }
     }
     
-    static var presentLanguageCode: String {
+    static var currentLanguageCode: String {
         get {
             return codeList[_presentLanguage.rawValue]
         }
@@ -81,8 +85,14 @@ enum Language: Int, CaseIterable {
         ]
     
     private static func loadPresentLanguage() -> Language {
+        if let language = forcedLanguage {
+            print("On utilise le language forcé: \(language).")
+            return language
+        }
+        
         if let langID = UserDefaults.standard.string(forKey: "user_language"),
             let language = codeToLang[langID] {
+            print("Trouvé langID dans UserDefaults: \(langID)")
             return language
         }
         if var langID = Locale.current.languageCode {
@@ -90,18 +100,20 @@ enum Language: Int, CaseIterable {
                 langID = langID + "-" + (Locale.current.scriptCode ?? "")
             }
             if let language = codeToLang[langID] {
+                print("langID est pris de Locale.current.languageCode: \(langID)")
                 return language
             }
         }
-        return english
+        print("Rien trouvé on prend le défaut: \(defaultLanguage).")
+        return defaultLanguage
     }
 }
 
 /** Extension pour les surfaces de string localisées. */
 extension String {
     var localized: String? {
-        guard let path = Bundle.main.path(forResource: Language.presentLanguageCode, ofType: "lproj") else {
-            printerror("Ne peut trouver le fichier pour \(Language.presentLanguageCode)"); return nil}
+        guard let path = Bundle.main.path(forResource: Language.currentLanguageCode, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.currentLanguageCode)"); return nil}
         guard let bundle = Bundle(path: path) else {
             printerror("Ne peut charger le bundle en \(path)"); return nil}
         return NSLocalizedString(self, tableName: nil, bundle: bundle, value: "", comment: "")
