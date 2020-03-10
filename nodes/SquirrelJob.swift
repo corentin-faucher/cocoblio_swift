@@ -97,6 +97,7 @@ extension Node {
      * (show peut être ajouté manuellement avant pour afficher une branche cachée)
      * (show peut avoir été ajouté exterieurement) */
     func openBranch() {
+        print("openBranch")
         (self as? Openable)?.open()
         if !containsAFlag(Flag1.hidden) {
             addFlags(Flag1.show)
@@ -114,7 +115,10 @@ extension Node {
             while !sq.goRight() {
                 if !sq.goUp() {
                     printerror("Pas de branch."); return
-                } else if sq.pos === self {return}
+                } else if sq.pos === self {
+                    print("end openBranch")
+                    return
+                }
             }
         }
     }

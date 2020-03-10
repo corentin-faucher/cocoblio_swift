@@ -27,19 +27,14 @@ final class Frame : Node {
         self.isInside = isInside
         super.init(refNode, 0, 0, delta, delta, lambda: lambda, flags: flags)
     }
-    
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node,
-         asParent: Bool, asElderBigbro: Bool) {
-        let toCloneFrame = toCloneNode as! Frame
-        delta = toCloneFrame.delta
-        lambda = toCloneFrame.lambda
-        pngID = toCloneFrame.pngID
-        isInside = toCloneFrame.isInside
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
+    required init(other: Node) {
+        let otherFrame = other as! Frame
+        delta = otherFrame.delta
+        lambda = otherFrame.lambda
+        pngID = otherFrame.pngID
+        isInside = otherFrame.isInside
+        super.init(other: other)
     }
-    
     /** Init ou met à jour un noeud frame
      * (Ajoute les descendants si besoin) */
     func update(width: Float, height: Float, fix: Bool) {
@@ -56,7 +51,6 @@ final class Frame : Node {
         // Mise à jour des dimensions.
         self.width.set(smallWidth + 2 * delta, true, true)
         self.height.set(smallHeight + 2 * delta, true, true)
-        
         sq.goDownForced(refSurf) // tl
         (sq.pos as? Surface)?.updateTile(0, 0)
         sq.pos.x.set(-deltaX, fix, true)

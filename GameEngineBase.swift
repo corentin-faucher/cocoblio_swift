@@ -8,6 +8,9 @@
 
 import simd
 import Foundation
+#if os(OSX)
+import AppKit
+#endif
 
 protocol EventsHandler {
     func singleTap(pos: Vector2)
@@ -18,8 +21,11 @@ protocol EventsHandler {
     func keyDown(key: KeyboardKey)
     func keyUp(key: KeyboardKey)
     
+    func appStart()
     func configurationChanged()
     func appPaused()
+    
+    func willDrawFrame()
 }
 
 class GameEngineBase {
@@ -28,17 +34,6 @@ class GameEngineBase {
     private(set) var activeScreen: ScreenBase? = nil
     var selectedNode: Node? = nil
      
-    func willDrawFrame(fullWidth: Float, fullHeight: Float) {
-        root.fullWidth = fullWidth
-        root.fullHeight = fullHeight
-    }
-    /* Implémentation par défaut lors d'un reshape -> Redimensionner l'écran. */
-    func viewReshaped(usableWidth: Float, usableHeight: Float) {
-        root.width.set(usableWidth)
-        root.height.set(usableHeight)
-        root.reshapeBranch()
-    }
-    
     final func changeActiveScreen(newScreen: ScreenBase?) {
         // 0. Cas réouverture
         if activeScreen === newScreen {
@@ -52,15 +47,14 @@ class GameEngineBase {
         // 2. Si null -> fermeture de l'app.
         guard let theNewScreen = newScreen else {
             activeScreen = nil
-            print("newScreen == null -> exit")
-            // TODO
-            //Timer(true).schedule(1000) ...
-            //exitProcess(0)
-        
+            #if os(OSX)
+            Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { (_) in
+                NSApplication.shared.terminate(self)
+            }
+            #endif
             return
         }
         // 3. Ouverture du nouvel écran.
-        print("Opening")
         activeScreen = theNewScreen
         theNewScreen.openBranch()
     }

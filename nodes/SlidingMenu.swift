@@ -40,7 +40,8 @@ class SlidingMenu : Node, Draggable, Openable {
         spacing: Float,
         addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Void),
         getIndicesRangeAtOpening: @escaping (() -> Range<Int>),
-        getPosIndex: @escaping (() -> Int)) {
+        getPosIndex: @escaping (() -> Int)
+    ) {
         self.nDisplayed = nDisplayed
         self.spacing = spacing
         self.addNewItem = addNewItem
@@ -51,6 +52,19 @@ class SlidingMenu : Node, Draggable, Openable {
                    x, y, width, height, lambda: 10)
         makeSelectable()
         menu = Node(self, 0, 0, width, height, lambda: 20)
+        tryToAddFrame()
+    }
+    required init(other: Node
+    ) {
+        let toCloneMenu = other as! SlidingMenu
+        nDisplayed = toCloneMenu.nDisplayed
+        spacing = toCloneMenu.spacing
+        addNewItem = toCloneMenu.addNewItem
+        getIndicesRangeAtOpening = toCloneMenu.getIndicesRangeAtOpening
+        getPosIndex = toCloneMenu.getPosIndex
+        super.init(other: other)
+        makeSelectable()
+        menu = Node(self, 0, 0, width.realPos, height.realPos, lambda: 20)
         tryToAddFrame()
     }
     
@@ -194,17 +208,5 @@ class SlidingMenu : Node, Draggable, Openable {
             round((yCandIn - menuDeltaYMax)/itemHeight) * itemHeight + menuDeltaYMax
             : yCandIn
         menu.y.set(max(min(yCand, menuDeltaYMax), -menuDeltaYMax), fix, false)
-    }
-    
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneMenu = toCloneNode as! SlidingMenu
-        self.nDisplayed = toCloneMenu.nDisplayed
-        self.spacing = toCloneMenu.spacing
-        self.addNewItem = toCloneMenu.addNewItem
-        self.getIndicesRangeAtOpening = toCloneMenu.getIndicesRangeAtOpening
-        self.getPosIndex = toCloneMenu.getPosIndex
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-        makeSelectable()
     }
 }

@@ -25,7 +25,7 @@ enum Flag1 {
     static let surfaceDontRespectRatio = 1<<7
     static let surfaceWithCeiledWidth = 1<<8
     /*-- Pour les ajustement de height/width du parent ou du frame --*/
-    static let giveSizesToBigBroFrame = 1<<8
+    static let giveSizesToBigBroFrame = 1<<9
     static let giveSizesToParent = 1<<10
     
     /*-- Pour les screens --*/
@@ -39,6 +39,6 @@ enum Flag1 {
     static let relativeToTop = 1<<15
     
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<13
+    static let firstCustomFlag = 1<<16
 }
 

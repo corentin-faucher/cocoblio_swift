@@ -40,6 +40,13 @@ extension Node {
         Surface(self, pngID: pngId, 0, 0, 1, lambda: 0,
                 i: i, flags: Flag1.giveSizesToParent)
     }
+    
+    func addSurface(_ pngId: String, _ x: Float, _ y: Float, _ height: Float,
+                    lambda: Float = 0, i: Int = 0, flags: Int = 0) {
+        Surface(self, pngID: pngId, x, y, height,
+                lambda: lambda, i: i, flags: flags)
+    }
+    
     /** Rempli un noeud avec une languageSurface . (e.g. remplir un bouton.) */
     func fillWithLanguageSurface(_ pngId: String) {
         guard firstChild == nil else { printerror("A déjà quelque chose."); return }
@@ -70,6 +77,16 @@ extension Node {
         LocStrSurf(self, stringID: locStrId, 0, 0, 1, lambda: 0,
                    flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
     }
+    func addFramedLocStr(_ locStrId: String, framePngId: String,
+                         _ x: Float, _ y: Float, _ height: Float,
+                         lambda: Float = 0, flags: Int = 0,
+                         ceiledWidth: Float? = nil, delta: Float = 0.4) {
+        Node(self, x, y, ceiledWidth ?? height, height,
+             lambda: lambda, flags: flags).also { nd in
+                nd.fillWithFrameAndLocStr(locStrId, framePngId: framePngId, ceiledWidth: ceiledWidth, delta: delta)
+        }
+    }
+    
     func fillWithFrameAndEdtStr(_ edtStrId: Int, framePngId: String = "frame_mocha",
                                 delta: Float = 0.4, ceiledWidth: Float? = nil) {
         guard firstChild == nil else { printerror("A déjà quelque chose."); return }
@@ -85,20 +102,6 @@ extension Node {
                    flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
     }
     
-    func addSurface(_ pngId: String, _ x: Float, _ y: Float, _ height: Float,
-                    lambda: Float = 0, i: Int = 0, flags: Int = 0) {
-        Surface(self, pngID: pngId, x, y, height,
-                lambda: lambda, i: i, flags: flags)
-    }
-    func addFramedLocStr(_ locStrId: String, framePngId: String,
-                         _ x: Float, _ y: Float, _ height: Float,
-                         lambda: Float = 0, flags: Int = 0,
-                         ceiledWidth: Float? = nil, delta: Float = 0.4) {
-        Node(self, x, y, ceiledWidth ?? height, height,
-             lambda: lambda, flags: flags).also { nd in
-                nd.fillWithFrameAndLocStr(locStrId, framePngId: framePngId, ceiledWidth: ceiledWidth, delta: delta)
-        }
-    }
     
     /** !Debug Option!
      * Ajout d'une surface "frame" pour visualiser la taille d'un "bloc".
@@ -206,9 +209,9 @@ extension Node {
             return n
         }
         
-        var y = -h / 2
+        var y = h / 2
         repeat {
-            y += sq.pos.deltaY * spacingRef + spacing/2
+            y -= sq.pos.deltaY * spacingRef + spacing/2
             
             sq.pos.y.set(y, fix, setAsDef)
             if setSecondaryToDefPos {
@@ -217,7 +220,7 @@ extension Node {
                 sq.pos.x.set(0, fix, false)
             }
             
-            y += sq.pos.deltaY * spacingRef + spacing / 2
+            y -= sq.pos.deltaY * spacingRef + spacing / 2
         } while (sq.goRightWithout(flag: Flag1.hidden))
         
         return n

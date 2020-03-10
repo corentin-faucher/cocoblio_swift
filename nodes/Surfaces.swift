@@ -34,16 +34,12 @@ class Surface : Node {
         updateTile(i, 0)
         updateRatio()
     }
-    
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node,
-                  asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneSurface = toCloneNode as! Surface
-        tex = toCloneSurface.tex
-        mesh = toCloneSurface.mesh
+    required init(other: Node) {
+        let otherSurf = other as! Surface
+        tex = otherSurf.tex
+        mesh = otherSurf.mesh
         trShow = SmTrans()
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
+        super.init(other: other)
     }
     
     func updateForTex(pngID: String) {
@@ -86,6 +82,7 @@ class Surface : Node {
 
 class LanguageSurface : Surface, Openable {
     func open() {
+        print("Opening a LanguageSurface")
         updateTile(Language.currentLanguageID, 0)
     }
     // (C'est tout! on garde le reste comme Surface)
@@ -97,6 +94,9 @@ final class TestFrame : Surface, Reshapable, Openable {
         super.init(refNode, pngID: "test_frame", 0, 0, refNode.height.realPos, lambda: 10,
                    i: 0, flags: Flag1.surfaceDontRespectRatio)
         width.set(refNode.width.realPos)
+    }
+    required init(other: Node) {
+        super.init(other: other)
     }
     
     func open() {
@@ -110,9 +110,6 @@ final class TestFrame : Surface, Reshapable, Openable {
         return false
     }
     
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
-        fatalError("init(refNode:toCloneNode:asParent:asElderBigbro:) has not been implemented")
-    }
 }
 
 /** Surface d'une string constante. (non localisée, définie "on the fly".) */
@@ -128,16 +125,13 @@ final class CstStrSurf : Surface {
                    asParent: asParent, asElderBigbro: asElderBigbro)
         piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
     }
+    required init(other: Node) {
+        super.init(other: other)
+    }
     /** Changement pour une autre string constante. */
     func updateForCstStr(newString: String) {
         tex = Texture.getConstantStringTex(string: newString)
         updateRatio()
-    }
-    
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool, asElderBigbro: Bool) {
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
     }
 }
 
@@ -155,6 +149,9 @@ final class LocStrSurf : Surface, Openable {
                    asParent: asParent, asElderBigbro: asElderBigbro)
         piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
     }
+    required init(other: Node) {
+        super.init(other: other)
+    }
     
     func open() {
         updateRatio()
@@ -163,12 +160,6 @@ final class LocStrSurf : Surface, Openable {
     func updateForLocStr(stringID: String) {
         self.tex = Texture.getLocalizedStringTex(textID: stringID)
         updateRatio()
-    }
-    
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool, asElderBigbro: Bool) {
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
     }
 }
 
@@ -195,6 +186,9 @@ final class EdtStrSurf : Surface, Openable {
         piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
         Texture.setEditableString(id: id, newString: string)
     }
+    required init(other: Node) {
+        super.init(other: other)
+    }
     func open() {
         updateRatio()
     }
@@ -205,10 +199,5 @@ final class EdtStrSurf : Surface, Openable {
     }
     func update() {
         updateRatio()
-    }
-    /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool, asElderBigbro: Bool) {
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
     }
 }

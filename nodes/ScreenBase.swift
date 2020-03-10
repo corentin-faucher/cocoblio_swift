@@ -20,6 +20,13 @@ class ScreenBase : Node, Reshapable, Openable {
         self.enterAction = enterAction
         super.init(refNode, 0, 0, 4, 4, lambda: 0, flags: flags)
     }
+    required init(other: Node) {
+        let theOther = other as! ScreenBase
+        self.escapeAction = theOther.escapeAction
+        self.enterAction = theOther.enterAction
+        super.init(other: theOther)
+    }
+    
     func open() {
         alignScreenElements(isOpening: true)
     }
@@ -51,15 +58,6 @@ class ScreenBase : Node, Reshapable, Openable {
             width.set(theParent.width.realPos, isOpening)
             height.set(theParent.height.realPos, isOpening)
         }
-    }
-    
-    required internal init(refNode: Node?, toCloneNode: Node,
-                           asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneScreen = toCloneNode as! ScreenBase
-        self.escapeAction = toCloneScreen.escapeAction
-        self.enterAction = toCloneScreen.enterAction
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
     }
 }
 

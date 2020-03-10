@@ -8,25 +8,6 @@
 
 import Foundation
 
-/** Classe de base des boutons.
- * Par défaut un bouton n'est qu'un carré sans surface.
- * Un bouton n'est qu'un SearchableNode (selectable) avec action (Actionable). */
-class Button : Node, Actionable {
-    init(_ refNode: Node?, _ x: Float, _ y: Float, _ height: Float,
-         lambda: Float = 0, flags: Int = 0) {
-        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
-        makeSelectable()
-    }
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
-        makeSelectable()
-    }
-    func action() {
-        printerror("Empty button! (override...)")
-    }
-}
-
 class SwitchButton : Node, Actionable, Draggable {
     private var back: Surface!
     private var nub: Surface!
@@ -37,21 +18,18 @@ class SwitchButton : Node, Actionable, Draggable {
          lambda: Float = 0, flags: Int = 0) {
         self.isOn = isOn
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
-        makeSelectable()
         scaleX.set(height)
         scaleY.set(height)
         self.height.set(1)
         width.set(2)
-        back = Surface(self, pngID: "switch_back", 0, 0, 1)
-        nub = Surface(self, pngID: "switch_front", isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
-        setBackColor()
+        initStructure()
     }
-    
-    required internal init(refNode: Node?, toCloneNode: Node,
-                           asParent: Bool = true, asElderBigbro: Bool = false) {
-        self.isOn = (toCloneNode as! SwitchButton).isOn
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
+    required init(other: Node) {
+        self.isOn = (other as! SwitchButton).isOn
+        super.init(other: other)
+        initStructure()
+    }
+    private func initStructure() {
         makeSelectable()
         back = Surface(self, pngID: "switch_back", 0, 0, 1)
         nub = Surface(self, pngID: "switch_front", isOn ? 0.375 : -0.375, 0, 1, lambda: 10)

@@ -26,7 +26,7 @@ enum Language: Int, CaseIterable {
     
     static let defaultLanguage = english
     /** Debug... à présenter mieux... ? */
-    static let forcedLanguage: Language? = japanese
+    static let forcedLanguage: Language? = nil
     
     static private var _presentLanguage: Language = loadPresentLanguage()
     static var currentLanguage: Language {

@@ -90,8 +90,14 @@ class Squirrel {
         return true
     }
     /// Va au petit-frère. S'il n'existe pas, on le crée.
-    func goRightForced(_ copyRef: Node) {
-        pos = pos.littleBro ?? copyRef.copy(refNode: pos, asParent: false, asElderBigbro: false)
+    func goRightForced<T: Node>(_ copyRef: T) {
+        if let theLittleBro = pos.littleBro {
+            pos = theLittleBro
+        } else {
+            let newLittleBro = copyRef.copy()
+            newLittleBro.simpleMoveToBro(pos, asBigBro: false)
+            pos = newLittleBro
+        }
     }
     /// Revient à l'ainé si arrive en bout de liste (retourne false si ne peut pas y aller, i.e. pas de parent).
     @discardableResult func goRightLoop() -> Bool {
@@ -117,8 +123,14 @@ class Squirrel {
         pos = bigBro
         return true
     }
-    func goLeftForced(_ copyRef: Node) {
-        pos = pos.bigBro ?? copyRef.copy(refNode: pos, asParent: false, asElderBigbro: true)
+    func goLeftForced<T: Node>(_ copyRef: T) {
+        if let theBigBro = pos.bigBro {
+            pos = theBigBro
+        } else {
+            let newBigBro = copyRef.copy()
+            newBigBro.simpleMoveToBro(pos, asBigBro: true)
+            pos = newBigBro
+        }
     }
     func goLeftWithout(flag: Int) -> Bool {
         repeat {
@@ -134,9 +146,16 @@ class Squirrel {
         return true
     }
     /// Va au firstChild. S'il n'existe pas on le crée.
-    func goDownForced(_ copyRef: Node) {
-        pos = pos.firstChild ?? copyRef.copy(refNode: pos, asParent: true, asElderBigbro: true)
+    func goDownForced<T: Node>(_ copyRef: T) {
+        if let theFirstChild = pos.firstChild {
+            pos = theFirstChild
+        } else {
+            let newFirstChild = copyRef.copy()
+            newFirstChild.simpleMoveToParent(pos, asElder: true)
+            pos = newFirstChild
+        }
     }
+    
     /** Va au lastChild. Retourne false si pas de descendants. */
     func goDownLast() -> Bool {
         guard let lastChild = pos.lastChild else {return false}

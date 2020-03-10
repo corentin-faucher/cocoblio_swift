@@ -34,21 +34,35 @@ class Texture {
     private func initAsString() {
         // Font, dimension,... pour dessiner la string.
         let str: NSString = NSString(string: string)
-        let font = NSFont(name: "Courier New", size: 64)
+        #if os(OSX)
+        let font = NSFont(name: "American Typewriter", size: 64)
+        #else
+        let font = UIFont(name: "American Typewriter", size: 64)
+        #endif
         let strSizes = str.size(withAttributes: [NSAttributedString.Key.font : font as Any])
         let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let context = CGContext(data: nil, width: Int(strSizes.width), height: Int(strSizes.height),
-                                bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
-                                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        guard let context = CGContext(data: nil, width: Int(strSizes.width), height: Int(strSizes.height),
+                bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else {
+                printerror("Ne peut charger le CGContext."); return
+        }
         context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
         
         // Dessiner la string sur le context CoreGraphics
+        #if os(OSX)
         NSGraphicsContext.saveGraphicsState()
         let context2 = NSGraphicsContext(cgContext: context, flipped: false)
         NSGraphicsContext.current = context2
         str.draw(at: NSPoint(x: 0, y: 0), withAttributes: [NSAttributedString.Key.font : font as Any])
         NSGraphicsContext.restoreGraphicsState()
-        
+        #else
+        UIGraphicsPushContext(context)
+        context.scaleBy(x: 1, y: -1)
+        print("strSize \(strSizes)")
+        str.draw(at: CGPoint(x: 0, y: -strSizes.height), withAttributes: [NSAttributedString.Key.font : font as Any])
+        UIGraphicsPopContext()
+        #endif
         // Créer une image et en faire une texture.
         let image = context.makeImage()
         mtlTexture = try! Texture.textureLoader.newTexture(cgImage: image!, options: nil)
@@ -93,9 +107,12 @@ class Texture {
     /*-- Les strings constantes --*/
     static func getConstantStringTex(string: String) -> Texture {
         if let tex = cstStringList[string] {
+            print("String \(string) déjà init...")
             return tex
         }
+        print("Création de texture pas défaut.")
         let newTex = Texture(1, 1, string)
+        print("Init as string.")
         newTex.initAsString()
         cstStringList[string] = newTex
         return newTex
@@ -161,6 +178,7 @@ class Texture {
         currentTexture = newTex
         
         commandEncoder.setFragmentTexture(newTex.mtlTexture, index: 0)
+        
         commandEncoder.setVertexBytes(&newTex.ptu, length: MemoryLayout<PerTextureUniforms>.size, index: 3)
     }
     static var currentTexture: Texture? = nil

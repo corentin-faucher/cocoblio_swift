@@ -11,14 +11,11 @@ func printerror(_ message: String, function: String = #function, file: String = 
 }
 
 protocol CopyableNode {
-    init(refNode: Node?, toCloneNode: Self,
-         asParent: Bool, asElderBigbro: Bool)
+    init(other: Self)
 }
-
 extension CopyableNode {
-    func copy(refNode: Node?, asParent: Bool = true, asElderBigbro: Bool = false) -> Self {
-        return Self.init(refNode: refNode, toCloneNode: self,
-                         asParent: asParent, asElderBigbro: asElderBigbro)
+    func copy() -> Self {
+        return Self.init(other: self)
     }
 }
 
@@ -130,27 +127,17 @@ class Node : CopyableNode {
     }
     
     /** Constructeur de copie. */
-    required internal init(refNode: Node?, toCloneNode: Node,
-         asParent: Bool = true, asElderBigbro: Bool = false) {
+    required init(other: Node) {
         // 1. Données de base (SmPos et PerInst. sont des struct)
-        self.flags = toCloneNode.flags
-        self.x = toCloneNode.x
-        self.y = toCloneNode.y
-        self.z = toCloneNode.z
-        self.width = toCloneNode.width
-        self.height = toCloneNode.height
-        self.scaleX = toCloneNode.scaleX
-        self.scaleY = toCloneNode.scaleY
-        piu = toCloneNode.piu
-    
-        // 2. Ajustement des références
-        if let theRef = refNode {
-            if (asParent) {
-                connectToParent(theRef, asElder: asElderBigbro)
-            } else {
-                connectToBro(theRef, asBigbro: asElderBigbro)
-            }
-        }
+        self.flags = other.flags
+        self.x = other.x
+        self.y = other.y
+        self.z = other.z
+        self.width = other.width
+        self.height = other.height
+        self.scaleX = other.scaleX
+        self.scaleY = other.scaleY
+        piu = other.piu
     }
     
     /*-----------------------------*/
@@ -159,16 +146,17 @@ class Node : CopyableNode {
      *  Sera effacé par l'ARC, si n'est pas référencié(swift) ou ramassé par le GC?(Kotlin) */
     func disconnect() {
         // 1. Retrait
-        if bigBro != nil {
-            bigBro!.littleBro = littleBro
+        if let theBigBro = bigBro {
+            theBigBro.littleBro = littleBro
         } else { // Pas de grand frère -> probablement l'ainé.
             parent?.firstChild = littleBro
         }
-        if littleBro != nil {
-            littleBro!.bigBro = bigBro
+        if let theLittleBro = littleBro {
+            theLittleBro.bigBro = bigBro
         } else { // Pas de petit frère -> probablement le cadet.
             parent?.lastChild = bigBro
         }
+
         // 2. Déconnexion
         parent = nil
         littleBro = nil

@@ -13,8 +13,8 @@ import MetalKit
 class MetalView: MTKView {
     var renderer: Renderer!
     var trackingArea: NSTrackingArea?
-    var eventsHandler: EventsHandler?
-    
+    var eventsHandler: EventsHandler!
+    var isTransitioning: Bool = false
     
     func touch() {
         isPaused = false
@@ -32,9 +32,11 @@ class MetalView: MTKView {
             printerror("Pas de fenêtre attachée."); return
         }
         window.makeFirstResponder(self)
+//        window.contentAspectRatio = NSSize(width: 16, height: 10)
         
         NotificationCenter.default.addObserver(forName: NSWindow.willEnterFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.pause()
+            window.resizeIncrements = NSSize(width: 1, height: 1)
             print("will enter fullScreen.")
         }
         NotificationCenter.default.addObserver(forName: NSWindow.didEnterFullScreenNotification, object: nil, queue: nil) { (notif) in
@@ -47,8 +49,16 @@ class MetalView: MTKView {
         }
         NotificationCenter.default.addObserver(forName: NSWindow.didExitFullScreenNotification, object: nil, queue: nil) { (notif) in
             self.touch()
+//            window.contentAspectRatio = NSSize(width: 16, height: 10)
             print("did exit fullscreen.")
         }
+        
+        renderer.root.updateFullDims(size: bounds.size)
+        renderer.root.updateUsableDims(size: bounds.size)
+        renderer.root.reshapeBranch()
+        
+        eventsHandler.appStart()
+        
         print("fin awake MetalView")
     }
     
@@ -67,11 +77,11 @@ class MetalView: MTKView {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        print("MV mouseEntered.")
+//        print("MV mouseEntered.")
         //        NSCursor.hide()
     }
     override func mouseExited(with event: NSEvent) {
-        print("MV mouseExited.")
+//        print("MV mouseExited.")
 //        NSCursor.unhide()
     }
     override func mouseMoved(with event: NSEvent) {
@@ -79,7 +89,7 @@ class MetalView: MTKView {
     }
     override func mouseDown(with event: NSEvent) {
         touch()
-        eventsHandler?.singleTap(pos: renderer.getPositionFrom(event.locationInWindow, invertedY: false))
+        eventsHandler?.singleTap(pos: renderer.getPositionFrom(event.locationInWindow, viewSize: bounds.size, invertedY: false))
     }
     override func keyUp(with event: NSEvent) {
         touch()

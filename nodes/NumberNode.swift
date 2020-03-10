@@ -35,6 +35,18 @@ class NumberNode : Node {
         
         update()
     }
+    required init(other: Node) {
+        let toCloneNumber = other as! NumberNode
+        digitPngID = toCloneNumber.digitPngID
+        number = toCloneNumber.number
+        unitDecimal = toCloneNumber.unitDecimal
+        separator = toCloneNumber.separator
+        extraDigit = toCloneNumber.extraDigit
+        spacing = toCloneNumber.spacing
+        sepSpacing = toCloneNumber.sepSpacing
+        super.init(other: other)
+        update()
+    }
     
     func update(newNumber: Int, newUnitDecimal: Int? = nil, newSeparator: Digit? = nil) {
         number = newNumber
@@ -92,18 +104,5 @@ class NumberNode : Node {
         if(containsAFlag(Flag1.show)) {
             openBranch()
         }
-    }
-    
-    required internal init(refNode: Node?, toCloneNode: Node, asParent: Bool = true, asElderBigbro: Bool = false) {
-        let toCloneNumber = toCloneNode as! NumberNode
-        digitPngID = toCloneNumber.digitPngID
-        number = toCloneNumber.number
-        unitDecimal = toCloneNumber.unitDecimal
-        separator = toCloneNumber.separator
-        extraDigit = toCloneNumber.extraDigit
-        spacing = toCloneNumber.spacing
-        sepSpacing = toCloneNumber.sepSpacing
-        super.init(refNode: refNode, toCloneNode: toCloneNode,
-                   asParent: asParent, asElderBigbro: asElderBigbro)
     }
 }
