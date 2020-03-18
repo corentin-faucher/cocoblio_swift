@@ -53,9 +53,7 @@ class MetalView: MTKView {
             print("did exit fullscreen.")
         }
         
-        renderer.root.updateFullDims(size: bounds.size)
-        renderer.root.updateUsableDims(size: bounds.size)
-        renderer.root.reshapeBranch()
+        renderer.setFrameFromViewSize(bounds.size, justSetFullFrame: false)
         
         eventsHandler.appStart()
         

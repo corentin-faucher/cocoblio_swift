@@ -61,7 +61,11 @@ class Renderer : NSObject {
         colorAtt.pixelFormat = .bgra8Unorm // metalView.colorPixelFormat //.bgra8Unorm
         colorAtt.isBlendingEnabled = true
         colorAtt.rgbBlendOperation = .add
-        colorAtt.sourceRGBBlendFactor = .one // .sourceAlpha
+        #if os(OSX)
+        colorAtt.sourceRGBBlendFactor = .sourceAlpha
+        #else
+        colorAtt.sourceRGBBlendFactor = .one
+        #endif
         colorAtt.destinationRGBBlendFactor = .oneMinusSourceAlpha
         
         pipelineState = try! device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
@@ -92,16 +96,50 @@ class Renderer : NSObject {
         smR.pos = rgb.x; smG.pos = rgb.y; smB.pos = rgb.z
     }
     func getPositionFrom(_ locationInWindow: CGPoint, viewSize: CGSize, invertedY: Bool) -> Vector2 {
-        return Vector2((Float(locationInWindow.x) / Float(viewSize.width) - 0.5) * root.fullWidth,
-                       (invertedY ? -1 : 1) * (Float(locationInWindow.y) / Float(viewSize.height) - 0.5) * root.fullHeight)
+        return Vector2(Float((locationInWindow.x / viewSize.width - 0.5) * fullFrame.width),
+                       Float((invertedY ? -1 : 1) * (locationInWindow.y / viewSize.height - 0.5) * fullFrame.height))
     }
     
     
     /*-- Private stuff --*/
+    func setFrameFromViewSize(_ viewSize: CGSize, justSetFullFrame: Bool) {
+        let ratio = viewSize.width / viewSize.height
+        // 1. Full Frame
+        if ratio > 1 { // Landscape
+            fullFrame.width = 2 * ratio / Renderer.defaultBordRatio
+            fullFrame.height = 2 / Renderer.defaultBordRatio
+        }
+        else {
+            fullFrame.width = 2 / Renderer.defaultBordRatio
+            fullFrame.height = 2 / (ratio * Renderer.defaultBordRatio)
+        }
+        if justSetFullFrame {
+            return
+        }
+        // 2. Usable Frame
+        if ratio > 1 { // Landscape
+            usableFrame.width = min(2 * ratio, 2 * Renderer.ratioMax)
+            usableFrame.height = 2
+        }
+        else {
+            usableFrame.width = 2
+            usableFrame.height = min(2 / ratio, 2 / Renderer.ratioMin)
+        }
+        root.reshapeBranch()
+    }
     
     private var smR: SmoothPos = SmoothPos(1, 8)
     private var smG: SmoothPos = SmoothPos(1, 8)
     private var smB: SmoothPos = SmoothPos(1, 8)
+        
+    /** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
+    private(set) var fullFrame = CGSize(width: 2, height: 2)
+    // * Le frame utilisable (sans les bords, les dimensions "utiles").
+    private(set) var usableFrame = CGSize(width: 2, height: 2)
+    
+    static private let defaultBordRatio: CGFloat = 0.95
+    static private let ratioMin: CGFloat = 0.54
+    static private let ratioMax: CGFloat = 1.85
     
     /*-- Metal Stuff --*/
     private let commandQueue: MTLCommandQueue!
@@ -115,11 +153,9 @@ class Renderer : NSObject {
 extension Renderer: MTKViewDelegate {
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        root.updateUsableDims(size: size)
-        root.updateFullDims(size: size)
-        root.reshapeBranch()
         
-        print("resize, view.bounds: \(view.bounds.size), size: \(size).")
+        setFrameFromViewSize(size, justSetFullFrame: false)
+        
         view.isPaused = false
         GlobalChrono.isPaused = false
     }
@@ -133,7 +169,7 @@ extension Renderer: MTKViewDelegate {
             guard let tmpSize = view.layer.presentation()?.bounds.size else {
                 printerror("Pas de presentation layer."); return
             }
-            root.updateFullDims(size: tmpSize)
+            setFrameFromViewSize(tmpSize, justSetFullFrame: true)
         }
         #endif
 

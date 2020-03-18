@@ -7,7 +7,11 @@
 import simd
 
 func printerror(_ message: String, function: String = #function, file: String = #file) {
-    print("Error: \(message) in \(function) of file \(file)")
+    print("❌ Error: \(message) in \(function) of file \(file)")
+}
+
+func printwarning(_ message: String, function: String = #function, file: String = #file) {
+    print("⚠️ Warn.: \(message) in \(function) of file \(file)")
 }
 
 protocol CopyableNode {

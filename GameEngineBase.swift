@@ -30,9 +30,13 @@ protocol EventsHandler {
 
 class GameEngineBase {
     /* Les trois noeuds clefs d'un projet. */
-    let root: RootNode = RootNode()
+    var root: RootNode
     private(set) var activeScreen: ScreenBase? = nil
     var selectedNode: Node? = nil
+    
+    init(renderer: Renderer) {
+        root = RootNode(refNode: nil, renderer: renderer)
+    }
      
     final func changeActiveScreen(newScreen: ScreenBase?) {
         // 0. Cas réouverture

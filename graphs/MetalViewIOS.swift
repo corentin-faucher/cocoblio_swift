@@ -21,9 +21,7 @@ class MetalView : MTKView {
     
     override func awakeFromNib() {
         print("awakeFromNib. size: \(bounds.size)")
-        renderer.root.updateFullDims(size: bounds.size)
-        renderer.root.updateUsableDims(size: bounds.size)
-        renderer.root.reshapeBranch()
+        renderer.setFrameFromViewSize(bounds.size, justSetFullFrame: false)
         eventsHandler.appStart()
     }
     

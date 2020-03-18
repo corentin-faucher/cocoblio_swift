@@ -8,49 +8,102 @@
 
 import Foundation
 
-enum Language: Int, CaseIterable {
-    case french
-    case english
-    case japanese
-    case german
-    case italian
-    case spanish
-    case arabic
-    case greek
-    case russian
-    case swedish
-    case chinese_simpl
-    case chinese_trad
-    case portuguese
-    case korean
+
+struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
+    init(stringLiteral value: String) {
+        iso = value
+        switch value {
+            case "fr": id = 0
+            case "en": id = 1
+            case "ja": id = 2
+            case "de": id = 3
+            case "it": id = 4
+            case "es": id = 5
+            case "ar": id = 6
+            case "el": id = 7
+            case "ru": id = 8
+            case "sv": id = 9
+            case "zh-Hans": id = 10
+            case "zh-Hant": id = 11
+            case "pt": id = 12
+            case "ko": id = 13
+        default: printerror("Language non définie: \(value)"); id = 1
+        }
+    }
+    
+    let id: Int
+    let iso: String
+}
+
+enum Language : LanguageInfo, CaseIterable {
+    case french = "fr"
+    case english = "en"
+    case japanese = "ja"
+    case german = "de"
+    case italian = "it"
+    case spanish = "es"
+    case arabic = "ar"
+    case greek = "el"
+    case russian = "ru"
+    case swedish = "sv"
+    case chinese_simpl = "zh-Hans"
+    case chinese_trad = "zh-Hant"
+    case portuguese = "pt"
+    case korean = "ko"
     
     static let defaultLanguage = english
-    /** Debug... à présenter mieux... ? */
+    /** Pour Debugging... à présenter mieux... ? */
     static let forcedLanguage: Language? = nil
     
-    static private var _presentLanguage: Language = loadPresentLanguage()
-    static var currentLanguage: Language {
-        set {
-            _presentLanguage = newValue
-            UserDefaults.standard.set(codeList[newValue.rawValue], forKey: "user_language")
-            Texture.updateAllLocalizedStrings()
+    /// Langue actuel et son setter.
+    static var currentLanguage: Language = loadPresentLanguage() {
+            didSet {
+                UserDefaults.standard.set(currentLanguageCode, forKey: "user_language")
+                Texture.updateAllLocalizedStrings()
+            }
         }
-        get {
-            return _presentLanguage
-        }
-    }
+    
+    /*-- Fonctions "helpers" --*/
+	/// Helper pour l'id utiliser dans les languageSurface (par exemple)
     static var currentLanguageID: Int {
         get {
-            return _presentLanguage.rawValue
+            return currentLanguage.rawValue.id
         }
     }
-    
+    /// Helper pour le code iso (i.e. "en", "fr", ...)
     static var currentLanguageCode: String {
         get {
-            return codeList[_presentLanguage.rawValue]
+            return currentLanguage.rawValue.iso
         }
     }
+    static func currentIs(_ language: Language) -> Bool {
+        return currentLanguage == language
+    }
     
+    private static func loadPresentLanguage() -> Language {
+        if let language = forcedLanguage {
+            printwarning("On utilise le language forcé: \(language).")
+            return language
+        }
+        
+        if let langISO = UserDefaults.standard.string(forKey: "user_language"),
+            let language = codeToLang[langISO]
+        {
+            print("Trouvé langISO dans UserDefaults: \(langISO)")
+            return language
+        }
+        if var langISO = Locale.current.languageCode {
+            if langISO == "zh" {
+                langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
+            }
+            if let language = codeToLang[langISO] {
+                print("langID est pris de Locale.current.languageCode: \(langISO)")
+                return language
+            }
+        }
+        print("Rien trouvé on prend le défaut: \(defaultLanguage).")
+        return defaultLanguage
+    }
     private static let codeToLang = [
         "fr" :  french,
         "en" :  english,
@@ -67,46 +120,6 @@ enum Language: Int, CaseIterable {
         "pt" :    portuguese,
         "ko" :    korean,
     ]
-    private static let codeList = [
-        "fr",
-        "en",
-        "ja",
-        "de",
-        "it",
-        "es",
-        "ar",
-        "el",
-        "ru",
-        "sv",
-        "zh-Hans",
-        "zh-Hant",
-        "pt",
-        "ko",
-        ]
-    
-    private static func loadPresentLanguage() -> Language {
-        if let language = forcedLanguage {
-            print("On utilise le language forcé: \(language).")
-            return language
-        }
-        
-        if let langID = UserDefaults.standard.string(forKey: "user_language"),
-            let language = codeToLang[langID] {
-            print("Trouvé langID dans UserDefaults: \(langID)")
-            return language
-        }
-        if var langID = Locale.current.languageCode {
-            if langID == "zh" {
-                langID = langID + "-" + (Locale.current.scriptCode ?? "")
-            }
-            if let language = codeToLang[langID] {
-                print("langID est pris de Locale.current.languageCode: \(langID)")
-                return language
-            }
-        }
-        print("Rien trouvé on prend le défaut: \(defaultLanguage).")
-        return defaultLanguage
-    }
 }
 
 /** Extension pour les surfaces de string localisées. */
@@ -120,36 +133,4 @@ extension String {
     }
 }
 
-/*
- enum LocalizedTexts {
- static var currentLanguage: Language = .japanese
- static var currentLanguageU8: UInt8 {
- return UInt8(currentLanguage.rawValue)
- }
- static var textsLists: [[String]] = Array(repeating: [], count: Language.allCases.count)
- 
- static func initTexts(showWarning: Bool) {
- currentLanguage = Language(languageCode: Locale.current.languageCode ?? "en")
- 
- for language in Language.allCases {
- if let url = Bundle.main.url(forResource: "\(language)", withExtension: "txt", subdirectory: "\(language)") {
- do {
- let data = try String(contentsOf: url, encoding: .utf8)
- textsLists[language.rawValue] = data.components(separatedBy: .newlines)
- } catch {
- printerror("Ne peut init pour \(language)")
- }
- } else if showWarning {
- printerror("Ne peut charger \(language)")
- }
- }
- }
- static func getTheString(ofText: Texts) -> String {
- if textsLists[currentLanguage.rawValue].count < ofText.rawValue {
- printerror("Overflow.")
- }
- return textsLists[currentLanguage.rawValue][ofText.rawValue]
- }
- }
- */
 
