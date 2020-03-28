@@ -54,9 +54,16 @@ enum Language : LanguageInfo, CaseIterable {
     static let defaultLanguage = english
     /** Pour Debugging... à présenter mieux... ? */
     static let forcedLanguage: Language? = nil
+	
+	static var actionAfterLanguageChanged: (() -> Void)? = nil
     
     /// Langue actuel et son setter.
-    static var current: Language = loadPresentLanguage()
+	static var current: Language = loadPresentLanguage() {
+		didSet {
+			guard let action = actionAfterLanguageChanged else {return}
+			action()
+		}
+	}
     
     /*-- Fonctions "helpers" --*/
 	/// Helper pour l'id utiliser dans les languageSurface (par exemple)

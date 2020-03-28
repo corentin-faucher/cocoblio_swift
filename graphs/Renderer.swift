@@ -218,7 +218,7 @@ extension Renderer: MTKViewDelegate {
     }
 }
 
-private extension Surface2 {
+private extension Surface {
     func draw(with commandEncoder: MTLRenderCommandEncoder) {
         // 1. Mise a jour de la mesh ?
         if (mesh !== Mesh.currentMesh) {
@@ -245,7 +245,7 @@ private extension Surface2 {
 /** La fonction utilisé par défaut pour CoqRenderer.setNodeForDrawing.
  * Retourne la surface à afficher (le noeud présent si c'est une surface). */
 private extension Node {
-    func defaultSetForDrawing() -> Surface2? {
+    func defaultSetForDrawing() -> Surface? {
         // 0. Cas Racine
         if let root = self as? RootNode {
             root.setModelAsCamera()
@@ -265,7 +265,7 @@ private extension Node {
         }
         // 3. Cas feuille
         // Laisser faire si n'est pas affichable...
-        guard let surface = self as? Surface2 else {
+        guard let surface = self as? Surface else {
             return nil
         }
         // Facteur d'"affichage"

@@ -1,13 +1,13 @@
 
 
-protocol Surface2 : Node {
+protocol Surface : Node {
 	var tex: Texture { get }
 	var mesh: Mesh { get }
 	var trShow: SmTrans { get set }
 	func updateRatio(fix: Bool)
 }
 
-extension Surface2 {
+extension Surface {
 	/** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
 	* Sinon, on ne fait que vérifier le frame voisin
 	* et le parent. */
@@ -29,7 +29,7 @@ extension Surface2 {
 	}
 }
 
-class StringSurface: Node, Surface2, Openable {
+class StringSurface: Node, Surface, Openable {
 	private(set) var tex: Texture
 	let mesh: Mesh = .sprite
 	var trShow: SmTrans = SmTrans()
@@ -83,7 +83,7 @@ class StringSurface: Node, Surface2, Openable {
 }
 
 /** Surface avec tiles (e.g. ensemble de 4x4 icones dans un png.) */
-class TiledSurface: Node, Surface2 {
+class TiledSurface: Node, Surface {
 	private(set) var tex: Texture
 	let mesh: Mesh = .sprite
 	var trShow: SmTrans = SmTrans()
@@ -128,7 +128,7 @@ class TiledSurface: Node, Surface2 {
 	}
 }
 
-class LanguageSurface: Node, Surface2, Openable {
+class LanguageSurface: Node, Surface, Openable {
 	let tex: Texture
 	let mesh: Mesh = .sprite
 	var trShow: SmTrans = SmTrans()
@@ -162,7 +162,7 @@ class LanguageSurface: Node, Surface2, Openable {
 	}
 }
 
-class TestFrame : Node, Surface2, Reshapable, Openable {
+class TestFrame : Node, Surface, Reshapable, Openable {
 	let tex: Texture
 	let mesh: Mesh = .sprite
 	var trShow: SmTrans = SmTrans()
