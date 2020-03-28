@@ -42,7 +42,7 @@ class Node : CopyableNode {
         return (flags & flagsRef) != 0
     }
     func isDisplayActive() -> Bool {
-        if let surface = self as? Surface, surface.trShow.isActive {
+        if let surface = self as? Surface2, surface.trShow.isActive {
             return true
         }
         return containsAFlag(Flag1.show | Flag1.branchToDisplay)

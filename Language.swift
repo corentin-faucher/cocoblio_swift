@@ -56,40 +56,36 @@ enum Language : LanguageInfo, CaseIterable {
     static let forcedLanguage: Language? = nil
     
     /// Langue actuel et son setter.
-    static var currentLanguage: Language = loadPresentLanguage() {
-            didSet {
-                UserDefaults.standard.set(currentLanguageCode, forKey: "user_language")
-                Texture.updateAllLocalizedStrings()
-            }
-        }
+    static var current: Language = loadPresentLanguage()
     
     /*-- Fonctions "helpers" --*/
 	/// Helper pour l'id utiliser dans les languageSurface (par exemple)
-    static var currentLanguageID: Int {
+    static var currentId: Int {
         get {
-            return currentLanguage.rawValue.id
+            return current.rawValue.id
         }
     }
     /// Helper pour le code iso (i.e. "en", "fr", ...)
-    static var currentLanguageCode: String {
+    static var currentIsoCode: String {
         get {
-            return currentLanguage.rawValue.iso
+            return current.rawValue.iso
         }
     }
     static func currentIs(_ language: Language) -> Bool {
-        return currentLanguage == language
+        return current == language
     }
     
+	static func getLanguageFrom(iso: String) -> Language {
+		guard let language = codeToLang[iso] else {
+			printerror("\(iso) language undefined")
+			return english
+		}
+		return language
+	}
+	
     private static func loadPresentLanguage() -> Language {
         if let language = forcedLanguage {
             printwarning("On utilise le language forcé: \(language).")
-            return language
-        }
-        
-        if let langISO = UserDefaults.standard.string(forKey: "user_language"),
-            let language = codeToLang[langISO]
-        {
-            print("Trouvé langISO dans UserDefaults: \(langISO)")
             return language
         }
         if var langISO = Locale.current.languageCode {
@@ -125,8 +121,8 @@ enum Language : LanguageInfo, CaseIterable {
 /** Extension pour les surfaces de string localisées. */
 extension String {
     var localized: String? {
-        guard let path = Bundle.main.path(forResource: Language.currentLanguageCode, ofType: "lproj") else {
-            printerror("Ne peut trouver le fichier pour \(Language.currentLanguageCode)"); return nil}
+        guard let path = Bundle.main.path(forResource: Language.currentIsoCode, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.currentIsoCode)"); return nil}
         guard let bundle = Bundle(path: path) else {
             printerror("Ne peut charger le bundle en \(path)"); return nil}
         return NSLocalizedString(self, tableName: nil, bundle: bundle, value: "", comment: "")

@@ -10,7 +10,7 @@
  * (NumberNode pour ne pas interférer avec la class Number de Kotlin.) */
 class NumberNode : Node {
     private var number: Int
-    private var digitPngID: String
+    private var digitsTex: Texture
     private var unitDecimal: Int
     private var separator: Digit
     private var extraDigit: Digit?
@@ -19,10 +19,10 @@ class NumberNode : Node {
     
     init(_ refNode: Node?, number: Int,
          _ x: Float, _ y: Float, height: Float, lambda: Float = 0,
-         unitDecimal: Int = 0, digitPngID: String = "digits_black",
+		 unitDecimal: Int = 0, digitsTex: Texture = Texture.blackDigits,
          separator: Digit = .dot, extraDigit: Digit? = nil,
          spacing: Float = 0.83, separatorSpacing: Float = 0.5) {
-        self.digitPngID = digitPngID
+        self.digitsTex = digitsTex
         self.number = number
         self.unitDecimal = unitDecimal
         self.separator = separator
@@ -37,7 +37,7 @@ class NumberNode : Node {
     }
     required init(other: Node) {
         let toCloneNumber = other as! NumberNode
-        digitPngID = toCloneNumber.digitPngID
+        digitsTex = toCloneNumber.digitsTex
         number = toCloneNumber.number
         unitDecimal = toCloneNumber.unitDecimal
         separator = toCloneNumber.separator
@@ -57,7 +57,7 @@ class NumberNode : Node {
     }
     private func update() {
         // 0. Init...
-        let refSurf = Surface(nil, pngID: digitPngID, 0, 0, 1)
+        let refSurf = TiledSurface(nil, pngTex: digitsTex, 0, 0, 1)
         refSurf.scaleX.set(spacing)
         let sq = Squirrel(at: self)
         let displayedNumber: UInt = UInt(abs(number))
@@ -67,23 +67,23 @@ class NumberNode : Node {
         // 1. Signe "-"
         sq.goDownForced(refSurf)
         if (isNegative) {
-            (sq.pos as? Surface)?.updateTile(Digit.minus.rawValue, 0)
+            (sq.pos as? TiledSurface)?.updateTile(Digit.minus.rawValue, 0)
             sq.goRightForced(refSurf)
         }
         // 2. Chiffres avant le "separator"
         for i in (unitDecimal...maxDigits).reversed() {
-            (sq.pos as? Surface)?.updateTile(Int(displayedNumber.getTheDigitAt(i)), 0)
+            (sq.pos as? TiledSurface)?.updateTile(Int(displayedNumber.getTheDigitAt(i)), 0)
             if i > 0 {
                 sq.goRightForced(refSurf)
             }
         }
         // 3. Separator et chiffres restants
         if(unitDecimal > 0) {
-            (sq.pos as? Surface)?.updateTile(separator.rawValue, 0)
+            (sq.pos as? TiledSurface)?.updateTile(separator.rawValue, 0)
             sq.pos.scaleX.set(sepSpacing)
             sq.goRightForced(refSurf)
             for i in (0...(unitDecimal-1)).reversed() {
-                (sq.pos as? Surface)?.updateTile(Int(displayedNumber.getTheDigitAt(i)), 0)
+                (sq.pos as? TiledSurface)?.updateTile(Int(displayedNumber.getTheDigitAt(i)), 0)
                 if(i > 0) {
                     sq.goRightForced(refSurf)
                 }
@@ -92,7 +92,7 @@ class NumberNode : Node {
         // 4. Extra/"unit" digit
         if let ed = extraDigit {
             sq.goRightForced(refSurf)
-            (sq.pos as? Surface)?.updateTile(ed.rawValue, 0)
+            (sq.pos as? TiledSurface)?.updateTile(ed.rawValue, 0)
         }
         // 5. Nettoyage de la queue.
         while (sq.pos.littleBro != nil) {

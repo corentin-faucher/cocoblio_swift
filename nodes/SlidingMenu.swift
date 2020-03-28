@@ -152,16 +152,16 @@ class SlidingMenu : Node, Draggable, Openable {
     
     private func checkFling() {
         // 1. Mise à jour automatique de la position en y.
-        if (flingChrono.elapsedMS > 100) {
+        if (flingChrono.elapsedMS64 > 100) {
             vitY.pos = 0 // Ralentissement...
             // OK, on arrête le "fling" après une seconde...
-            if (flingChrono.elapsedMS > 1000) {
+            if (flingChrono.elapsedMS64 > 1000) {
                 flingChrono.stop()
                 deltaT.stop()
                 setMenuYpos(yCandIn: menu.y.realPos, snap: true, fix: false)
             }
         }
-        if (deltaT.elapsedMS > 30) {
+        if (deltaT.elapsedMS64 > 30) {
             setMenuYpos(yCandIn: menu.y.realPos + deltaT.elsapsedSec * vitY.pos,
                         snap: false, fix: false)
             deltaT.start()

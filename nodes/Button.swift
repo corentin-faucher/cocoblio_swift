@@ -9,8 +9,8 @@
 import Foundation
 
 class SwitchButton : Node, Actionable, Draggable {
-    private var back: Surface!
-    private var nub: Surface!
+    private var back: TiledSurface!
+    private var nub: TiledSurface!
     private var isOn: Bool
     
     init(_ refNode: Node?, isOn: Bool,
@@ -31,8 +31,8 @@ class SwitchButton : Node, Actionable, Draggable {
     }
     private func initStructure() {
         makeSelectable()
-        back = Surface(self, pngID: "switch_back", 0, 0, 1)
-        nub = Surface(self, pngID: "switch_front", isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
+		back = TiledSurface(self, pngTex: Texture.getExistingPng("switch_back"), 0, 0, 1)
+		nub = TiledSurface(self, pngTex: Texture.getExistingPng("switch_front"), isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
         setBackColor()
     }
     

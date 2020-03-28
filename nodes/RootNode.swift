@@ -10,16 +10,15 @@ import Foundation
 import simd
 import CoreGraphics
 
-/*-- Le noeud racine contrôle la caméra.
+/** Le noeud racine contrôle la caméra.
  	 En effet sa matrice "model" est une matrice "lookAt"
 	 étant la première transformation pour tout les objets.
  	 Les positions (x,y,z) sont la position de la caméra.
- 	 Par défaut on regarde vers l'origine (0,0,0).
- --*/
+ 	 Par défaut on regarde vers l'origine (0,0,0). */
 class RootNode : Node, Reshapable {
     private let up: Vector3 = [0, 1, 0]
-    private var yLookAt = SmoothPos(0, 5)
-    private let renderer: Renderer
+    var yLookAt = SmoothPos(0, 5)
+    let renderer: Renderer
     
     /// Déplacement relatif de la vue dans son cadre (voir fullHeight vs usableHeight).
     /// Les valeurs acceptable sont entre [-1, 1]. -1: collé en bas, +1: collé en haut.

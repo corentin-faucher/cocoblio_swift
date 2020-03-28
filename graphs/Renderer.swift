@@ -184,7 +184,7 @@ extension Renderer: MTKViewDelegate {
         commandEncoder.setRenderPipelineState(pipelineState)
         //commandEncoder.setDepthStencilState(depthStencilState)
         Mesh.currentMesh = nil
-        Texture.currentTexture = nil
+        Texture.current = nil
         
         // 1. Check le chrono/sleep.
         GlobalChrono.update()
@@ -218,14 +218,14 @@ extension Renderer: MTKViewDelegate {
     }
 }
 
-private extension Surface {
+private extension Surface2 {
     func draw(with commandEncoder: MTLRenderCommandEncoder) {
         // 1. Mise a jour de la mesh ?
         if (mesh !== Mesh.currentMesh) {
             Mesh.setMesh(newMesh: mesh, with: commandEncoder)
         }
         // 2. Mise a jour de la texture ?
-        if tex !== Texture.currentTexture {
+        if tex !== Texture.current {
             Texture.setTexture(newTex: tex, with: commandEncoder)
         }
         // 3. Mise à jour des "PerInstanceUniforms"
@@ -245,14 +245,14 @@ private extension Surface {
 /** La fonction utilisé par défaut pour CoqRenderer.setNodeForDrawing.
  * Retourne la surface à afficher (le noeud présent si c'est une surface). */
 private extension Node {
-    func defaultSetForDrawing() -> Surface? {
+    func defaultSetForDrawing() -> Surface2? {
         // 0. Cas Racine
+        if let root = self as? RootNode {
+            root.setModelAsCamera()
+            return nil
+        }
         guard let theParent = parent else {
-            guard let theRoot = self as? RootNode else {
-                printerror("Root n'est pas une RootNode.")
-                return nil
-            }
-            theRoot.setModelAsCamera()
+            printerror("Root n'est pas une RootNode.")
             return nil
         }
         // 1. Init de la matrice model avec le parent.
@@ -265,7 +265,7 @@ private extension Node {
         }
         // 3. Cas feuille
         // Laisser faire si n'est pas affichable...
-        guard let surface = self as? Surface else {
+        guard let surface = self as? Surface2 else {
             return nil
         }
         // Facteur d'"affichage"

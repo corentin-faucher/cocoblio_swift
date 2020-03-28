@@ -77,12 +77,15 @@ struct Chrono {
     /// Le chronomètre est activé.
     private(set) var isActive: Bool
     /// Le temps écoulé depuis "start()" en millisec.
-    var elapsedMS: Int64 {
+    var elapsedMS64: Int64 {
         return isActive ? (GlobalChrono.elapsedMS - time) : time
     }
+	var elapsedMS32: Int32 {
+		return Int32(isActive ? (GlobalChrono.elapsedMS - time) : time)
+	}
     /// Le temps écoulé depuis "start()" en secondes.
     var elsapsedSec: Float {
-        return Float(elapsedMS) / 1000
+        return Float(elapsedMS64) / 1000
     }
     /// Le temps global où le chrono a commencé (en millisec).
     var startTimeMS: Int64 {
@@ -101,7 +104,7 @@ struct Chrono {
         time = 0
     }
     mutating func pause() {
-        time = elapsedMS
+        time = elapsedMS64
         isActive = false
     }
     mutating func unpause() {
@@ -122,7 +125,7 @@ struct Chrono {
     }
     mutating func remove(millisec: Int64) {
         if (isActive) { // time est le starting time.
-            time = (elapsedMS > millisec) ? time + millisec : GlobalChrono.elapsedMS
+            time = (elapsedMS64 > millisec) ? time + millisec : GlobalChrono.elapsedMS
         } else { // time est le temps écoulé.
             time = (time > millisec) ? time - millisec : 0
         }

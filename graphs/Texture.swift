@@ -19,18 +19,82 @@ class Texture {
     
     let m: Int
     let n: Int
-    var string: String = ""
-    var mtlTexture: MTLTexture? = nil
-    var ptu = PerTextureUniforms()
-    var ratio: Float = 1
-    
-    init(_ m: Int, _ n: Int, _ string: String) {
-        self.m = m
-        self.n = n
-        self.string = string
-        ptu.dim = (m: Float(m), n: Float(n))
-    }
-    
+    private(set) var string: String = ""
+    private(set) var mtlTexture: MTLTexture? = nil
+    private(set) var ptu = PerTextureUniforms()
+    private(set) var ratio: Float = 1
+	let isString: Bool
+	let isMutable: Bool
+	
+	static func getAsString(_ string: String, isMutable: Bool) -> Texture {
+		// Cas string mutable (editable, localisable), on donne une nouvelle texture.
+		if isMutable {
+			return Texture(string: string, isMutable: true)
+		}
+		// Cas "constant", on garde en mémoire dans cstStringsTex pour évité les duplicas
+		if let we = cstStringsTex[string], let tex = we.value {
+			return tex
+		}
+		let newTex = Texture(string: string, isMutable: false)
+		cstStringsTex[string] = WeakElement(newTex)
+		return newTex
+	}
+	static func getAsPng(_ pngName: String, m: Int, n: Int, showWarning: Bool = true) -> Texture {
+		if let we = pngsTex[pngName], let tex = we.value {
+			if showWarning {
+				printwarning("\(pngName) already init with \(tex.m)x\(tex.n) vs \(m)x\(n)")
+			}
+			return tex
+		}
+		let newTex = Texture(pngName: pngName, m: m, n: n)
+		pngsTex[pngName] = WeakElement(newTex)
+		return newTex
+	}
+	static func getExistingPng(_ pngName: String) -> Texture {
+		guard let we = pngsTex[pngName], let tex = we.value else {
+			printerror("\(pngName) not init")
+			return Texture.testFrame
+		}
+		return tex
+	}
+	func updateString(_ string: String) {
+		guard isString, isMutable else {
+			printerror("N'est pas une texture de string ou n'est pas mutable."); return
+		}
+		self.string = string
+		initAsString()
+	}
+	    
+	// Init comme png...
+	private init(pngName: String, m: Int, n: Int) {
+		self.m = m
+		self.n = n
+		self.string = pngName
+		isString = false
+		isMutable = false
+		ptu.dim = (m: Float(m), n: Float(n))
+		initAsPng()
+		Texture.allTextures.append(WeakElement(self))
+	}
+	// Les texture de string sont soit constantes (mutable = false) soit modifiable.
+	// Setter privé, car pour les constantes on stock dans un array pour évité les duplicas.
+	private init(string: String, isMutable: Bool) {
+		m = 1
+		n = 1
+		self.string = string
+		isString = true
+		self.isMutable = isMutable
+		initAsString()
+		Texture.allTextures.append(WeakElement(self))
+	}
+	// On garde une référence pour libérer l'espace des textures quand on met l'application en pause (background)
+	private static var allTextures: [WeakElement<Texture>] = []
+	// Liste (weak) des string constantes (non mutable) déjà définies
+	// (si plus besoin, la texture de la string disparait)
+	private static var cstStringsTex: [String: WeakElement<Texture>] = [:]
+	// liste weak des png (juste pour être sur qu'il n'est pas déjà init)
+	private static var pngsTex: [String: WeakElement<Texture>] = [:]
+	
     private func initAsString() {
         // Font, dimension,... pour dessiner la string.
         let str: NSString = NSString(string: string)
@@ -76,7 +140,7 @@ class Texture {
         }
         mtlTexture = try!
             Texture.textureLoader.newTexture(URL: url, options: [MTKTextureLoader.Option.SRGB : false])
-
+		
         setDims()
     }
     private func setDims() {
@@ -85,105 +149,23 @@ class Texture {
         ratio = ptu.sizes.width / ptu.sizes.height * ptu.dim.n / ptu.dim.m
     }
     
-    
-    /*-- Les textures de png --*/
-    static func initPngTex(pngID: String, m: Int, n: Int) {
-        guard pngList[pngID] == nil else {
-            printerror("Texture du png \(pngID) déjà init.")
-            return
-        }
-        let newTex = Texture(m, n, pngID)
-        newTex.initAsPng()
-        pngList[pngID] = newTex
-    }
-    static func getPngTex(pngID: String) -> Texture {
-        guard let tex = pngList[pngID] else {
-            printerror("Texture du png \(pngID) pas encore init.")
-            return getConstantStringTex(string: pngID)
-        }
-        return tex
-    }
-    private static var pngList: [String: Texture] = [:]
-    /*-- Les strings constantes --*/
-    static func getConstantStringTex(string: String) -> Texture {
-        if let tex = cstStringList[string] {
-            print("String \(string) déjà init...")
-            return tex
-        }
-        print("Création de texture pas défaut.")
-        let newTex = Texture(1, 1, string)
-        print("Init as string.")
-        newTex.initAsString()
-        cstStringList[string] = newTex
-        return newTex
-    }
-    private static var cstStringList: [String: Texture] = [:]
-    /*-- Les strings localisées. (Pas obligé d'init comme en kotlin).--*/
-    static func getLocalizedStringTex(textID: String) -> Texture {
-        if let tex = localizedStringList[textID] {
-            return tex
-        }
-        let newTexture = Texture(1, 1, textID.localized ?? "")
-        newTexture.initAsString()
-        localizedStringList[textID] = newTexture
-        return newTexture
-    }
-    static func updateAllLocalizedStrings() {
-        for element in localizedStringList {
-            element.value.string = element.key.localized ?? ""
-            element.value.initAsString()
-        }
-    }
-    private static var localizedStringList: [String: Texture] = [:]
-    /*-- Les strings éditables --*/
-    static func setEditableString(id: Int, newString: String) {
-        if let tex = editableStringList[id] {
-            tex.string = newString
-            tex.initAsString()
-            return
-        }
-        let newTexture = Texture(1, 1, newString)
-        newTexture.initAsString()
-        editableStringList[id] = newTexture
-    }
-    static func getEditableStringTex(id: Int) -> Texture {
-        if let tex = editableStringList[id] {
-            return tex
-        }
-        let newTexture = Texture(1, 1, "")
-        editableStringList[id] = newTexture
-        return newTexture
-    }
-    static func getEditableString(id: Int) -> String {
-        guard let tex = editableStringList[id] else {
-            printerror("EditableString pas dans la liste.")
-            return "I am error"
-        }
-        return tex.string
-    }
-    static func getNewEditableStringID() -> Int {
-        while editableStringList[currentFreeEditableStringID] != nil {
-            currentFreeEditableStringID += 1
-        }
-        let returnID = currentFreeEditableStringID
-        currentFreeEditableStringID += 1
-        return returnID
-    }
-    private static var editableStringList: [Int: Texture] = [:]
-    private static var currentFreeEditableStringID = 0
-    
-    
+    /*-- Les textures disponible par défault. --*/
+	static let defaultString = Texture(string: "🦆", isMutable: false)
+	static let testFrame = getAsPng("test_frame", m: 1, n: 2, showWarning: false)
+	static let blackDigits = getAsPng("digits_black", m: 12, n: 2, showWarning: false)
     // 2. Stuff pour Renderer
     static func setTexture(newTex: Texture, with commandEncoder: MTLRenderCommandEncoder) {
-        currentTexture = newTex
+        current = newTex
         
         commandEncoder.setFragmentTexture(newTex.mtlTexture, index: 0)
         
         commandEncoder.setVertexBytes(&newTex.ptu, length: MemoryLayout<PerTextureUniforms>.size, index: 3)
     }
-    static var currentTexture: Texture? = nil
+    static var current: Texture? = nil
     static var textureLoader: MTKTextureLoader!
-    // 2.1 Textures de textes
-    private static var fontSize: CGFloat = 128
+    // Taille des strings
+    private static var fontSize: CGFloat = 64
     
+	
 }
+

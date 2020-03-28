@@ -30,6 +30,17 @@ extension float4x4 {
         self.columns.3.z += self.columns.0.z * t.x + self.columns.1.z * t.y + self.columns.2.z * t.z
     }
     
+    mutating func rotateX(ofRadian theta: Float) {
+        let c = cosf(theta)
+        let s = sinf(theta)
+        
+        let v1: Vector4 = self.columns.1
+        let v2: Vector4 = self.columns.2
+        
+        self.columns.1 = c*v1 + s*v2 // Ou au long x,y,z ? et pas w ?
+        self.columns.2 = c*v2 - s*v1
+    }
+    
     mutating func rotateY(ofRadian theta: Float) {
         let c = cosf(theta)
         let s = sinf(theta)
@@ -38,7 +49,6 @@ extension float4x4 {
         let v2: Vector4 = self.columns.2
         
         self.columns.0 = c*v0 - s*v2 // Ou au long x,y,z ? et pas w ?
-        
         self.columns.2 = s*v0 + c*v2
     }
     
@@ -164,7 +174,62 @@ extension UInt {
         9, 9, 9]
 }
 
+extension Array where Element == UInt32 {
+	func encoded(key: UInt32) -> Array<UInt32> {
+		var intArray = self
+		
+		var uA: UInt32 = 0xeafc8f75 ^ key
+		var uE: UInt32 = 0
+		for index in intArray.indices {
+			uE = intArray[index] ^ uA ^ uE
+			intArray[index] = uE
+			uA = (uA<<1) ^ (uA>>1)
+		}
+		// 2e passe (laisse le dernier)
+		uA = uE
+		uE = 0
+		for index in (0...(intArray.count-2)) {
+			uE = intArray[index] ^ uA ^ uE
+			intArray[index] = uE
+			uA = (uA<<1) ^ (uA>>1)
+		}
+		return intArray
+	}
+	mutating func decode(key: UInt32) {
+		guard var uA: UInt32 = self.last else {
+			printerror("Pas d'élément."); return
+		}
+		var uD: UInt32
+		var uE: UInt32 = 0
+		for index in 0...(count-2) {
+			uD = self[index] ^ uE ^ uA
+			uE = self[index]
+			self[index] = uD
+			uA = (uA<<1) ^ (uA>>1)
+		}
+		uA = 0xeafc8f75 ^ key
+		uE = 0
+		for index in indices {
+			uD = self[index] ^ uE ^ uA
+			uE = self[index]
+			self[index] = uD
+			uA = (uA<<1) ^ (uA>>1)
+		}
+	}
+}
 
+struct WeakElement<T: AnyObject> {
+	weak var value: T?
+	init(_ value: T) {
+		self.value = value
+	}
+}
+
+extension Array where Element == WeakElement<AnyObject> {
+	mutating func reap() {
+		self = self.filter { nil != $0.value }
+	}
+}
 
 // Garbage
 /*

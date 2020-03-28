@@ -14,16 +14,16 @@ import Foundation
 final class Frame : Node {
     private let delta: Float
     private let lambda: Float
-    private var pngID: String
+    private var texture: Texture
     private let isInside: Bool
     
     @discardableResult
     init(_ refNode: Node?, isInside: Bool = false,
          delta: Float = 0.1, lambda: Float = 0,
-         framePngID: String = "frame_mocha", flags: Int = 0) {
+         texture: Texture, flags: Int = 0) {
         self.delta = delta
         self.lambda = lambda
-        self.pngID = framePngID
+        self.texture = texture
         self.isInside = isInside
         super.init(refNode, 0, 0, delta, delta, lambda: lambda, flags: flags)
     }
@@ -31,16 +31,15 @@ final class Frame : Node {
         let otherFrame = other as! Frame
         delta = otherFrame.delta
         lambda = otherFrame.lambda
-        pngID = otherFrame.pngID
+        texture = otherFrame.texture
         isInside = otherFrame.isInside
         super.init(other: other)
     }
     /** Init ou met à jour un noeud frame
      * (Ajoute les descendants si besoin) */
     func update(width: Float, height: Float, fix: Bool) {
-        let refSurf = Surface(nil, pngID: pngID, 0, 0,
-                              delta, lambda: lambda,
-                              flags: Flag1.surfaceDontRespectRatio)
+        let refSurf = TiledSurface(nil, pngTex: texture, 0, 0, delta, lambda: lambda,
+								   flags: Flag1.surfaceDontRespectRatio)
         
         let sq = Squirrel(at: self)
         let deltaX = isInside ? max(width/2 - delta/2, delta/2) : (width/2 + delta/2)
@@ -51,59 +50,64 @@ final class Frame : Node {
         // Mise à jour des dimensions.
         self.width.set(smallWidth + 2 * delta, true, true)
         self.height.set(smallHeight + 2 * delta, true, true)
+        if let theParent = parent, containsAFlag(Flag1.giveSizesToParent) {
+            theParent.width.set(self.width.realPos)
+            theParent.height.set(self.height.realPos)
+        }
+        
         sq.goDownForced(refSurf) // tl
-        (sq.pos as? Surface)?.updateTile(0, 0)
+        (sq.pos as? TiledSurface)?.updateTile(0, 0)
         sq.pos.x.set(-deltaX, fix, true)
         sq.pos.y.set(deltaY, fix, true)
         sq.goRightForced(refSurf) // t
-        (sq.pos as? Surface)?.updateTile(1, 0)
+        (sq.pos as? TiledSurface)?.updateTile(1, 0)
         sq.pos.x.set(0, fix, true)
         sq.pos.y.set(deltaY, fix, true)
         sq.pos.width.set(smallWidth, fix, true)
         sq.goRightForced(refSurf) // tr
-        (sq.pos as? Surface)?.updateTile(2, 0)
+        (sq.pos as? TiledSurface)?.updateTile(2, 0)
         sq.pos.x.set(deltaX, fix, true)
         sq.pos.y.set(deltaY, fix, true)
         sq.goRightForced(refSurf) // l
-        (sq.pos as? Surface)?.updateTile(3, 0)
+        (sq.pos as? TiledSurface)?.updateTile(3, 0)
         sq.pos.x.set(-deltaX, fix, true)
         sq.pos.y.set(0, fix, true)
         sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // c
-        (sq.pos as? Surface)?.updateTile(4, 0)
+        (sq.pos as? TiledSurface)?.updateTile(4, 0)
         sq.pos.x.set(0, fix, true)
         sq.pos.y.set(0, fix, true)
         sq.pos.width.set(smallWidth, fix, true)
         sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // r
-        (sq.pos as? Surface)?.updateTile(5, 0)
+        (sq.pos as? TiledSurface)?.updateTile(5, 0)
         sq.pos.x.set(deltaX, fix, true)
         sq.pos.y.set(0, fix, true)
         sq.pos.height.set(smallHeight, fix, true)
         sq.goRightForced(refSurf) // bl
-        (sq.pos as? Surface)?.updateTile(6, 0)
+        (sq.pos as? TiledSurface)?.updateTile(6, 0)
         sq.pos.x.set(-deltaX, fix, true)
         sq.pos.y.set(-deltaY, fix, true)
         sq.goRightForced(refSurf) // b
-        (sq.pos as? Surface)?.updateTile(7, 0)
+        (sq.pos as? TiledSurface)?.updateTile(7, 0)
         sq.pos.x.set(0, fix, true)
         sq.pos.y.set(-deltaY, fix, true)
         sq.pos.width.set(smallWidth, fix, true)
         sq.goRightForced(refSurf) // br
-        (sq.pos as? Surface)?.updateTile(8, 0)
+        (sq.pos as? TiledSurface)?.updateTile(8, 0)
         sq.pos.x.set(deltaX, fix, true)
         sq.pos.y.set(-deltaY, fix, true)
     }
     
-    func updatePng(newPngId: String) {
-        if newPngId == pngID {
+	func updateTexture(_ newTexture: Texture) {
+        if newTexture === texture {
             return
         }
-        pngID = newPngId
+        texture = newTexture
         guard let theFirstChild = firstChild else {printerror("Frame pas init."); return}
         let sq = Squirrel(at: theFirstChild)
         repeat {
-            (sq.pos as? Surface)?.updateForTex(pngID: pngID)
+			(sq.pos as? TiledSurface)?.updateTexture(newTexture)
         } while sq.goRight()
     }
 }
