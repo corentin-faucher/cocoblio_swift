@@ -145,24 +145,28 @@ extension Float {
     func toNormalizedAngle() -> Float {
         return self - ceilf((self - .pi) / (2 * .pi)) * 2 * .pi
     }
+	
+	func roundToInt() -> Int {
+		return Int(roundf(self))
+	}
 }
 
-extension UInt {
+extension UInt32 {
     func getHighestDecimal() -> Int {
-        let highestDecimal = UInt.pow2numberOfDigit[(self != 0) ? 31 - self.leadingZeroBitCount : 0]
-        return highestDecimal + ((self > UInt.pow10m1[highestDecimal]) ? 1 : 0)
+        let highestDecimal = UInt32.pow2numberOfDigit[(self != 0) ? 31 - self.leadingZeroBitCount : 0]
+        return highestDecimal + ((self > UInt32.pow10m1[highestDecimal]) ? 1 : 0)
     }
     
-    func getTheDigitAt(_ decimal: Int) -> UInt {
-        return (self / UInt.pow10[decimal]) % 10
+    func getTheDigitAt(_ decimal: Int) -> UInt32 {
+        return (self / UInt32.pow10[decimal]) % 10
     }
     
-    private static let pow10: [UInt] = [
+    private static let pow10: [UInt32] = [
         1,       10,       100,
         1000,    10000,    100000,
         1000000, 10000000, 100000000,
         1000000000]
-    private static let pow10m1: [UInt] = [
+    private static let pow10m1: [UInt32] = [
         9,       99,       999,
         9999,    99999,    999999,
         9999999, 99999999, 999999999,
@@ -218,18 +222,7 @@ extension Array where Element == UInt32 {
 	}
 }
 
-struct WeakElement<T: AnyObject> {
-	weak var value: T?
-	init(_ value: T) {
-		self.value = value
-	}
-}
 
-extension Array where Element == WeakElement<AnyObject> {
-	mutating func reap() {
-		self = self.filter { nil != $0.value }
-	}
-}
 
 // Garbage
 /*

@@ -27,7 +27,6 @@ class MetalView: MTKView {
     }
     
     override func awakeFromNib() {
-        print("awake MetalView")
         guard let window = self.window else {
             printerror("Pas de fenêtre attachée."); return
         }
@@ -56,13 +55,11 @@ class MetalView: MTKView {
         renderer.setFrameFromViewSize(bounds.size, justSetFullFrame: false)
         
         eventsHandler.appStart()
-        
-        print("fin awake MetalView")
     }
     
     required init(coder: NSCoder) {
         super.init(coder: coder)
-        renderer = Renderer(metalView: self)
+        renderer = Renderer(metalView: self, withDepth: false)
     }
     override func updateTrackingAreas() {
         if trackingArea != nil {
@@ -92,13 +89,18 @@ class MetalView: MTKView {
     override func keyUp(with event: NSEvent) {
         touch()
         eventsHandler?.keyUp(key:
-            KeyData(scancode: Int(event.keyCode), keycode: Int(event.keyCode),
-                    keymode: Int(event.modifierFlags.rawValue), isVirtual: false))
+			KeyData(keycode: event.keyCode, keymod: event.modifierFlags.rawValue, isVirtual: false))
     }
     override func keyDown(with event: NSEvent) {
         touch()
+		printdebug("key keycode: \(event.keyCode)")
         eventsHandler?.keyDown(key:
-            KeyData(scancode: Int(event.keyCode), keycode: Int(event.keyCode),
-                    keymode: Int(event.modifierFlags.rawValue), isVirtual: false))
+            KeyData(keycode: event.keyCode, keymod: event.modifierFlags.rawValue, isVirtual: false))
     }
+	override func flagsChanged(with event: NSEvent) {
+		printdebug("Modifier now \(toHex(event.modifierFlags.rawValue)).")
+		eventsHandler?.modifiersChangedTo(event.modifierFlags.rawValue)
+	}
 }
+
+

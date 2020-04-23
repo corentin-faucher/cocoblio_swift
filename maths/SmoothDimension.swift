@@ -19,16 +19,17 @@ protocol SmoothDimension {
     init(_ posInit: Float, _ lambda: Float)
     init(_ posInit: Float)
     
-    /** Set avec options : fixer ou non, setter la position par défaut ou non. */
+    /** Set la position, avec options : fixer ou non, setter la position par défaut ou non. */
     mutating func set(_ newPos: Float, _ fix: Bool, _ setAsDef: Bool)
-    /// Se place à defPos + shift.
+    /// Se place à defPos + shift. (convenience de set)
     mutating func setRelToDef(shift: Float, fix: Bool)
-    /** move: place par rapport à realPos (i.e. un déplacement)
-     * Pourrait être "setRelToRealPos"... */
+    /** Se place à realPos + shift. (convenience de set) */
     mutating func move(shift: Float, fix: Bool, setAsDef: Bool)
-    /// Se place à defPos + dec avec effet en arrivant par la "droite".
+    /// Se place à defPos avec effet d'arriver de defPos + delta. (convenience de set)
     mutating func fadeIn(delta: Float?)
-    /// Tasse l'objet en dehors...
+	/// Se place à defPos + delta avec effet d'arriver de defPos. (convenience de set)
+	mutating func fadeInFromDef(delta: Float?)
+    /// Se place à realPos - delta. (convenience de set)
     mutating func fadeOut(delta: Float?)
 }
 
@@ -40,9 +41,13 @@ extension SmoothDimension {
         set(realPos + shift, fix, setAsDef)
     }
     mutating func fadeIn(delta: Float? = nil) {
-        setRelToDef(shift: delta ?? defaultFadeDelta, fix: true)
+		set(defPos + (delta ?? defaultFadeDelta), true, false)
         set(defPos, false, false)
     }
+	mutating func fadeInFromDef(delta: Float? = nil) {
+		set(defPos, true, false)
+		set(defPos + (delta ?? defaultFadeDelta), false, false)
+	}
     mutating func fadeOut(delta: Float? = nil) {
         set(realPos - (delta ?? defaultFadeDelta), false, false)
     }
@@ -290,6 +295,13 @@ struct SmoothAngle : SmoothDimension, CurveInfo {
         }
         realPos = newPos.toNormalizedAngle()
     }
+	
+	mutating func updateCurve(lambda: Float) {
+		updateParameters(gamma: 2 * lambda, k: lambda * lambda)
+	}
+	mutating func updateCurve(gamma: Float, k: Float) {
+		updateParameters(gamma: gamma, k: k)
+	}
     
     fileprivate var A: Float = 0
     fileprivate var B: Float = 0

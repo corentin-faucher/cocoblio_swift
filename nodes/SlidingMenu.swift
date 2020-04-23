@@ -18,28 +18,28 @@ import Foundation
 class SlidingMenu : Node, Draggable, Openable {
     private let nDisplayed: Int
     private let spacing: Float
-    private let addNewItem: ((_ menu: Node, _ index: Int) -> Void)
-    private let getIndicesRangeAtOpening: (() -> Range<Int>)
+	private let addNewItem: ((_ menu: Node, _ index: Int) -> Node)
+    private let getIndicesRangeAtOpening: (() -> ClosedRange<Int>?)
     private let getPosIndex: (() -> Int)
     private var menuGrabPosY: Float? = nil
-    private var indicesRange: Range<Int> = 0..<0
+	private var indicesRange: ClosedRange<Int>? = nil
     private var menu: Node! // Le menu qui "glisse" sur le noeud racine.
     private var vitY = SmoothPos(0, 4) // La vitesse lors du "fling"
     private var deltaT = Chrono() // Pour la distance parcourue
     private var flingChrono = Chrono() // Temps de "vol"
     /** Le déplacement maximal du menu en y. 0 si n <= nD. */
     private var menuDeltaYMax: Float {
-        return 0.5 * itemHeight * Float(max(indicesRange.count - nDisplayed, 0))
+		return 0.5 * itemHeight * Float(max((indicesRange?.count ?? 0) - nDisplayed, 0))
     }
     private var itemHeight: Float {
         return height.realPos / Float(nDisplayed)
     }
-    
+    @discardableResult
     init(_ refNode: Node, nDisplayed: Int,
         _ x: Float, _ y: Float, width: Float, height: Float,
         spacing: Float,
-        addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Void),
-        getIndicesRangeAtOpening: @escaping (() -> Range<Int>),
+        addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Node),
+        getIndicesRangeAtOpening: @escaping (() -> ClosedRange<Int>?),
         getPosIndex: @escaping (() -> Int)
     ) {
         self.nDisplayed = nDisplayed
@@ -104,8 +104,12 @@ class SlidingMenu : Node, Draggable, Openable {
     
     func open() {
         func placeToOpenPos() {
-            let normalizedID = max(min(getPosIndex(), indicesRange.endIndex-1), indicesRange.startIndex) - indicesRange.startIndex
-            setMenuYpos(yCandIn: itemHeight * (Float(normalizedID) - 0.5 * Float(indicesRange.count-1)),
+			let first = indicesRange?.first ?? 0
+			let last = indicesRange?.last ?? 0
+			let countMinusOne = last - first
+			let normalizedId = max(min(getPosIndex(), last), first) - first
+			
+            setMenuYpos(yCandIn: itemHeight * (Float(normalizedId) - 0.5 * Float(countMinusOne)),
                         snap: true, fix: true)
         }
         // Mettre tout de suite le flag "show".
@@ -127,9 +131,11 @@ class SlidingMenu : Node, Draggable, Openable {
             menu.disconnectChild(elder: true)
         }
         // 2. Ajout des items avec lambda addingItem
-        for i in indicesRange {
-            addNewItem(menu, i)
-        }
+		if let range = indicesRange {
+			for i in range {
+				_ = addNewItem(menu, i)
+			}
+		}
         // 3. Normaliser les hauteurs pour avoir itemHeight
         let sq = Squirrel(at: menu)
         if (!sq.goDown()) {

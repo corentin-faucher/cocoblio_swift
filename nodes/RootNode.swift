@@ -9,6 +9,9 @@
 import Foundation
 import simd
 import CoreGraphics
+#if os(OSX)
+import AppKit
+#endif
 
 /** Le noeud racine contrôle la caméra.
  	 En effet sa matrice "model" est une matrice "lookAt"
@@ -49,3 +52,46 @@ class RootNode : Node, Reshapable {
     }
 }
 
+class AppRootNode : RootNode {
+	private(set) var activeScreen: ScreenBase? = nil
+	var selectedNode: Node? = nil
+	
+	init(renderer: Renderer) {
+		super.init(renderer: renderer)
+	}
+	required init(other: Node) {
+		fatalError("init(other:) has not been implemented")
+	}
+	final func changeActiveScreen(newScreen: ScreenBase?) {
+		// 0. Cas réouverture
+		if activeScreen === newScreen {
+			//newScreen?.closeBranch()
+			newScreen?.openBranch()
+			return
+		}
+		// 1. Fermer l'écran actif (déconnecter si evanescent)
+		if let lastScreen = activeScreen {
+			lastScreen.closeBranch()
+			if !lastScreen.containsAFlag(Flag1.persistentScreen) {
+				Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
+					lastScreen.disconnect()
+				}
+			}
+		}
+		// 2. Si null -> fermeture de l'app.
+		guard let theNewScreen = newScreen else {
+			#if os(OSX)
+			activeScreen = nil
+			Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { (_) in
+				NSApplication.shared.terminate(self)
+			}
+			#else
+			printerror("nil redirect in iOS")
+			#endif
+			return
+		}
+		// 3. Ouverture du nouvel écran.
+		activeScreen = theNewScreen
+		theNewScreen.openBranch()
+	}
+}

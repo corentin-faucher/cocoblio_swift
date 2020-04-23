@@ -6,14 +6,6 @@
 //
 import simd
 
-func printerror(_ message: String, function: String = #function, file: String = #file) {
-    print("❌ Error: \(message) in \(function) of file \(file)")
-}
-
-func printwarning(_ message: String, function: String = #function, file: String = #file) {
-    print("⚠️ Warn.: \(message) in \(function) of file \(file)")
-}
-
 protocol CopyableNode {
     init(other: Self)
 }
@@ -24,29 +16,10 @@ extension CopyableNode {
 }
 
 class Node : CopyableNode {
-    /*-- Données de bases --*/
+    /*-- Fields --*/
     /** Flags : Les options sur le noeud. */
     private var flags: Int
-    /** Retirer des flags au noeud. */
-    func removeFlags(_ toRemove: Int) {
-        flags &= ~toRemove
-    }
-    /** Ajouter des flags au noeud. */
-    func addFlags(_ toAdd: Int) {
-        flags |= toAdd
-    }
-    func addRemoveFlags(_ toAdd: Int, _ toRemove: Int) {
-        flags = (flags | toAdd) & ~toRemove
-    }
-    func containsAFlag(_ flagsRef: Int) -> Bool {
-        return (flags & flagsRef) != 0
-    }
-    func isDisplayActive() -> Bool {
-        if let surface = self as? Surface, surface.trShow.isActive {
-            return true
-        }
-        return containsAFlag(Flag1.show | Flag1.branchToDisplay)
-    }
+    
     /** Positions, tailles, etc. */
     var x, y, z, width, height, scaleX, scaleY: SmoothPos
     /** Demi espace occupé en x. (width * scaleX) / 2 */
@@ -68,6 +41,28 @@ class Node : CopyableNode {
     weak var lastChild: Node? = nil
     weak var bigBro: Node? = nil
     
+	
+	/*-- Methods --*/
+	/** Retirer des flags au noeud. */
+	func removeFlags(_ toRemove: Int) {
+		flags &= ~toRemove
+	}
+	/** Ajouter des flags au noeud. */
+	func addFlags(_ toAdd: Int) {
+		flags |= toAdd
+	}
+	func addRemoveFlags(_ toAdd: Int, _ toRemove: Int) {
+		flags = (flags | toAdd) & ~toRemove
+	}
+	func containsAFlag(_ flagsRef: Int) -> Bool {
+		return (flags & flagsRef) != 0
+	}
+	func isDisplayActive() -> Bool {
+		if let surface = self as? Surface, surface.trShow.isActive {
+			return true
+		}
+		return containsAFlag(Flag1.show | Flag1.branchToDisplay)
+	}
     /*-- Fonctions d'accès et Computed properties --*/
     /// Obtenir la position absolue d'un noeud.
     func getAbsPos() -> Vector2 {
@@ -129,7 +124,6 @@ class Node : CopyableNode {
             }
         }
     }
-    
     /** Constructeur de copie. */
     required init(other: Node) {
         // 1. Données de base (SmPos et PerInst. sont des struct)
@@ -149,6 +143,7 @@ class Node : CopyableNode {
     /** Se retire de sa chaine de frère et met les optionals à nil.
      *  Sera effacé par l'ARC, si n'est pas référencié(swift) ou ramassé par le GC?(Kotlin) */
     func disconnect() {
+		#warning("Tester: pas de 'deconnexion' et retrait des strong en dernier.")
         // 1. Retrait
         if let theBigBro = bigBro {
             theBigBro.littleBro = littleBro
@@ -344,6 +339,7 @@ class Node : CopyableNode {
     /*-- Private stuff... --*/
     /** Connect au parent. (Doit être fullyDeconnect -> optionals à nil.) */
     private func connectToParent(_ parent: Node, asElder: Bool) {
+		#warning("Check aver if let")
         // Dans tout les cas, on a le parent:
         self.parent = parent
         // Cas parent pas d'enfants

@@ -10,7 +10,8 @@ import Foundation
 
 
 struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
-    init(stringLiteral value: String) {
+	typealias StringLiteralType = String
+	init(stringLiteral value: StringLiteralType) {
         iso = value
         switch value {
             case "fr": id = 0
@@ -31,8 +32,8 @@ struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
         }
     }
     
-    let id: Int
-    let iso: String
+    fileprivate let id: Int
+    fileprivate let iso: String
 }
 
 enum Language : LanguageInfo, CaseIterable {
@@ -51,6 +52,14 @@ enum Language : LanguageInfo, CaseIterable {
     case portuguese = "pt"
     case korean = "ko"
     
+	init?(iso: String) {
+		self.init(rawValue: LanguageInfo(stringLiteral: iso))
+	}
+	
+	var iso: String {
+		get { rawValue.iso }
+	}
+	
     static let defaultLanguage = english
     /** Pour Debugging... à présenter mieux... ? */
     static let forcedLanguage: Language? = nil
@@ -60,6 +69,7 @@ enum Language : LanguageInfo, CaseIterable {
     /// Langue actuel et son setter.
 	static var current: Language = loadPresentLanguage() {
 		didSet {
+			printdebug("change current Language \(current), with action: \(actionAfterLanguageChanged != nil)")
 			guard let action = actionAfterLanguageChanged else {return}
 			action()
 		}
@@ -73,7 +83,7 @@ enum Language : LanguageInfo, CaseIterable {
         }
     }
     /// Helper pour le code iso (i.e. "en", "fr", ...)
-    static var currentIsoCode: String {
+    static var currentIso: String {
         get {
             return current.rawValue.iso
         }
@@ -81,16 +91,8 @@ enum Language : LanguageInfo, CaseIterable {
     static func currentIs(_ language: Language) -> Bool {
         return current == language
     }
-    
-	static func getLanguageFrom(iso: String) -> Language {
-		guard let language = codeToLang[iso] else {
-			printerror("\(iso) language undefined")
-			return english
-		}
-		return language
-	}
 	
-    private static func loadPresentLanguage() -> Language {
+	private static func loadPresentLanguage() -> Language {
         if let language = forcedLanguage {
             printwarning("On utilise le language forcé: \(language).")
             return language
@@ -99,41 +101,54 @@ enum Language : LanguageInfo, CaseIterable {
             if langISO == "zh" {
                 langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
             }
-            if let language = codeToLang[langISO] {
-                print("langID est pris de Locale.current.languageCode: \(langISO)")
+			if let language = Language(iso: langISO) {
                 return language
             }
         }
-        print("Rien trouvé on prend le défaut: \(defaultLanguage).")
+        printwarning("Language not found. Taking default: \(defaultLanguage).")
         return defaultLanguage
     }
-    private static let codeToLang = [
-        "fr" :  french,
-        "en" :  english,
-        "ja" :  japanese,
-        "de" :  german,
-        "it" :  italian,
-        "es" :  spanish,
-        "ar" :  arabic,
-        "el" :  greek,
-        "ru" :  russian,
-        "sv" :    swedish,
-        "zh-Hans": chinese_simpl,
-        "zh-Hant": chinese_trad,
-        "pt" :    portuguese,
-        "ko" :    korean,
-    ]
+	
 }
 
 /** Extension pour les surfaces de string localisées. */
 extension String {
     var localized: String? {
-        guard let path = Bundle.main.path(forResource: Language.currentIsoCode, ofType: "lproj") else {
-            printerror("Ne peut trouver le fichier pour \(Language.currentIsoCode)"); return nil}
+        guard let path = Bundle.main.path(forResource: Language.currentIso, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.currentIso)"); return nil}
         guard let bundle = Bundle(path: path) else {
             printerror("Ne peut charger le bundle en \(path)"); return nil}
         return NSLocalizedString(self, tableName: nil, bundle: bundle, value: "", comment: "")
     }
 }
 
+
+
+/*
+static func getLanguageFrom(iso: String) -> Language {
+
+guard let language = codeToLang[iso] else {
+printerror("\(iso) language undefined")
+return english
+}
+return language
+}
+
+private static let codeToLang = [
+"fr" :  french,
+"en" :  english,
+"ja" :  japanese,
+"de" :  german,
+"it" :  italian,
+"es" :  spanish,
+"ar" :  arabic,
+"el" :  greek,
+"ru" :  russian,
+"sv" :    swedish,
+"zh-Hans": chinese_simpl,
+"zh-Hant": chinese_trad,
+"pt" :    portuguese,
+"ko" :    korean,
+]
+*/
 

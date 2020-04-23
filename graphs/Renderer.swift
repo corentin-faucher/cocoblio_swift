@@ -1,6 +1,6 @@
 //
 //  coqMeshes.swift
-//  MetalTest
+//  Renderer
 //
 //  Created by Corentin Faucher on 2018-10-25.
 //  Copyright © 2018 Corentin Faucher. All rights reserved.
@@ -9,6 +9,7 @@ import MetalKit
 import CoreGraphics
 
 class Renderer : NSObject {
+	/*-- Struct related to Renderer --*/
     /** Les propriétés d'affichage d'un objet/instance (un noeud typiquement). */
     struct PerInstanceUniforms { // Doit être multiple de 16octets.
         var model = float4x4(1) // 16 float -> 64 oct
@@ -19,7 +20,7 @@ class Renderer : NSObject {
         
         static let isOneSided: Int32 = 1
     }
-
+	/** Constante de l'affichage d'une frame pour les shaders. */
     struct PerFrameUniforms {
         var projection: float4x4
         var time: Float32
@@ -33,14 +34,58 @@ class Renderer : NSObject {
         static var pfu = PerFrameUniforms()
     }
     
-    /*-- Doivent être initialisé pour qu'il se passe quelque chose... */
+	/*-- Fields --*/
+    //-- Doivent être initialisé pour qu'il se passe quelque chose...
     /// La structure à afficher
     var root: RootNode!
     /// Le gestionnaire d'events (le gameEngine)
     var eventHandler: EventsHandler!
+	/// Fonction de préparation des Surfaces avant l'affichage (customizable)
     var setForDrawing = Node.defaultSetForDrawing
-    
-    init(metalView: MTKView) {
+	/** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
+	private(set) var fullFrame = CGSize(width: 2, height: 2)
+	/** Le frame utilisable (sans les bords, les dimensions "utiles"). */
+	private(set) var usableFrame = CGSize(width: 2, height: 2)
+	// Fond d'écran
+	private var smR: SmoothPos = SmoothPos(1, 8)
+	private var smG: SmoothPos = SmoothPos(1, 8)
+	private var smB: SmoothPos = SmoothPos(1, 8)
+	// Present frame stuff: command encoder, used mesh, used texture.
+	fileprivate var currentMesh: Mesh? = nil {
+		didSet {
+			if let newMesh = currentMesh, let cmdenc = commandEncoder {
+				currentPrimitiveType = newMesh.primitiveType
+				currentVertexCount = newMesh.vertices.count
+				cmdenc.setCullMode(newMesh.cullMode)
+				cmdenc.setVertexBuffer(newMesh.verticesBuffer,
+											   offset: 0,
+											   index: Renderer.metalVerticesBufferIndex)
+			}
+		}
+	}
+	fileprivate var currentPrimitiveType: MTLPrimitiveType = .triangle
+	fileprivate var currentVertexCount: Int = 0
+	// La texture présentement utilisée
+	fileprivate var currentTexture: Texture? = nil {
+		didSet {
+			if let newTexture = currentTexture, let cmdenc = commandEncoder  {
+				cmdenc.setFragmentTexture(newTexture.mtlTexture,
+												  index: Renderer.metalTextureIndex)
+				cmdenc.setVertexBytes(&newTexture.ptu,
+											  length: MemoryLayout<Texture.PerTextureUniforms>.size,
+											  index: Renderer.metalPtuIndex)
+			}
+		}
+	}
+	// Metal Stuff
+	fileprivate var commandEncoder: MTLRenderCommandEncoder?
+	private let commandQueue: MTLCommandQueue!
+	private let pipelineState: MTLRenderPipelineState!
+	private let samplerState: MTLSamplerState!
+	private let depthStencilState: MTLDepthStencilState?
+	
+	/*-- Methods --*/
+	init(metalView: MTKView, withDepth: Bool) {
         /*-- Init de device et commandQueue --*/
         guard let device = MTLCreateSystemDefaultDevice() else {
             fatalError("Pas de GPU.")
@@ -58,7 +103,7 @@ class Renderer : NSObject {
         renderPipelineDescriptor.fragmentFunction = library?.makeFunction(name: "fragment_function")
         renderPipelineDescriptor.depthAttachmentPixelFormat = metalView.depthStencilPixelFormat
         let colorAtt: MTLRenderPipelineColorAttachmentDescriptor = renderPipelineDescriptor.colorAttachments[0]
-        colorAtt.pixelFormat = .bgra8Unorm // metalView.colorPixelFormat //.bgra8Unorm
+		colorAtt.pixelFormat = metalView.colorPixelFormat //.bgra8Unorm
         colorAtt.isBlendingEnabled = true
         colorAtt.rgbBlendOperation = .add
         #if os(OSX)
@@ -69,26 +114,33 @@ class Renderer : NSObject {
         colorAtt.destinationRGBBlendFactor = .oneMinusSourceAlpha
         
         pipelineState = try! device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
+		
+		/*-- Sampler state pour les textures --*/
+        let samplerDescr = MTLSamplerDescriptor()
+		samplerDescr.magFilter = MTLSamplerMinMagFilter.linear
+		samplerDescr.minFilter = MTLSamplerMinMagFilter.linear
+        samplerState = device.makeSamplerState(descriptor: samplerDescr)
+		
+		/*-- Depth (si besoin) --*/
+		if withDepth {
+			let depthStencilDescriptor = MTLDepthStencilDescriptor()
+			depthStencilDescriptor.depthCompareFunction = .less
+			depthStencilDescriptor.isDepthWriteEnabled = true
+			depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
+		} else {
+			depthStencilState = nil
+		}
         
-        samplerState = device.makeSamplerState(descriptor: MTLSamplerDescriptor())
+        /*-- Init des Texture avec device (gpu) car utilisé pour loader les pngs. --*/
+		Texture.initWith(device: device)
         
-        /*-- Texture loader --*/
-        Texture.textureLoader = MTKTextureLoader(device: device)
-        
-        /*-- Init des meshes --*/
-        Mesh.initBasicMeshes(with: device)
+        /*-- Init de Mesh avec device (gpu) car utilisé pour créer les buffers. --*/
+		Mesh.setDeviceAndInitBasicMeshes(device)
         
         super.init()
         
         metalView.delegate = self
     }
-    func addDepth(device: MTLDevice) {
-        let depthStencilDescriptor = MTLDepthStencilDescriptor()
-        depthStencilDescriptor.depthCompareFunction = .less
-        depthStencilDescriptor.isDepthWriteEnabled = true
-        depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
-    }
-    
     func initClearColor(rgb: Vector3) {
         smR.set(rgb.x); smG.set(rgb.y); smB.set(rgb.z)
     }
@@ -99,9 +151,6 @@ class Renderer : NSObject {
         return Vector2(Float((locationInWindow.x / viewSize.width - 0.5) * fullFrame.width),
                        Float((invertedY ? -1 : 1) * (locationInWindow.y / viewSize.height - 0.5) * fullFrame.height))
     }
-    
-    
-    /*-- Private stuff --*/
     func setFrameFromViewSize(_ viewSize: CGSize, justSetFullFrame: Bool) {
         let ratio = viewSize.width / viewSize.height
         // 1. Full Frame
@@ -128,24 +177,13 @@ class Renderer : NSObject {
         root.reshapeBranch()
     }
     
-    private var smR: SmoothPos = SmoothPos(1, 8)
-    private var smG: SmoothPos = SmoothPos(1, 8)
-    private var smB: SmoothPos = SmoothPos(1, 8)
-        
-    /** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
-    private(set) var fullFrame = CGSize(width: 2, height: 2)
-    // * Le frame utilisable (sans les bords, les dimensions "utiles").
-    private(set) var usableFrame = CGSize(width: 2, height: 2)
-    
+    /*-- Static constants --*/
+	static private let metalVerticesBufferIndex = 0
+	static private let metalTextureIndex = 0
+	static private let metalPtuIndex = 3
     static private let defaultBordRatio: CGFloat = 0.95
     static private let ratioMin: CGFloat = 0.54
     static private let ratioMax: CGFloat = 1.85
-    
-    /*-- Metal Stuff --*/
-    private let commandQueue: MTLCommandQueue!
-    private let pipelineState: MTLRenderPipelineState!
-    private let samplerState: MTLSamplerState!
-    private var depthStencilState: MTLDepthStencilState?
 }
 
 
@@ -178,13 +216,17 @@ extension Renderer: MTKViewDelegate {
             let renderPassDescriptor = view.currentRenderPassDescriptor
             else {return}
         let commandBuffer = commandQueue.makeCommandBuffer()
-        guard let commandEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+        guard let cmdenc = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
             print("Error loading commandEncoder"); return}
-        commandEncoder.setFragmentSamplerState(samplerState, index: 0)
-        commandEncoder.setRenderPipelineState(pipelineState)
-        //commandEncoder.setDepthStencilState(depthStencilState)
-        Mesh.currentMesh = nil
-        Texture.current = nil
+		commandEncoder = cmdenc
+        cmdenc.setFragmentSamplerState(samplerState, index: 0)
+        cmdenc.setRenderPipelineState(pipelineState)
+		if let dss = depthStencilState {
+        	cmdenc.setDepthStencilState(dss)
+		}
+		
+		currentMesh = nil
+		currentTexture = nil
         
         // 1. Check le chrono/sleep.
         GlobalChrono.update()
@@ -196,48 +238,56 @@ extension Renderer: MTKViewDelegate {
         // 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
         PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
         root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
-        commandEncoder.setVertexBytes(&PerFrameUniforms.pfu, length: MemoryLayout.size(ofValue: PerFrameUniforms.pfu), index: 2)
+        cmdenc.setVertexBytes(&PerFrameUniforms.pfu,
+							  length: MemoryLayout.size(ofValue: PerFrameUniforms.pfu),
+							  index: 2)
         
         // 3. Action du game engine avant l'affichage.
         eventHandler.willDrawFrame()
         
         // 4. Mise à jour de la couleur de fond.
-        view.clearColor = MTLClearColorMake(Double(smR.pos), Double(smG.pos), Double(smB.pos), 1)
+		view.clearColor = MTLClearColorMake(Double(smR.pos), Double(smG.pos), Double(smB.pos), 1)
         
         // 5. Boucle d'affichage (parcourt l'arbre de noeud de la structure)
         let sq = Squirrel(at: root)
         repeat {
             if let surface = setForDrawing(sq.pos)() {
-                surface.draw(with: commandEncoder)
+                surface.draw(with: cmdenc, and: self)
             }
         } while sq.goToNextToDisplay()
         // 6. Fin. Soumettre au gpu...
-        commandEncoder.endEncoding()
+        cmdenc.endEncoding()
+		commandEncoder = nil
         commandBuffer?.present(drawable)
         commandBuffer?.commit()
     }
 }
 
 private extension Surface {
-    func draw(with commandEncoder: MTLRenderCommandEncoder) {
+	func draw(with cmdenc: MTLRenderCommandEncoder, and renderer: Renderer) {
         // 1. Mise a jour de la mesh ?
-        if (mesh !== Mesh.currentMesh) {
-            Mesh.setMesh(newMesh: mesh, with: commandEncoder)
+		if (mesh !== renderer.currentMesh) {
+			renderer.currentMesh = mesh
         }
         // 2. Mise a jour de la texture ?
-        if tex !== Texture.current {
-            Texture.setTexture(newTex: tex, with: commandEncoder)
+		if tex !== renderer.currentTexture {
+			renderer.currentTexture = tex
         }
         // 3. Mise à jour des "PerInstanceUniforms"
-        commandEncoder.setVertexBytes(&piu, length: MemoryLayout<Renderer.PerInstanceUniforms>.size,
-                                      index: 1)
+		cmdenc.setVertexBytes(&piu,
+							length: MemoryLayout<Renderer.PerInstanceUniforms>.size,
+							index: 1)
         // 4. Dessiner
         if mesh.indices.count < 1 {
-            commandEncoder.drawPrimitives(type: Mesh.currentPrimitiveType,
-                                          vertexStart: 0,
-                                          vertexCount: Mesh.currentVertexCount)
+			cmdenc.drawPrimitives(type: renderer.currentPrimitiveType,
+								vertexStart: 0,
+								vertexCount: renderer.currentVertexCount)
         } else {
-            commandEncoder.drawIndexedPrimitives(type: Mesh.currentPrimitiveType, indexCount: mesh.indices.count, indexType: .uint16, indexBuffer: mesh.indicesBuffer!, indexBufferOffset: 0)
+			cmdenc.drawIndexedPrimitives(type: renderer.currentPrimitiveType,
+										indexCount: mesh.indices.count,
+										indexType: .uint16,
+										indexBuffer: mesh.indicesBuffer!,
+										indexBufferOffset: 0)
         }
     }
 }

@@ -35,25 +35,33 @@ final class Frame : Node {
         isInside = otherFrame.isInside
         super.init(other: other)
     }
+	
+	@discardableResult
+	func preSetWidthAndHeightFrom(width: Float, height: Float) -> (smWidth: Float, smHeight: Float)
+	{
+		let smallWidth = isInside ? max(width - delta, 0) : width
+		let smallHeight = isInside ? max(height - delta, 0) : height
+		self.width.set(smallWidth + 2 * delta, true, true)
+		self.height.set(smallHeight + 2 * delta, true, true)
+		if let theParent = parent, containsAFlag(Flag1.giveSizesToParent) {
+			theParent.width.set(self.width.realPos)
+			theParent.height.set(self.height.realPos)
+		}
+		return (smallWidth, smallHeight)
+	}
+	
     /** Init ou met à jour un noeud frame
      * (Ajoute les descendants si besoin) */
     func update(width: Float, height: Float, fix: Bool) {
+		let showFlag = containsAFlag(Flag1.show) ? Flag1.show : 0
         let refSurf = TiledSurface(nil, pngTex: texture, 0, 0, delta, lambda: lambda,
-								   flags: Flag1.surfaceDontRespectRatio)
+								   flags: Flag1.surfaceDontRespectRatio | showFlag)
         
         let sq = Squirrel(at: self)
         let deltaX = isInside ? max(width/2 - delta/2, delta/2) : (width/2 + delta/2)
         let deltaY = isInside ? max(height/2 - delta/2, delta/2) : (height/2 + delta/2)
-        let smallWidth = isInside ? max(width - delta, 0) : width
-        let smallHeight = isInside ? max(height - delta, 0) : height
         
-        // Mise à jour des dimensions.
-        self.width.set(smallWidth + 2 * delta, true, true)
-        self.height.set(smallHeight + 2 * delta, true, true)
-        if let theParent = parent, containsAFlag(Flag1.giveSizesToParent) {
-            theParent.width.set(self.width.realPos)
-            theParent.height.set(self.height.realPos)
-        }
+		let (smallWidth, smallHeight) = preSetWidthAndHeightFrom(width: width, height: height)
         
         sq.goDownForced(refSurf) // tl
         (sq.pos as? TiledSurface)?.updateTile(0, 0)

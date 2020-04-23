@@ -1,31 +1,5 @@
 
 
-protocol KotlinLikeScope {}
-
-extension KotlinLikeScope {
-    @discardableResult
-    @inline(__always) func also(_ block: (Self) -> Void) -> Self {
-        block(self)
-        return self
-    }
-    @discardableResult
-    @inline(__always) func `let`<R>(_ block: (Self) -> R) -> R {
-        return block(self)
-    }
-}
-
-extension Optional where Wrapped: KotlinLikeScope {
-    @inline(__always) func also(_ block: (Wrapped) -> Void) -> Self? {
-        guard let self = self else {return nil}
-        block(self)
-        return self
-    }
-    @inline(__always) func `let`<R>(_ block: (Wrapped) -> R) -> R? {
-        guard let self = self else {return nil}
-        return block(self)
-    }
-}
-
 extension Node : KotlinLikeScope {}
 
 extension Node {
@@ -58,23 +32,27 @@ extension Node {
 	/** Ajout d'un frame et string à un noeud. (e.g. remplir un bouton.)
 	* La hauteur devient 1 et ses scales deviennent sa hauteur.
 	* (Pour avoir les objets (label...) relatif au noeud.)
-	* Delta est un pourcentage de la hauteur. */
+	* Delta est un pourcentage de la hauteur.
+	* Retourne (seulement) la StringSurface ajoutée. */
+	@discardableResult
 	func fillWithFramedString(strTex: Texture, frameTex: Texture,
-							ceiledWidth: Float? = nil, delta: Float = 0.4) {
-		guard firstChild == nil else { printerror("A déjà quelque chose."); return }
+							ceiledWidth: Float? = nil, delta: Float = 0.4) -> StringSurface? {
+		guard firstChild == nil else { printerror("A déjà quelque chose."); return nil }
 		guard strTex.isString, !frameTex.isString else {
-			printerror("Bad textures"); return
+			printerror("Bad textures"); return nil
 		}
 		
 		scaleX.set(height.realPos)
 		scaleY.set(height.realPos)
 		let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
-		width.set(1)
-		height.set(1)
-		Frame(self, isInside: false, delta: delta, lambda: 0,
+		let frame = Frame(self, isInside: false, delta: delta, lambda: 0,
 			  texture: frameTex, flags: Flag1.giveSizesToParent)
-		StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
+		// Init des dimensions du frame et du parent (i.e. le noeud courant)
+		frame.preSetWidthAndHeightFrom(width: scaleCeiledWidth ?? 1, height: 1)
+		
+		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
 					  flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
+		return stringSurf
 	}
 	func addFramedString(strTex: Texture, frameTex: Texture,
 						 _ x: Float, _ y: Float, _ height: Float,

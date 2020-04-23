@@ -27,18 +27,23 @@ enum Flag1 {
     /*-- Pour les ajustement de height/width du parent ou du frame --*/
     static let giveSizesToBigBroFrame = 1<<9
     static let giveSizesToParent = 1<<10
-    
-    /*-- Pour les screens --*/
+	
+	/*-- Pour les screens --*/
     static let dontAlignScreenElements = 1<<11
+	/** Par défaut un screen est evanescent (disconnect apres usage). */
+	static let persistentScreen = 1<<12
     
     /** Paur l'affichage. La branche a encore des descendant à afficher. */
-    static let branchToDisplay = 1<<12
+    static let branchToDisplay = 1<<13
     
-    static let relativeToRight = 1<<13
-    static let relativeToLeft = 1<<14
-    static let relativeToTop = 1<<15
-    
+	/*-- Pour le protocole RelativeToParent --*/
+    static let relativeToRight = 1<<14
+    static let relativeToLeft = 1<<15
+    static let relativeToTop = 1<<16
+    static let relativeToBottom = 1<<17
+	static let allRelatives = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom
+	
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<16
+    static let firstCustomFlag = 1<<18
 }
 

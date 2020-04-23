@@ -26,13 +26,16 @@ extension Surface {
 			theParent.width.set(width.realPos)
 			theParent.height.set(height.realPos)
 		}
+		if tex.string == "Default" {
+			printdebug("updateRatio end \(width.realPos) x \(height.realPos)")
+		}
 	}
 }
 
 class StringSurface: Node, Surface, Openable {
 	private(set) var tex: Texture
 	let mesh: Mesh = .sprite
-	var trShow: SmTrans = SmTrans()
+	var trShow: SmTrans
 	
 	/** On prend pour aquis que la texture reçu est déjà une texture avec une string. */
 	@discardableResult
@@ -44,41 +47,58 @@ class StringSurface: Node, Surface, Openable {
 		guard strTex.isString else {
 			printerror("Pas une texture de string")
 			tex = Texture.defaultString
+			trShow = SmTrans()
 			super.init(refNode, x, y, ceiledWidth ?? height, height, lambda: lambda, flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
 			return
 		}
 		tex = strTex
-		super.init(refNode, x, y, height, height, lambda: lambda, flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
+		trShow = SmTrans()
+		super.init(refNode, x, y, ceiledWidth ?? height, height, lambda: lambda, flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
 		if ceiledWidth != nil {
 			addFlags(Flag1.surfaceWithCeiledWidth)
 		}
 		piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-		updateRatio(fix: true)
+//		updateRatio(fix: true)
+		
+	}
+	@discardableResult
+	convenience init(_ refNode: Node?, cstString: String,
+					 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
+					 flags: Int = 0, ceiledWidth: Float? = nil,
+					 asParent: Bool = true, asElderBigbro: Bool = false
+	) {
+		self.init(refNode, strTex: Texture.getAsString(cstString, isMutable: false),
+				  x, y, height, lambda: lambda, flags: flags, ceiledWidth: ceiledWidth,
+				  asParent: asParent, asElderBigbro: asElderBigbro)
 	}
 	required init(other: Node) {
-		tex = (other as! StringSurface).tex
+		let otherStr = other as! StringSurface
+		tex = otherStr.tex
+		trShow = otherStr.trShow
 		super.init(other: other)
 	}
 	func open() {
 		updateRatio(fix: true)
 	}
 	/** Change la texture du noeud (dervrait être une string). */
-	func updateTexture(_ newTexture: Texture, fix: Bool) {
+	func updateTexture(_ newTexture: Texture) {
 		guard newTexture.isString else {
 			printerror("Not a string texture")
 			return
 		}
 		tex = newTexture
-		updateRatio(fix: fix)
 	}
-	/** Met à jour la string de la texture (qui peut être partagé) et updateRatio. */
-	func updateString(_ newString: String, fix: Bool) {
+	/** "Convenience function": Ne change pas la texture. Ne fait que mettre à jour la string de la texture. */
+	func updateAsMutableString(_ newString: String) {
 		guard tex.isMutable else {
-			printerror("Not a mutable string texture")
+			printerror("Not a mutable string texture.")
 			return
 		}
 		tex.updateString(newString)
-		updateRatio(fix: fix)
+	}
+	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
+	func updateTextureToConstantString(_ newString: String) {
+		tex = Texture.getAsString(newString, isMutable: false)
 	}
 }
 
@@ -86,7 +106,7 @@ class StringSurface: Node, Surface, Openable {
 class TiledSurface: Node, Surface {
 	private(set) var tex: Texture
 	let mesh: Mesh = .sprite
-	var trShow: SmTrans = SmTrans()
+	var trShow: SmTrans
 	
 	@discardableResult
 	init(_ refNode: Node?, pngTex: Texture,
@@ -96,18 +116,22 @@ class TiledSurface: Node, Surface {
 		guard !pngTex.isString else {
 			printerror("Pas une texture de string")
 			tex = Texture.defaultString
+			trShow = SmTrans()
 			super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
 					   asParent: asParent, asElderBigbro: asElderBigbro)
 			return
 		}
 		tex = pngTex
+		trShow = SmTrans()
 		super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
 				   asParent: asParent, asElderBigbro: asElderBigbro)
 		updateRatio(fix: true)
 		updateTile(i, 0)
 	}
 	required init(other: Node) {
-		tex = (other as! TiledSurface).tex
+		let otherSurf = other as! TiledSurface
+		tex = otherSurf.tex
+		trShow = otherSurf.trShow
 		super.init(other: other)
 	}
 	/** Si i > m -> va sur les lignes suivantes. */
@@ -159,6 +183,35 @@ class LanguageSurface: Node, Surface, Openable {
 		let i = Language.currentId
 		piu.tile = (Float(i % tex.m),
 					Float((i / tex.m) % tex.n))
+	}
+}
+
+class MeshSurface : Node, Surface {
+	let tex: Texture
+	var mesh: Mesh
+	var trShow: SmTrans
+	
+	@discardableResult
+	init(_ refNode: Node?, texture: Texture, mesh: Mesh,
+		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
+		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
+	) {
+		tex = texture
+		self.mesh = mesh
+		trShow = SmTrans()
+		super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
+				   asParent: asParent, asElderBigbro: asElderBigbro)
+	}
+	required init(other: Node) {
+		let otherSurf = other as! MeshSurface
+		tex = otherSurf.tex
+		mesh = otherSurf.mesh
+		trShow = otherSurf.trShow
+		super.init(other: other)
+	}
+	
+	func updateRatio(fix: Bool) {
+		printwarning("No updateRatio for MeshSurface.")
 	}
 }
 

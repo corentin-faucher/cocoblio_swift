@@ -17,6 +17,7 @@ class NumberNode : Node {
     private var spacing: Float
     private var sepSpacing: Float
     
+	@discardableResult
     init(_ refNode: Node?, number: Int,
          _ x: Float, _ y: Float, height: Float, lambda: Float = 0,
 		 unitDecimal: Int = 0, digitsTex: Texture = Texture.blackDigits,
@@ -60,7 +61,7 @@ class NumberNode : Node {
         let refSurf = TiledSurface(nil, pngTex: digitsTex, 0, 0, 1)
         refSurf.scaleX.set(spacing)
         let sq = Squirrel(at: self)
-        let displayedNumber: UInt = UInt(abs(number))
+        let displayedNumber: UInt32 = UInt32(abs(number))
         let isNegative = number < 0
         let maxDigits = max(displayedNumber.getHighestDecimal(), unitDecimal)
 

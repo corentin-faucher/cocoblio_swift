@@ -136,12 +136,17 @@ struct SmTrans {
     private var transTime: UInt16 = SmTrans.defTransTime
     
     // Enum et static
-    static func updateParameters(newPopFactor: Float, newSemiFactor: Float, newTransTime: UInt16) {
-        popFact = newPopFactor
-        semiFact = newSemiFactor
-        defTransTime = newTransTime
-        a = 0.75 + popFact * 0.2
-        b = -0.43 + popFact * 0.43
+    static func updateParameters(newPopFactor: Float?, newSemiFactor: Float?, newTransTime: UInt16?) {
+		if let pf = newPopFactor {
+			a = 0.75 + pf * 0.2
+			b = -0.43 + pf * 0.43
+		}
+		if let sf = newSemiFactor {
+			semiFact = sf
+		}
+		if let tt = newTransTime {
+			defTransTime = tt
+		}
     }
     private enum TransEnum {
         case isDown
@@ -149,9 +154,8 @@ struct SmTrans {
         case goingUp
         case goingDown
     }
-    private static var popFact: Float = 0.2
     private static var semiFact: Float = 0.4
     private static var defTransTime: UInt16 = 500
-    private static var a: Float = 0.75 + popFact * 0.2
-    private static var b: Float = -0.43 + popFact * 0.43
+	private static var a: Float = 0.75 + (0.2) * 0.2  // (pop factor est de 0.2 par défaut)
+	private static var b: Float = -0.43 + (0.2) * 0.43
 }

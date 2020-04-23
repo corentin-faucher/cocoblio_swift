@@ -8,20 +8,6 @@
 
 import Foundation
 
-protocol KeyboardKey {
-    var scancode: Int { get }
-    var keycode: Int { get }
-    var keymode: Int { get }
-    var isVirtual: Bool { get }
-}
-
-struct KeyData : KeyboardKey {
-    var scancode: Int
-    var keycode: Int
-    var keymode: Int
-    var isVirtual: Bool
-}
-
 protocol Openable : Node {
     func open()
 }
@@ -70,13 +56,16 @@ extension Fading {
     // Version "static" de open()
     // (open() est dynamique, i.e. sera overridé en cas de conflit...)
     func open_fading() {
-        x.fadeIn()
+		if !containsAFlag(Flag1.show) {
+        	x.fadeIn()
+		}
     }
 }
 
-// Incompatible avec Fading (les deux utilisent defPos de manière différente)
-// Au pire faire une structure du type (node,RelativeToParent) -> (node,Fading).
+/** Incompatible avec Fading (les deux utilisent defPos de manière différente)
+ * Au pire faire une structure du type (node,RelativeToParent) -> (node,Fading). */
 protocol RelativeToParent : Reshapable, Openable {}
+
 extension RelativeToParent {
     func reshape() -> Bool {
         setRelativelyToParent(isOpening: false)
@@ -87,16 +76,22 @@ extension RelativeToParent {
     }
     func setRelativelyToParent(isOpening: Bool) {
         guard let theParent = parent else {return}
+		guard containsAFlag(Flag1.allRelatives) else {
+			printwarning("RelativeToParent without relative flag.")
+			return
+		}
         var xDec: Float = 0
         var yDec: Float = 0
-        if (containsAFlag(Flag1.relativeToRight)) {
+        if containsAFlag(Flag1.relativeToRight) {
             xDec = theParent.width.realPos * 0.5
-        } else if (containsAFlag(Flag1.relativeToLeft)) {
+        } else if containsAFlag(Flag1.relativeToLeft) {
             xDec = -theParent.width.realPos * 0.5
         }
         if (containsAFlag(Flag1.relativeToTop)) {
             yDec = theParent.height.realPos * 0.5
-        }
+		} else if containsAFlag(Flag1.relativeToBottom) {
+			yDec = -theParent.height.realPos * 0.5
+		}
         x.setRelToDef(shift: xDec, fix: isOpening)
         y.setRelToDef(shift: yDec, fix: isOpening)
     }
