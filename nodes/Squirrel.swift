@@ -217,7 +217,6 @@ class Squirrel {
     }
     func goToNextNode() -> Bool {
         if goDown() {return true}
-        if pos === root {return true}
         while !goRight() {
             if !goUp() {
                 printerror("Pas de root.")

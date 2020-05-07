@@ -61,8 +61,6 @@ enum Language : LanguageInfo, CaseIterable {
 	}
 	
     static let defaultLanguage = english
-    /** Pour Debugging... à présenter mieux... ? */
-    static let forcedLanguage: Language? = nil
 	
 	static var actionAfterLanguageChanged: (() -> Void)? = nil
     
@@ -74,6 +72,23 @@ enum Language : LanguageInfo, CaseIterable {
 			action()
 		}
 	}
+	/** Écriture en arabe. */
+	static private(set) var currentIsRightToLeft = false {
+		didSet {
+			if currentIsRightToLeft {
+				currentDirectionFactor = -1
+				currentCharSpacing = -0.12
+			} else {
+				currentDirectionFactor = 1
+				currentCharSpacing = -0.07
+			}
+		}
+	}
+	/** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
+	static private(set) var currentDirectionFactor: Float = 1
+	/** L'espacement entre les Char (différent pour l'arabe) */
+	static private(set) var currentCharSpacing: Float = -0.07
+	
     
     /*-- Fonctions "helpers" --*/
 	/// Helper pour l'id utiliser dans les languageSurface (par exemple)
@@ -93,8 +108,8 @@ enum Language : LanguageInfo, CaseIterable {
     }
 	
 	private static func loadPresentLanguage() -> Language {
-        if let language = forcedLanguage {
-            printwarning("On utilise le language forcé: \(language).")
+		if let language = BuildConfig.forcedLanguage {
+            printwarning("Using fored language \(language).")
             return language
         }
         if var langISO = Locale.current.languageCode {

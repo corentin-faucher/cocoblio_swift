@@ -54,17 +54,21 @@ extension Node {
 					  flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
 		return stringSurf
 	}
+	/** Ajout d'une StringSurface à la position voulue.
+	* Struct : root->{frame, string}. Retourne la StringSurface. */
+	@discardableResult
 	func addFramedString(strTex: Texture, frameTex: Texture,
 						 _ x: Float, _ y: Float, _ height: Float,
 						 lambda: Float = 0, flags: Int = 0,
-						 ceiledWidth: Float? = nil, delta: Float = 0.4) {
+						 ceiledWidth: Float? = nil, delta: Float = 0.4) -> StringSurface? {
 		guard strTex.isString, !frameTex.isString else {
-			printerror("Bad textures"); return
+			printerror("Bad textures"); return nil
 		}
-		Node(self, x, y, ceiledWidth ?? height, height,
-			 lambda: lambda, flags: flags).also { nd in
-				nd.fillWithFramedString(strTex: strTex, frameTex: frameTex, ceiledWidth: ceiledWidth, delta: delta)
-		}
+		let node = Node(self, x, y, ceiledWidth ?? height, height,
+			 lambda: lambda, flags: flags)
+		return node.fillWithFramedString(strTex: strTex,
+										 frameTex: frameTex,
+										 ceiledWidth: ceiledWidth, delta: delta)
 	}
     
     /** !Debug Option!

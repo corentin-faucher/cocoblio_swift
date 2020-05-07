@@ -129,7 +129,6 @@ class Texture {
 		#else
 		UIGraphicsPushContext(context)
 		context.scaleBy(x: 1, y: -1)
-		print("strSize \(strSizes)")
 		str.draw(at: CGPoint(x: 0, y: -strSizes.height), withAttributes: [NSAttributedString.Key.font : font as Any])
 		UIGraphicsPopContext()
 		#endif

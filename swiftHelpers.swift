@@ -25,7 +25,7 @@ func printdebug(_ message: String, function: String = #function, file: String = 
 }
 
 func toHex(_ n: UInt) -> String {
-	String(format: "%02X", n)
+	String(format: "0x%02X", n)
 }
 
 /*-- Text file helper --*/

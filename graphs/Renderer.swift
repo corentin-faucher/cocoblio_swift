@@ -8,6 +8,81 @@
 import MetalKit
 import CoreGraphics
 
+protocol CoqMetalView : MTKView {
+	var root: AppRootBase! { get }
+	var renderer: Renderer! {get }
+	var isTransitioning: Bool { get set }
+	
+	/** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
+	var fullFrame: CGSize { get set }
+	/** Le frame utilisable un rectangle dans fullFrame, i.e. les dimensions "utiles", sans les bords. */
+	var usableFrame: CGRect { get set }
+}
+
+fileprivate let ratioMin: CGFloat = 0.54
+fileprivate let ratioMax: CGFloat = 1.85
+
+extension CoqMetalView {
+	func getNormalizePositionFrom(_ locationInView: CGPoint, invertedY: Bool) -> Vector2 {
+		return Vector2(Float((locationInView.x / bounds.width - 0.5) * fullFrame.width),
+					   Float((invertedY ? -1 : 1) * (locationInView.y / bounds.height - 0.5) * fullFrame.height - usableFrame.origin.y))
+	}
+	func updateFrame() {
+		let realRatio = frame.width / frame.height
+		#if os(OSX)
+		guard let window = window else {printerror("No window."); return}
+		let headerHeight = window.styleMask.contains(.fullScreen) ? 22 : window.frame.height - window.contentLayoutRect.height
+		
+		let ratioT: CGFloat = headerHeight / window.frame.height + 0.005
+		let ratioB: CGFloat = 0.005
+		let ratioLR: CGFloat = 0.01
+		#else
+		#warning("TODO safearea...")
+		let ratioT: CGFloat = 0.01
+		let ratioB: CGFloat = 0.01
+		let ratioLR: CGFloat = 0.01
+		#endif
+		
+		// 1. Full Frame
+		if realRatio > 1 { // Landscape
+			fullFrame.height = 2 / ( 1 - ratioT - ratioB)
+			fullFrame.width = realRatio * fullFrame.height
+		}
+		else {
+			fullFrame.width = 2 / (1 - ratioLR)
+			fullFrame.height = fullFrame.width / realRatio
+		}
+		// 2. Usable Frame
+		if realRatio > 1 { // Landscape
+			usableFrame.size.width = min((1 - ratioLR) * fullFrame.width, 2 * ratioMax)
+			usableFrame.size.height = 2
+		}
+		else {
+			usableFrame.size.width = 2
+			usableFrame.size.height = min((1 - ratioT - ratioB) * fullFrame.height, 2 / ratioMin)
+		}
+		usableFrame.origin.x = 0
+		usableFrame.origin.y = (ratioB - ratioT) * fullFrame.height / 2
+	}
+	#if !os(OSX)
+	func updateFrameInTransition() {
+		guard let tmpBounds = layer.presentation()?.bounds else {
+			printerror("Pas de presentation layer."); return
+		}
+		let ratio = tmpBounds.width / tmpBounds.height
+		// 1. Full Frame
+		if ratio > 1 { // Landscape
+			fullFrame.width = 2 * ratio / defaultBordRatio
+			fullFrame.height = 2 / defaultBordRatio
+		}
+		else {
+			fullFrame.width = 2 / defaultBordRatio
+			fullFrame.height = 2 / (ratio * defaultBordRatio)
+		}
+	}
+	#endif
+}
+
 class Renderer : NSObject {
 	/*-- Struct related to Renderer --*/
     /** Les propriétés d'affichage d'un objet/instance (un noeud typiquement). */
@@ -34,18 +109,17 @@ class Renderer : NSObject {
         static var pfu = PerFrameUniforms()
     }
     
+	
 	/*-- Fields --*/
-    //-- Doivent être initialisé pour qu'il se passe quelque chose...
-    /// La structure à afficher
-    var root: RootNode!
-    /// Le gestionnaire d'events (le gameEngine)
-    var eventHandler: EventsHandler!
+    
+    /// App structure to display.
+//    unowned var root: AppRootBase! // (owned by MetalView)
 	/// Fonction de préparation des Surfaces avant l'affichage (customizable)
     var setForDrawing = Node.defaultSetForDrawing
 	/** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
-	private(set) var fullFrame = CGSize(width: 2, height: 2)
+//	private(set) var fullFrame = CGSize(width: 2, height: 2)
 	/** Le frame utilisable (sans les bords, les dimensions "utiles"). */
-	private(set) var usableFrame = CGSize(width: 2, height: 2)
+//	private(set) var usableFrame = CGSize(width: 2, height: 2)
 	// Fond d'écran
 	private var smR: SmoothPos = SmoothPos(1, 8)
 	private var smG: SmoothPos = SmoothPos(1, 8)
@@ -84,16 +158,19 @@ class Renderer : NSObject {
 	private let samplerState: MTLSamplerState!
 	private let depthStencilState: MTLDepthStencilState?
 	
+	
 	/*-- Methods --*/
+	
 	init(metalView: MTKView, withDepth: Bool) {
         /*-- Init de device et commandQueue --*/
-        guard let device = MTLCreateSystemDefaultDevice() else {
-            fatalError("Pas de GPU.")
+		guard let device = metalView.device else {
+            fatalError("No GPU in metalView.")
         }
+		
+		printdebug("Renderer init.")
         commandQueue = device.makeCommandQueue()
         
         /*-- Init de la vue. --*/
-        metalView.device = device
         metalView.depthStencilPixelFormat = .depth32Float
         
         /*-- Init du pipeline --*/
@@ -138,8 +215,6 @@ class Renderer : NSObject {
 		Mesh.setDeviceAndInitBasicMeshes(device)
         
         super.init()
-        
-        metalView.delegate = self
     }
     func initClearColor(rgb: Vector3) {
         smR.set(rgb.x); smG.set(rgb.y); smB.set(rgb.z)
@@ -147,120 +222,87 @@ class Renderer : NSObject {
     func updateClearColor(rgb: Vector3) {
         smR.pos = rgb.x; smG.pos = rgb.y; smB.pos = rgb.z
     }
-    func getPositionFrom(_ locationInWindow: CGPoint, viewSize: CGSize, invertedY: Bool) -> Vector2 {
-        return Vector2(Float((locationInWindow.x / viewSize.width - 0.5) * fullFrame.width),
-                       Float((invertedY ? -1 : 1) * (locationInWindow.y / viewSize.height - 0.5) * fullFrame.height))
-    }
-    func setFrameFromViewSize(_ viewSize: CGSize, justSetFullFrame: Bool) {
-        let ratio = viewSize.width / viewSize.height
-        // 1. Full Frame
-        if ratio > 1 { // Landscape
-            fullFrame.width = 2 * ratio / Renderer.defaultBordRatio
-            fullFrame.height = 2 / Renderer.defaultBordRatio
-        }
-        else {
-            fullFrame.width = 2 / Renderer.defaultBordRatio
-            fullFrame.height = 2 / (ratio * Renderer.defaultBordRatio)
-        }
-        if justSetFullFrame {
-            return
-        }
-        // 2. Usable Frame
-        if ratio > 1 { // Landscape
-            usableFrame.width = min(2 * ratio, 2 * Renderer.ratioMax)
-            usableFrame.height = 2
-        }
-        else {
-            usableFrame.width = 2
-            usableFrame.height = min(2 / ratio, 2 / Renderer.ratioMin)
-        }
-        root.reshapeBranch()
-    }
-    
+	
     /*-- Static constants --*/
 	static private let metalVerticesBufferIndex = 0
 	static private let metalTextureIndex = 0
 	static private let metalPtuIndex = 3
-    static private let defaultBordRatio: CGFloat = 0.95
-    static private let ratioMin: CGFloat = 0.54
-    static private let ratioMax: CGFloat = 1.85
 }
 
-
-
 extension Renderer: MTKViewDelegate {
-    
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        
-        setFrameFromViewSize(size, justSetFullFrame: false)
-        
-        view.isPaused = false
-        GlobalChrono.isPaused = false
-    }
-    
-    func draw(in view: MTKView) {
-        guard let metalView = view as? MetalView else {
-            printerror("Pas une MetalView."); return
-        }
-        #if !os(OSX)
-        if metalView.isTransitioning {
-            guard let tmpSize = view.layer.presentation()?.bounds.size else {
-                printerror("Pas de presentation layer."); return
-            }
-            setFrameFromViewSize(tmpSize, justSetFullFrame: true)
-        }
-        #endif
-
-        // 0. Init du commandEncoder/commandBuffer, mesh, text...
-        guard let drawable = view.currentDrawable,
-            let renderPassDescriptor = view.currentRenderPassDescriptor
-            else {return}
-        let commandBuffer = commandQueue.makeCommandBuffer()
-        guard let cmdenc = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-            print("Error loading commandEncoder"); return}
+	func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+		guard let metalView = view as? CoqMetalView else {
+			printerror("Not attach to CoqMetalView.")
+			return
+		}
+		metalView.updateFrame()
+		metalView.root.reshapeBranch()
+		
+		view.isPaused = false
+		GlobalChrono.isPaused = false
+	}
+	
+	func draw(in view: MTKView) {
+		guard let metalView = view as? CoqMetalView, let root = metalView.root else {
+			printerror("Pas une MetalView."); return
+		}
+		#if !os(OSX)
+		if metalView.isTransitioning {
+			metalView.updateFrameInTransition()
+		}
+		#endif
+		
+		// 0. Init du commandEncoder/commandBuffer, mesh, text...
+		guard let drawable = view.currentDrawable,
+			let renderPassDescriptor = view.currentRenderPassDescriptor
+			else {return}
+		let commandBuffer = commandQueue.makeCommandBuffer()
+		guard let cmdenc = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+			print("Error loading commandEncoder"); return}
 		commandEncoder = cmdenc
-        cmdenc.setFragmentSamplerState(samplerState, index: 0)
-        cmdenc.setRenderPipelineState(pipelineState)
+		cmdenc.setFragmentSamplerState(samplerState, index: 0)
+		cmdenc.setRenderPipelineState(pipelineState)
 		if let dss = depthStencilState {
-        	cmdenc.setDepthStencilState(dss)
+			cmdenc.setDepthStencilState(dss)
 		}
 		
 		currentMesh = nil
 		currentTexture = nil
-        
-        // 1. Check le chrono/sleep.
-        GlobalChrono.update()
-        if GlobalChrono.shouldSleep {
-            view.isPaused = true
-            GlobalChrono.isPaused = true
-        }
-        
-        // 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
-        PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
-        root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
-        cmdenc.setVertexBytes(&PerFrameUniforms.pfu,
+		
+		// 1. Check le chrono/sleep.
+		GlobalChrono.update()
+		if GlobalChrono.shouldSleep {
+			view.isPaused = true
+			GlobalChrono.isPaused = true
+		}
+		
+		// 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
+		PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
+		root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
+		cmdenc.setVertexBytes(&PerFrameUniforms.pfu,
 							  length: MemoryLayout.size(ofValue: PerFrameUniforms.pfu),
 							  index: 2)
-        
-        // 3. Action du game engine avant l'affichage.
-        eventHandler.willDrawFrame()
-        
-        // 4. Mise à jour de la couleur de fond.
+		
+		// 3. Action du game engine avant l'affichage.
+		root.willDrawFrame()
+		
+		// 4. Mise à jour de la couleur de fond.
 		view.clearColor = MTLClearColorMake(Double(smR.pos), Double(smG.pos), Double(smB.pos), 1)
-        
-        // 5. Boucle d'affichage (parcourt l'arbre de noeud de la structure)
-        let sq = Squirrel(at: root)
-        repeat {
-            if let surface = setForDrawing(sq.pos)() {
-                surface.draw(with: cmdenc, and: self)
-            }
-        } while sq.goToNextToDisplay()
-        // 6. Fin. Soumettre au gpu...
-        cmdenc.endEncoding()
+		
+		// 5. Boucle d'affichage (parcourt l'arbre de noeud de la structure)
+		let sq = Squirrel(at: root)
+		repeat {
+			if let surface = setForDrawing(sq.pos)() {
+				surface.draw(with: cmdenc, and: self)
+			}
+		} while sq.goToNextToDisplay()
+		// 6. Fin. Soumettre au gpu...
+		cmdenc.endEncoding()
 		commandEncoder = nil
-        commandBuffer?.present(drawable)
-        commandBuffer?.commit()
-    }
+		commandBuffer?.present(drawable)
+		commandBuffer?.commit()
+	}
+	
 }
 
 private extension Surface {
@@ -333,3 +375,37 @@ private extension Node {
         return surface
     }
 }
+
+
+// GARBAGE
+
+/*
+func getPositionFrom(_ locationInWindow: CGPoint, viewSize: CGSize, invertedY: Bool) -> Vector2 {
+return Vector2(Float((locationInWindow.x / viewSize.width - 0.5) * fullFrame.width),
+Float((invertedY ? -1 : 1) * (locationInWindow.y / viewSize.height - 0.5) * fullFrame.height))
+}
+func setFrameFrom(viewFrame: CGRect, safeAreaFrame: CGRect?, alsoSetUsableFrame: Bool) {
+let ratio = viewFrame.width / viewFrame.height
+// 1. Full Frame
+if ratio > 1 { // Landscape
+fullFrame.width = 2 * ratio / Renderer.defaultBordRatio
+fullFrame.height = 2 / Renderer.defaultBordRatio
+}
+else {
+fullFrame.width = 2 / Renderer.defaultBordRatio
+fullFrame.height = 2 / (ratio * Renderer.defaultBordRatio)
+}
+if !alsoSetUsableFrame {
+return
+}
+// 2. Usable Frame
+if ratio > 1 { // Landscape
+usableFrame.width = min(2 * ratio, 2 * Renderer.ratioMax)
+usableFrame.height = 2
+}
+else {
+usableFrame.width = 2
+usableFrame.height = min(2 / ratio, 2 / Renderer.ratioMin)
+}
+}
+*/

@@ -169,20 +169,15 @@ extension Node {
     /*-- Private stuff --*/
     private func searchBranchForSelectablePrivate(relPos: Vector2, nodeToAvoid: Node?) -> Node? {
         let sq = Squirrel(at: self, relPos: relPos, scaleInit: .ones)
-        var candidate: Node? = nil
-        
-        // 1. Cas particulier pour le point de départ -> On ne peut pas aller au littleBro...
-        if sq.isIn, sq.pos.containsAFlag(Flag1.show), sq.pos !== nodeToAvoid {
-            // 1. Possibilité trouvé
-            if sq.pos.containsAFlag(Flag1.selectable) {
-                candidate = sq.pos
-                if !sq.pos.containsAFlag(Flag1.selectableRoot) {return candidate}
-            }
-            // 2. Aller en profondeur
-            if sq.pos.containsAFlag(Flag1.selectableRoot), sq.goDownP() {}
-            else {return candidate}
-        } else {return candidate}
-        
+		guard sq.isIn, sq.pos.containsAFlag(Flag1.show), sq.pos !== nodeToAvoid else { return nil }
+		var candidate: Node? = nil
+		// 1. Vérif la root
+		if sq.pos.containsAFlag(Flag1.selectable) {
+			candidate = sq.pos
+		}
+		// 2. Se placer au premier child
+		guard sq.pos.containsAFlag(Flag1.selectableRoot), sq.goDownP() else { return candidate }
+		
         while true {
             if sq.isIn, sq.pos.containsAFlag(Flag1.show), sq.pos !== nodeToAvoid {
                 // 1. Possibilité trouvé
@@ -209,6 +204,30 @@ extension Node {
             }
         }
     }
+	
+	func searchBranchForSelectableAndApplyFunction(_ function: (Node)->()) {
+		guard containsAFlag(Flag1.show) else {return}
+		if containsAFlag(Flag1.selectable) {
+			function(self)
+		}
+		guard containsAFlag(Flag1.selectableRoot), let firstChild = firstChild else {return}
+		let sq = Squirrel(at: firstChild)
+		while true {
+			if sq.pos.containsAFlag(Flag1.show) {
+				if sq.pos.containsAFlag(Flag1.selectable) {
+					function(sq.pos)
+				}
+				if sq.pos.containsAFlag(Flag1.selectableRoot), sq.goDown() { continue }
+			}
+			// 3. Remonter, si plus de petit-frère
+			while !sq.goRight() {
+				if !sq.goUp() {
+					printerror("Pas de branch.")
+					return
+				} else if sq.pos === self {return}
+			}
+		}
+	}
 }
 
 

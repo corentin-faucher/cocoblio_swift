@@ -114,7 +114,7 @@ class TiledSurface: Node, Surface {
 		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
 	) {
 		guard !pngTex.isString else {
-			printerror("Pas une texture de string")
+			printerror("String texture (need standand texture).")
 			tex = Texture.defaultString
 			trShow = SmTrans()
 			super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
@@ -148,12 +148,16 @@ class TiledSurface: Node, Surface {
 		piu.tile.j = Float(index % tex.n)
 	}
 	func updateTexture(_ newTexture: Texture) {
+		guard !newTexture.isString else {
+			printerror("String texture (need standand texture).")
+			return
+		}
 		tex = newTexture
 	}
 }
 
 class LanguageSurface: Node, Surface, Openable {
-	let tex: Texture
+	private(set) var tex: Texture
 	let mesh: Mesh = .sprite
 	var trShow: SmTrans = SmTrans()
 	
@@ -164,7 +168,7 @@ class LanguageSurface: Node, Surface, Openable {
 		 asParent: Bool = true, asElderBigbro: Bool = false
 	) {
 		guard !pngTex.isString else {
-			printerror("Pas une texture de string")
+			printerror("String texture (need standand texture).")
 			tex = Texture.defaultString
 			super.init(refNode, x, y, height, height, lambda: lambda, flags: flags,
 					   asParent: asParent, asElderBigbro: asElderBigbro)
@@ -183,6 +187,13 @@ class LanguageSurface: Node, Surface, Openable {
 		let i = Language.currentId
 		piu.tile = (Float(i % tex.m),
 					Float((i / tex.m) % tex.n))
+	}
+	func updateTexture(_ newTexture: Texture) {
+		guard !newTexture.isString else {
+			printerror("String texture (need standand texture).")
+			return
+		}
+		tex = newTexture
 	}
 }
 

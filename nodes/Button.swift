@@ -11,7 +11,7 @@ import Foundation
 class SwitchButton : Node, Actionable, Draggable {
     private var back: TiledSurface!
     private var nub: TiledSurface!
-    private var isOn: Bool
+    var isOn: Bool
     
     init(_ refNode: Node?, isOn: Bool,
          _ x: Float, _ y: Float, _ height: Float,
@@ -45,7 +45,8 @@ class SwitchButton : Node, Actionable, Draggable {
         nub.x.set(isOn ? 0.375 : -0.375)
         setBackColor()
     }
-    /** Simple touche. Permute l'état présent (n'effectue pas l'"action") */
+    /** Simple touche. Permute l'état présent.
+	* N'effectue pas l'"action", doit être effectué si besoin. */
     func justTapNub() {
         isOn = !isOn
         setBackColor()
