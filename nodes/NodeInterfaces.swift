@@ -8,6 +8,8 @@
 
 import Foundation
 
+
+
 protocol Openable : Node {
     func open()
 }
@@ -20,17 +22,34 @@ protocol Closeable : Node {
 * 1. On prend le noeud : "grab",
 * 2. On le déplace : "drag",
 * 3. On le relâche : "letGo".
-* Retourne s'il y a une "action / event".
+* Les position sont dans le référentiel du Draggable.
 * On utilise les flags selectable et selectableRoot pour les trouver.
 * (On peut être draggable mais pas actionable, e.g. le sliding menu.) */
 protocol Draggable : Node {
-    func grab(posInit: Vector2) -> Bool
-    func drag(posNow: Vector2) -> Bool
-    func letGo(speed: Vector2?) -> Bool
+    func grab(relPosInit: Vector2)
+    func drag(relPos: Vector2)
+    func letGo(speed: Vector2?)
+	func justTap()
 }
 
 
-/** Un noeud pouvant être activé (e.g. les boutons).
+protocol Scrollable : Node {
+	/** Scrolling with wheel. */
+	func scroll(up: Bool)
+	/** Scrolling with trackpad. */
+	func trackpadScrollBegan()
+	func trackpadScroll(deltaY: Float)
+	func trackpadScrollEnded()
+}
+
+protocol Cursorable : Node {
+	func moveAt(_ pos: Vector2)
+	func clickAt(_ pos: Vector2)
+	func unclick()
+}
+
+
+/** Un noeud pouvant être activé (e.g. les boutons ordinaires).
 * On utilise les flags selectable et selectableRoot pour les trouver. */
 protocol Actionable : Node {
     func action()
@@ -96,3 +115,31 @@ extension RelativeToParent {
         y.setRelToDef(shift: yDec, fix: isOpening)
     }
 }
+
+
+/*
+protocol Flagable {
+associatedtype BinType: BinaryInteger
+var flags: BinType {get set}
+}
+extension Flagable {
+/** Retirer des flags au noeud. */
+mutating func removeFlags(_ toRemove: BinType) {
+flags &= ~toRemove
+}
+/** Ajouter des flags au noeud. */
+mutating func addFlags(_ toAdd: BinType) {
+flags |= toAdd
+}
+mutating func toggleFlags(_ toToggle: BinType) {
+flags =
+}
+mutating func addRemoveFlags(_ toAdd: BinType, _ toRemove: BinType) {
+flags = (flags | toAdd) & ~toRemove
+}
+mutating func containsAFlag(_ flagsRef: BinType) -> Bool {
+return (flags & flagsRef) != 0
+}
+}
+*/
+

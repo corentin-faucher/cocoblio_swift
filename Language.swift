@@ -32,8 +32,8 @@ struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
         }
     }
     
-    fileprivate let id: Int
-    fileprivate let iso: String
+    let id: Int
+    let iso: String
 }
 
 enum Language : LanguageInfo, CaseIterable {
@@ -61,36 +61,37 @@ enum Language : LanguageInfo, CaseIterable {
 	}
 	
     static let defaultLanguage = english
-	
-	static var actionAfterLanguageChanged: (() -> Void)? = nil
     
     /// Langue actuel et son setter.
-	static var current: Language = loadPresentLanguage() {
+	static var current: Language = getSystemLanguage() {
 		didSet {
-			printdebug("change current Language \(current), with action: \(actionAfterLanguageChanged != nil)")
-			guard let action = actionAfterLanguageChanged else {return}
-			action()
+			guard current != oldValue else {return}
+			// (pour l'instant c'est juste l'arabe...)
+			currentIsRightToLeft = (current == .arabic)
+			currentDirectionFactor = currentIsRightToLeft ? -1 : 1
+			currentCharSpacing = evalCharSpacing()
+			Texture.updateAllLocStrings()
+			
+			guard let path = Bundle.main.path(forResource: Language.currentIso, ofType: "lproj") else {
+				printerror("Ne peut trouver le fichier pour \(Language.currentIso)"); return}
+			guard let bundle = Bundle(path: path) else {
+				printerror("Ne peut charger le bundle en \(path)"); return}
+			currentBundle = bundle
 		}
 	}
+	static private(set) var currentBundle: Bundle = Bundle.main
 	/** Écriture en arabe. */
-	static private(set) var currentIsRightToLeft = false {
-		didSet {
-			if currentIsRightToLeft {
-				currentDirectionFactor = -1
-				currentCharSpacing = -0.12
-			} else {
-				currentDirectionFactor = 1
-				currentCharSpacing = -0.07
-			}
-		}
-	}
+	static private(set) var currentIsRightToLeft = (Language.current == .arabic)
 	/** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
-	static private(set) var currentDirectionFactor: Float = 1
+	static private(set) var currentDirectionFactor: Float = (Language.current == .arabic) ? -1 : 1
 	/** L'espacement entre les Char (différent pour l'arabe) */
-	static private(set) var currentCharSpacing: Float = -0.07
+	static private(set) var currentCharSpacing: Float = evalCharSpacing()
+	static private func evalCharSpacing() -> Float {
+		currentIsRightToLeft ? -0.25 : -0.20
+	}
 	
     
-    /*-- Fonctions "helpers" --*/
+    /*-- Getter "helpers" --*/
 	/// Helper pour l'id utiliser dans les languageSurface (par exemple)
     static var currentId: Int {
         get {
@@ -107,7 +108,8 @@ enum Language : LanguageInfo, CaseIterable {
         return current == language
     }
 	
-	private static func loadPresentLanguage() -> Language {
+	/*-- Langue de l'OS. --*/
+	static func getSystemLanguage() -> Language {
 		if let language = BuildConfig.forcedLanguage {
             printwarning("Using fored language \(language).")
             return language
@@ -123,47 +125,25 @@ enum Language : LanguageInfo, CaseIterable {
         printwarning("Language not found. Taking default: \(defaultLanguage).")
         return defaultLanguage
     }
-	
 }
 
 /** Extension pour les surfaces de string localisées. */
 extension String {
     var localized: String? {
-        guard let path = Bundle.main.path(forResource: Language.currentIso, ofType: "lproj") else {
-            printerror("Ne peut trouver le fichier pour \(Language.currentIso)"); return nil}
-        guard let bundle = Bundle(path: path) else {
-            printerror("Ne peut charger le bundle en \(path)"); return nil}
-        return NSLocalizedString(self, tableName: nil, bundle: bundle, value: "", comment: "")
+		let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
+		guard locStr != "⁉️" else {
+			return nil
+		}
+		return locStr
     }
+	var localizedWithMain: String? {
+		let locStr = NSLocalizedString(self, tableName: nil, bundle: Bundle.main, value: "⁉️", comment: "")
+		guard locStr != "⁉️" else {
+			return nil
+		}
+		return locStr
+	}
 }
 
 
-
-/*
-static func getLanguageFrom(iso: String) -> Language {
-
-guard let language = codeToLang[iso] else {
-printerror("\(iso) language undefined")
-return english
-}
-return language
-}
-
-private static let codeToLang = [
-"fr" :  french,
-"en" :  english,
-"ja" :  japanese,
-"de" :  german,
-"it" :  italian,
-"es" :  spanish,
-"ar" :  arabic,
-"el" :  greek,
-"ru" :  russian,
-"sv" :    swedish,
-"zh-Hans": chinese_simpl,
-"zh-Hant": chinese_trad,
-"pt" :    portuguese,
-"ko" :    korean,
-]
-*/
 

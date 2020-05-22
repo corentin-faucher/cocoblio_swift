@@ -55,6 +55,10 @@ class RootNode : Node, Reshapable {
 class AppRootBase : RootNode {
 	private(set) var activeScreen: ScreenBase? = nil
 	var selectedNode: Node? = nil
+	/** Cas particulier de selectedNode. */
+	var grabbedNode: Draggable? = nil
+	var cursor: Cursorable? = nil
+	
 	
 	init(metalView: CoqMetalView) {
 		super.init(refNode: nil, metalView: metalView)
@@ -80,7 +84,7 @@ class AppRootBase : RootNode {
 			lastScreen.closeBranch()
 			if !lastScreen.containsAFlag(Flag1.persistentScreen) {
 				Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
-					printdebug("Disconnecting \(lastScreen).")
+//					printdebug("Disconnecting \(lastScreen).")
 					lastScreen.disconnect()
 				}
 			}

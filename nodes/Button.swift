@@ -8,7 +8,10 @@
 
 import Foundation
 
-class SwitchButton : Node, Actionable, Draggable {
+/** Un bouton switch est seulement Draggable, pas Actionnable.
+ * Par contre il y a tout de même la méthode "action" qui doit être overridé.
+ * L'action a lieu lors du drag. (ou du "justTouch") */
+class SwitchButton : Node, Draggable {
     private var back: TiledSurface!
     private var nub: TiledSurface!
     var isOn: Bool
@@ -31,51 +34,55 @@ class SwitchButton : Node, Actionable, Draggable {
     }
     private func initStructure() {
         makeSelectable()
-		back = TiledSurface(self, pngTex: Texture.getExistingPng("switch_back"), 0, 0, 1)
-		nub = TiledSurface(self, pngTex: Texture.getExistingPng("switch_front"), isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
+		
+		back = TiledSurface(self, pngTex:
+			Texture.tryToGetExistingPng("switch_back") ?? Texture.getNewPng("switch_back", m: 1, n: 1),
+			0, 0, 1)
+		nub = TiledSurface(self, pngTex:
+			Texture.tryToGetExistingPng("switch_front") ?? Texture.getNewPng("switch_front", m: 1, n: 1),
+			isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
+		
         setBackColor()
     }
     
+	func fix(isOn: Bool) {
+		self.isOn = isOn
+		nub.x.set(isOn ? 0.375 : -0.375)
+		setBackColor()
+	}
+	
     func action() {
-        printerror("Empty switchButton! (override...)")
+        printerror("To be overridden.")
     }
     
-    func fix(isOn: Bool) {
-        self.isOn = isOn
-        nub.x.set(isOn ? 0.375 : -0.375)
-        setBackColor()
-    }
-    /** Simple touche. Permute l'état présent.
-	* N'effectue pas l'"action", doit être effectué si besoin. */
-    func justTapNub() {
-        isOn = !isOn
-        setBackColor()
-        letGo(speed: nil)
-    }
+    /** Simple touche. Permute l'état présent et effectue l'action. */
+	func justTap() {
+		isOn = !isOn
+		setBackColor()
+		letGo(speed: nil)
+		action()
+	}
     
-    func grab(posInit: Vector2) -> Bool {
-        return false
+	func grab(relPosInit posInit: Vector2) {
+		// (Rien à faire pour SwitchButton)
     }
     /** Déplacement en cours du "nub", aura besoin de letGoNub.
     * newX doit être dans le ref. du SwitchButton.
-    * Retourne true si l'état à changer (i.e. action requise ?) */
-    func drag(posNow: Vector2) -> Bool {
+    * Effectue l'action si changement d'état. */
+    func drag(relPos: Vector2) {
         // 1. Ajustement de la position du nub.
-        nub.x.pos = min(max(posNow.x, -0.375), 0.375)
+        nub.x.pos = min(max(relPos.x, -0.375), 0.375)
         // 2. Vérif si changement
-        if isOn != (posNow.x > 0) {
-            isOn = posNow.x > 0
+        if isOn != (relPos.x > 0) {
+            isOn = relPos.x > 0
             setBackColor()
-            return true
+            action()
         }
-        return false
     }
     
     /** Ne fait que placer le nub comme il faut. (À faire après avoir dragué.) */
-    @discardableResult
-    func letGo(speed: Vector2?) -> Bool {
+    func letGo(speed: Vector2?) {
         nub.x.pos = isOn ? 0.375 : -0.375
-        return false
     }
     
     private func setBackColor() {

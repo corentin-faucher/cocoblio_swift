@@ -15,19 +15,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var metalView: MetalView!
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+		Texture.resume()
+		Sound.resume()
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
+		Texture.suspend()
+		Sound.suspend()
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }
+	
+	func applicationWillResignActive(_ notification: Notification) {
+		metalView.pause()
+		Sound.suspend()
+		Texture.suspend()
+	}
 
     func applicationDidResignActive(_ notification: Notification) {
-        metalView.pause()
     }
     func applicationDidBecomeActive(_ notification: Notification) {
+		if !Texture.loaded {
+			Texture.resume()
+			Sound.resume()
+		}
         metalView.touch()
     }
 }

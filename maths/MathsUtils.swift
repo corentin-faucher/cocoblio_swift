@@ -17,6 +17,7 @@ typealias Vector3 = SIMD3<Float>
 typealias Vector4 = SIMD4<Float>
 
 
+
 extension float4x4 {
     mutating func scale(with scale: Vector3) {
         self.columns.0 *= scale.x

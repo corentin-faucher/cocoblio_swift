@@ -70,6 +70,18 @@ class Node : CopyableNode {
         while sq.goUpP() {}
         return sq.v
     }
+	func getPosInGrandPa(_ grandPa: Node) -> Vector2 {
+		let sq = Squirrel(at: self)
+		repeat {
+			if let currentParent = sq.pos.parent,
+				currentParent === grandPa
+			{
+					return sq.v
+			}
+		} while sq.goUpP()
+		printerror("No grandPa encountered.")
+		return sq.v
+	}
     /** relativePosOf: La position obtenue est dans le référentiel du noeud présent,
      *  i.e. au niveau des node.children.
      * (Si node == nil -> retourne absPos tel quel,

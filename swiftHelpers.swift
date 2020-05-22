@@ -24,8 +24,53 @@ func printdebug(_ message: String, function: String = #function, file: String = 
 	#endif
 }
 
-func toHex(_ n: UInt) -> String {
-	String(format: "0x%02X", n)
+extension UnsignedInteger {
+	func toHex() -> String {
+		String(format: "0x%02X", UInt64(self))
+	}
+}
+
+/*-- Charactere/unicode --*/
+extension Character {
+	func toUInt32() -> UInt32 {
+		guard let us = self.unicodeScalars.first else {printerror("Cannot convert char \(self) to UInt32."); return 0}
+		return us.value
+	}
+}
+extension UInt32 {
+	func toCharacter() -> Character {
+		guard let us = Unicode.Scalar(self) else {printerror("Cannot convert UInt32 \(self) to char"); return "?"}
+		return Character(us)
+	}
+}
+extension String {
+	func substring(lowerIndex: Int, exHighIndex: Int) -> String? {
+		guard lowerIndex < count, lowerIndex < exHighIndex else {
+			return nil
+		}
+		let start = index(startIndex, offsetBy: lowerIndex)
+		let end = index(start, offsetBy: min(exHighIndex - lowerIndex,
+											 count - lowerIndex))
+		return String(self[start..<end])
+	}
+	func substring(atIndex: Int) -> String? {
+		return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)
+	}
+}
+
+/*-- Optional --*/
+
+extension Optional {
+	/** Comme ?? mais affiche un message d'avertissement. */
+	func or(_ defaultValue: Wrapped, warning: String, function: String = #function, file: String = #file) -> Wrapped {
+		switch self {
+			case .none:
+				printwarning(warning, function: function, file: file)
+				return defaultValue
+			case .some(let value):
+				return value
+		}
+	}
 }
 
 /*-- Text file helper --*/
@@ -111,6 +156,35 @@ extension Array {
 			Array<T>($0.bindMemory(to: T.self))
 		}
 		return intArr
+	}
+}
+
+/*-- Relatif à l'app / Bundle --*/
+
+extension Bundle {
+	var displayName: String {
+		get {
+			guard let name = object(forInfoDictionaryKey: "CFBundleName") as? String else {
+				printerror("No CFBundleName."); return "CoqApp"
+			}
+			return name
+		}
+	}
+	var version: String {
+		get {
+			guard let name = object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+				printerror("No CFBundleShortVersionString."); return "0.0"
+			}
+			return name
+		}
+	}
+	var build: String {
+		get {
+			guard let number = object(forInfoDictionaryKey: "CFBundleVersion") as? String else {
+				printerror("No CFBundleVersion."); return "0"
+			}
+			return number
+		}
 	}
 }
 

@@ -166,8 +166,6 @@ class Renderer : NSObject {
 		guard let device = metalView.device else {
             fatalError("No GPU in metalView.")
         }
-		
-		printdebug("Renderer init.")
         commandQueue = device.makeCommandQueue()
         
         /*-- Init de la vue. --*/
@@ -209,7 +207,7 @@ class Renderer : NSObject {
 		}
         
         /*-- Init des Texture avec device (gpu) car utilisé pour loader les pngs. --*/
-		Texture.initWith(device: device)
+		Texture.initWith(device: device, drawableSize: metalView.drawableSize)
         
         /*-- Init de Mesh avec device (gpu) car utilisé pour créer les buffers. --*/
 		Mesh.setDeviceAndInitBasicMeshes(device)
@@ -235,6 +233,9 @@ extension Renderer: MTKViewDelegate {
 			printerror("Not attach to CoqMetalView.")
 			return
 		}
+		
+		Texture.checkFontSize(with: size)
+		
 		metalView.updateFrame()
 		metalView.root.reshapeBranch()
 		
@@ -246,6 +247,7 @@ extension Renderer: MTKViewDelegate {
 		guard let metalView = view as? CoqMetalView, let root = metalView.root else {
 			printerror("Pas une MetalView."); return
 		}
+		guard !view.isPaused else { printwarning("Draw while paused."); return }
 		#if !os(OSX)
 		if metalView.isTransitioning {
 			metalView.updateFrameInTransition()

@@ -19,16 +19,18 @@ extension Surface {
 				width.set(height.realPos * tex.ratio, fix, true)
 			}
 		}
-		if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
+		if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame, let theParent = parent {
 			bigBroFrame.update(width: width.realPos, height: height.realPos, fix: true)
+			if tex.string == "Lessons" {
+				printdebug("updateRatio end Lessons \(width.realPos) x \(height.realPos), frame \(bigBroFrame.width.realPos) x \(bigBroFrame.height.realPos)")
+				printdebug("parent \(theParent.width.realPos) x \(theParent.height.realPos)")
+			}
 		}
 		if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
 			theParent.width.set(width.realPos)
 			theParent.height.set(height.realPos)
 		}
-		if tex.string == "Default" {
-			printdebug("updateRatio end \(width.realPos) x \(height.realPos)")
-		}
+		
 	}
 }
 
@@ -58,7 +60,6 @@ class StringSurface: Node, Surface, Openable {
 			addFlags(Flag1.surfaceWithCeiledWidth)
 		}
 		piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-//		updateRatio(fix: true)
 		
 	}
 	@discardableResult
@@ -147,6 +148,7 @@ class TiledSurface: Node, Surface {
 	func updateTileJ(_ index: Int) {
 		piu.tile.j = Float(index % tex.n)
 	}
+	/** Ne change que la texture (pas de updateRatio). */
 	func updateTexture(_ newTexture: Texture) {
 		guard !newTexture.isString else {
 			printerror("String texture (need standand texture).")
@@ -163,9 +165,8 @@ class LanguageSurface: Node, Surface, Openable {
 	
 	@discardableResult
 	init(_ refNode: Node?, pngTex: Texture,
-		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
-		 flags: Int = 0, ceiledWidth: Float? = nil,
-		 asParent: Bool = true, asElderBigbro: Bool = false
+		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
+		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
 	) {
 		guard !pngTex.isString else {
 			printerror("String texture (need standand texture).")
@@ -235,7 +236,7 @@ class TestFrame : Node, Surface, Reshapable, Openable {
 	init(_ refNode: Node) {
 		tex = Texture.testFrame
 		super.init(refNode, 0, 0, refNode.width.realPos, refNode.height.realPos, lambda: 10,
-				   flags: Flag1.surfaceDontRespectRatio)
+				   flags: Flag1.surfaceDontRespectRatio | Flag1.notToAlign)
 	}
 	required init(other: Node) {
 		tex = (other as! TestFrame).tex

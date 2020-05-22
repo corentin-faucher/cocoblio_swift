@@ -159,6 +159,20 @@ struct CountDown {
             ringTimeMS = Int64(newRingTimeSec * 1000)
         }
     }
+	var elapsedMS64: Int64 {
+		return isActive ? (GlobalChrono.elapsedMS - time) : time
+	}
+	var remainingMS: Int64 {
+		let elapsed = elapsedMS64
+		if elapsed > ringTimeMS {
+			return 0
+		} else {
+			return ringTimeMS - elapsed
+		}
+	}
+	var remainingSec: Double {
+		return Double(remainingMS) / 1000
+	}
     
     init(ringMillisec: Int64) {
         isActive = false

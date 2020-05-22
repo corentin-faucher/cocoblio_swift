@@ -46,11 +46,12 @@ struct KeyData : KeyboardKey {
 
 /** MyKeyCode... */
 enum MKC {
-	static let space = 51
+	static let space = 51 // (Fait parti des Keycode "ordinaire")
+	// Keycodes spéciaux ayant une string associable
 	static let delete = 52
 	static let return_ = 53
-	static let escape = 54
-	static let tab = 55
+	static let tab = 54
+	// Keycodes de contrôle
 	static let capsLock = 60
 	static let control = 61
 	static let shift = 62
@@ -60,6 +61,9 @@ enum MKC {
 	static let rightShift = 66
 	static let rightOption = 67
 	static let rightCommand = 68
+	// Autre Keycodes Spéciaux
+	static let escape = 70
+	// Pour les "autres" non définie (e.g. fn, kana...)
 	static let empty = 99
 }
 

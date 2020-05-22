@@ -43,7 +43,9 @@ enum Flag1 {
     static let relativeToBottom = 1<<17
 	static let allRelatives = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom
 	
+	static let notToAlign = 1<<18
+	
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<18
+    static let firstCustomFlag = 1<<19
 }
 

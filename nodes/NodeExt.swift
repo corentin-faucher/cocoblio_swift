@@ -3,32 +3,6 @@
 extension Node : KotlinLikeScope {}
 
 extension Node {
-	/** Rempli un noeud avec une surface. (e.g. remplir un bouton.) */
-	func fillWithTiledSurface(pngTex: Texture, i: Int = 0) {
-		guard firstChild == nil, !pngTex.isString else { printerror("A déjà quelque chose."); return }
-		
-		scaleX.set(height.realPos)
-		scaleY.set(height.realPos)
-		width.set(1)
-		height.set(1)
-		TiledSurface(self, pngTex: pngTex, 0, 0, 1, i: i, flags: Flag1.giveSizesToParent)
-	}
-	func addTiledSurface(pngTex: Texture, _ x: Float, _ y: Float, _ height: Float,
-					lambda: Float = 0, i: Int = 0, flags: Int = 0) {
-		TiledSurface(self, pngTex: pngTex, x, y, height,
-					 lambda: lambda, i: i, flags: flags)
-	}
-	/** Rempli un noeud avec une languageSurface . (e.g. remplir un bouton.) */
-	func fillWithLanguageSurface(pngTex: Texture) {
-		guard firstChild == nil else { printerror("A déjà quelque chose."); return }
-		scaleX.set(height.realPos)
-		scaleY.set(height.realPos)
-		width.set(1)
-		height.set(1)
-		LanguageSurface(self, pngTex: pngTex, 0, 0, 1, lambda: 0,
-						i: 0, flags: Flag1.giveSizesToParent)
-	}
-	
 	/** Ajout d'un frame et string à un noeud. (e.g. remplir un bouton.)
 	* La hauteur devient 1 et ses scales deviennent sa hauteur.
 	* (Pour avoir les objets (label...) relatif au noeud.)
@@ -47,11 +21,13 @@ extension Node {
 		let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
 		let frame = Frame(self, isInside: false, delta: delta, lambda: 0,
 			  texture: frameTex, flags: Flag1.giveSizesToParent)
-		// Init des dimensions du frame et du parent (i.e. le noeud courant)
+		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
+									   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
+		
+		// Init des dimensions du frame et du parent, i.e. le noeud courant,
+		// Utile pour connaitre sa hauteur, pas la largeur. La largeur sera déterminer quand le noeud sera ouvert.
 		frame.preSetWidthAndHeightFrom(width: scaleCeiledWidth ?? 1, height: 1)
 		
-		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
-					  flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
 		return stringSurf
 	}
 	/** Ajout d'une StringSurface à la position voulue.
@@ -70,7 +46,26 @@ extension Node {
 										 frameTex: frameTex,
 										 ceiledWidth: ceiledWidth, delta: delta)
 	}
-    
+	/** Ajout d'une TiledSurface avec Frame.
+	* Struct : root->{frame, tiledSurface}. Retourne la TiledSurface. */
+	@discardableResult
+	func addFramedTiledSurface(surfTex: Texture, frameTex: Texture,
+							   _ x: Float, _ y: Float, _ height: Float, i: Int,
+						 lambda: Float = 0, flags: Int = 0,
+						 delta: Float = 0.4) -> TiledSurface? {
+		guard !surfTex.isString, !frameTex.isString else {
+			printerror("Bad textures"); return nil
+		}
+		let node = Node(self, x, y, height, height,
+						lambda: lambda, flags: flags)
+		
+		Frame(node, isInside: false, delta: delta * height, lambda: 0,
+			  texture: frameTex, flags: Flag1.giveSizesToParent)
+		let tiledSurf = TiledSurface(node, pngTex: surfTex, 0, 0, height, i: i, flags: Flag1.giveSizesToBigBroFrame)
+		return tiledSurf
+	}
+	
+	
     /** !Debug Option!
      * Ajout d'une surface "frame" pour visualiser la taille d'un "bloc".
      * L'option Node.showFrame doit être "true". */
@@ -104,7 +99,7 @@ extension Node {
     @discardableResult
     func alignTheChildren(alignOpt: Int, ratio: Float = 1, spacingRef: Float = 1) -> Int {
         var sq = Squirrel(at: self)
-        guard sq.goDownWithout(flag: Flag1.hidden) else {
+        guard sq.goDownWithout(flag: Flag1.hidden|Flag1.notToAlign) else {
             printerror("pas de child."); return 0
         }
         // 0. Les options
@@ -123,7 +118,7 @@ extension Node {
                 if (sq.pos.deltaY*2 > h) {
                     h = sq.pos.deltaY*2
                 }
-            } while sq.goRightWithout(flag: Flag1.hidden)
+			} while sq.goRightWithout(flag: Flag1.hidden|Flag1.notToAlign)
         } else {
             repeat {
                 h += sq.pos.deltaY * 2 * spacingRef
@@ -131,7 +126,7 @@ extension Node {
                 if (sq.pos.deltaX * 2 > w) {
                     w = sq.pos.deltaX * 2
                 }
-            } while sq.goRightWithout(flag: Flag1.hidden)
+            } while sq.goRightWithout(flag: Flag1.hidden|Flag1.notToAlign)
         }
         // 2. Ajuster l'espacement
         var spacing: Float = 0
@@ -155,7 +150,7 @@ extension Node {
         }
         // 4. Aligner les éléments
         sq = Squirrel(at: self)
-        guard sq.goDownWithout(flag: Flag1.hidden) else {
+        guard sq.goDownWithout(flag: Flag1.hidden|Flag1.notToAlign) else {
             printerror("pas de child2.");return 0
             
         }
@@ -172,7 +167,7 @@ extension Node {
                 }
                 
                 x += sq.pos.deltaX * spacingRef + spacing/2
-            } while (sq.goRightWithout(flag: Flag1.hidden))
+            } while (sq.goRightWithout(flag: Flag1.hidden|Flag1.notToAlign))
             return n
         }
         
@@ -188,7 +183,7 @@ extension Node {
             }
             
             y -= sq.pos.deltaY * spacingRef + spacing / 2
-        } while (sq.goRightWithout(flag: Flag1.hidden))
+        } while (sq.goRightWithout(flag: Flag1.hidden|Flag1.notToAlign))
         
         return n
     }

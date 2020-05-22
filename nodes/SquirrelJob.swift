@@ -205,17 +205,19 @@ extension Node {
         }
     }
 	
-	func searchBranchForSelectableAndApplyFunction(_ function: (Node)->()) {
-		guard containsAFlag(Flag1.show) else {return}
+	/** Recherche du premier selectable du type voulu.
+	* Le type est déduit par la valeur retournée attendue. */
+	func searchBranchForFirstSelectableTyped<T: Node>() -> T? {
+		guard containsAFlag(Flag1.show) else {return nil}
 		if containsAFlag(Flag1.selectable) {
-			function(self)
+			if let typed = self as? T {return typed}
 		}
-		guard containsAFlag(Flag1.selectableRoot), let firstChild = firstChild else {return}
+		guard containsAFlag(Flag1.selectableRoot), let firstChild = firstChild else {return nil}
 		let sq = Squirrel(at: firstChild)
 		while true {
 			if sq.pos.containsAFlag(Flag1.show) {
 				if sq.pos.containsAFlag(Flag1.selectable) {
-					function(sq.pos)
+					if let typed = sq.pos as? T {return typed}
 				}
 				if sq.pos.containsAFlag(Flag1.selectableRoot), sq.goDown() { continue }
 			}
@@ -223,11 +225,36 @@ extension Node {
 			while !sq.goRight() {
 				if !sq.goUp() {
 					printerror("Pas de branch.")
-					return
-				} else if sq.pos === self {return}
+					return nil
+				} else if sq.pos === self {return nil}
 			}
 		}
 	}
+	
+	func searchBranchForFirstSelectableUsing(_ testIsValid: (Node)->Bool) -> Node? {
+		guard containsAFlag(Flag1.show) else {return nil}
+		if containsAFlag(Flag1.selectable) {
+			if testIsValid(self) { return self }
+		}
+		guard containsAFlag(Flag1.selectableRoot), let firstChild = firstChild else {return nil}
+		let sq = Squirrel(at: firstChild)
+		while true {
+			if sq.pos.containsAFlag(Flag1.show) {
+				if sq.pos.containsAFlag(Flag1.selectable) {
+					if testIsValid(sq.pos) { return sq.pos }
+				}
+				if sq.pos.containsAFlag(Flag1.selectableRoot), sq.goDown() { continue }
+			}
+			// 3. Remonter, si plus de petit-frère
+			while !sq.goRight() {
+				if !sq.goUp() {
+					printerror("Pas de branch.")
+					return nil
+				} else if sq.pos === self {return nil}
+			}
+		}
+	}
+	
 }
 
 
