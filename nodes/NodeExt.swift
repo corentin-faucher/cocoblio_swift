@@ -10,7 +10,7 @@ extension Node {
 	* Retourne (seulement) la StringSurface ajoutée. */
 	@discardableResult
 	func fillWithFramedString(strTex: Texture, frameTex: Texture,
-							ceiledWidth: Float? = nil, delta: Float = 0.4) -> StringSurface? {
+							ceiledWidth: Float? = nil, relDelta: Float = 0.2) -> StringSurface? {
 		guard firstChild == nil else { printerror("A déjà quelque chose."); return nil }
 		guard strTex.isString, !frameTex.isString else {
 			printerror("Bad textures"); return nil
@@ -19,14 +19,13 @@ extension Node {
 		scaleX.set(height.realPos)
 		scaleY.set(height.realPos)
 		let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
-		let frame = Frame(self, isInside: false, delta: delta, lambda: 0,
+
+		Frame(self, delta: relDelta, lambda: 0,
 			  texture: frameTex, flags: Flag1.giveSizesToParent)
 		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
 									   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
+		stringSurf.updateRatio(fix: true)
 		
-		// Init des dimensions du frame et du parent, i.e. le noeud courant,
-		// Utile pour connaitre sa hauteur, pas la largeur. La largeur sera déterminer quand le noeud sera ouvert.
-		frame.preSetWidthAndHeightFrom(width: scaleCeiledWidth ?? 1, height: 1)
 		
 		return stringSurf
 	}
@@ -36,7 +35,7 @@ extension Node {
 	func addFramedString(strTex: Texture, frameTex: Texture,
 						 _ x: Float, _ y: Float, _ height: Float,
 						 lambda: Float = 0, flags: Int = 0,
-						 ceiledWidth: Float? = nil, delta: Float = 0.4) -> StringSurface? {
+						 ceiledWidth: Float? = nil, relDelta: Float = 0.2) -> StringSurface? {
 		guard strTex.isString, !frameTex.isString else {
 			printerror("Bad textures"); return nil
 		}
@@ -44,7 +43,7 @@ extension Node {
 			 lambda: lambda, flags: flags)
 		return node.fillWithFramedString(strTex: strTex,
 										 frameTex: frameTex,
-										 ceiledWidth: ceiledWidth, delta: delta)
+										 ceiledWidth: ceiledWidth, relDelta: relDelta)
 	}
 	/** Ajout d'une TiledSurface avec Frame.
 	* Struct : root->{frame, tiledSurface}. Retourne la TiledSurface. */
@@ -59,7 +58,7 @@ extension Node {
 		let node = Node(self, x, y, height, height,
 						lambda: lambda, flags: flags)
 		
-		Frame(node, isInside: false, delta: delta * height, lambda: 0,
+		Frame(node, delta: delta * height, lambda: 0,
 			  texture: frameTex, flags: Flag1.giveSizesToParent)
 		let tiledSurf = TiledSurface(node, pngTex: surfTex, 0, 0, height, i: i, flags: Flag1.giveSizesToBigBroFrame)
 		return tiledSurf

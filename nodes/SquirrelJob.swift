@@ -125,15 +125,15 @@ extension Node {
     func closeBranch() {
         if !containsAFlag(Flag1.exposed) {
             removeFlags(Flag1.show)
-            (self as? Closeable)?.close()
         }
+		(self as? Closeable)?.close()
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
         while true {
             if !sq.pos.containsAFlag(Flag1.exposed) {
                 sq.pos.removeFlags(Flag1.show)
-                (sq.pos as? Closeable)?.close()
             }
+			(sq.pos as? Closeable)?.close()
             
             if sq.goDown() {continue}
             while !sq.goRight() {

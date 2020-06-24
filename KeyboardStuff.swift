@@ -13,25 +13,6 @@ import Carbon
 import Carbon.HIToolbox
 #endif
 
-/*
-protocol EventsHandler {
-	func singleTap(pos: Vector2)
-	func initTouchDrag()
-	func touchDrag(posNow: Vector2)
-	func letTouchDrag(vit: Vector2)
-	
-	func keyDown(key: KeyboardKey)
-	func keyUp(key: KeyboardKey)
-	func modifiersChangedTo(_ newModifiers: UInt)
-	
-	func appStart()
-	func configurationChanged()
-	func appPaused()
-	
-	func willDrawFrame()
-}
-*/
-
 protocol KeyboardKey {
 	var keycode: UInt16 { get }
 	var keymod: UInt { get }

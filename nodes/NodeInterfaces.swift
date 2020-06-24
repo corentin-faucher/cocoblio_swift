@@ -28,7 +28,7 @@ protocol Closeable : Node {
 protocol Draggable : Node {
     func grab(relPosInit: Vector2)
     func drag(relPos: Vector2)
-    func letGo(speed: Vector2?)
+    func letGo() // (iOS ne fournit pas la vitesse)
 	func justTap()
 }
 

@@ -11,17 +11,21 @@ import Foundation
 /*-- Console info --*/
 
 func printerror(_ message: String, function: String = #function, file: String = #file) {
-	print("❌ Error: \(message) in \(function) of file \(file)")
+	print("❌ Error: \(message) in \(function) of file \((file as NSString).lastPathComponent)")
 }
 
 func printwarning(_ message: String, function: String = #function, file: String = #file) {
-	print("⚠️ Warn.: \(message) in \(function) of file \(file)")
+	print("⚠️ Warn.: \(message) in \(function) of file \((file as NSString).lastPathComponent)")
 }
 
 func printdebug(_ message: String, function: String = #function, file: String = #file) {
 	#if DEBUG
-	print("🐞 Debug.: \(message) in \(function) of file \(file)")
+	print("🐞 Debug.: \(message) in \(function) of file \((file as NSString).lastPathComponent)")
 	#endif
+}
+
+func printnoln(_ message: String) {
+	print(message, terminator: "")
 }
 
 extension UnsignedInteger {
@@ -35,6 +39,9 @@ extension Character {
 	func toUInt32() -> UInt32 {
 		guard let us = self.unicodeScalars.first else {printerror("Cannot convert char \(self) to UInt32."); return 0}
 		return us.value
+	}
+	func isAlphaNumeric() -> Bool {
+		return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
 	}
 }
 extension UInt32 {
@@ -56,6 +63,9 @@ extension String {
 	func substring(atIndex: Int) -> String? {
 		return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)
 	}
+	func char(atIndex: Int) -> Character? {
+		return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)?.first
+	}
 }
 
 /*-- Optional --*/
@@ -71,27 +81,6 @@ extension Optional {
 				return value
 		}
 	}
-}
-
-/*-- Text file helper --*/
-
-func getContentOfTextFile(_ textFileName: String, withExtension ext: String = "txt", subdir: String?, showError: Bool = true) -> String?
-{
-	guard let url = Bundle.main.url(forResource: textFileName,
-									withExtension: ext,
-									subdirectory: subdir) else {
-		if showError {
-			printerror("Cannot load \(textFileName).txt in \(subdir ?? "\"\"").")
-		}
-		return nil
-	}
-	guard let fileContent = try? String(contentsOf: url) else {
-		if showError {
-			printerror("Cannot put content of \(textFileName).txt in string.")
-		}
-		return nil
-	}
-	return fileContent
 }
 
 /*-- Array/Dictionnary of weak element (evanescent element) --*/

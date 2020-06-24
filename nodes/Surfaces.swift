@@ -7,30 +7,30 @@ protocol Surface : Node {
 	func updateRatio(fix: Bool)
 }
 
+protocol FlippableSurface {
+	var trFlip: SmTrans { get set }
+}
+
 extension Surface {
 	/** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
 	* Sinon, on ne fait que vérifier le frame voisin
 	* et le parent. */
 	func updateRatio(fix: Bool) {
-		if !containsAFlag(Flag1.surfaceDontRespectRatio) {
-			if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-				width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
-			} else {
-				width.set(height.realPos * tex.ratio, fix, true)
-			}
+		guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
+		
+		if containsAFlag(Flag1.surfaceWithCeiledWidth) {
+			width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
+		} else {
+			width.set(height.realPos * tex.ratio, fix, false)
 		}
-		if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame, let theParent = parent {
-			bigBroFrame.update(width: width.realPos, height: height.realPos, fix: true)
-			if tex.string == "Lessons" {
-				printdebug("updateRatio end Lessons \(width.realPos) x \(height.realPos), frame \(bigBroFrame.width.realPos) x \(bigBroFrame.height.realPos)")
-				printdebug("parent \(theParent.width.realPos) x \(theParent.height.realPos)")
-			}
+		if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
+			bigBroFrame.updateWithLittleBro(fix: fix)
 		}
 		if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
+//			print("giveng size to parent.")
 			theParent.width.set(width.realPos)
 			theParent.height.set(height.realPos)
 		}
-		
 	}
 }
 
@@ -95,7 +95,7 @@ class StringSurface: Node, Surface, Openable {
 			printerror("Not a mutable string texture.")
 			return
 		}
-		tex.updateString(newString)
+		tex.updateAsMutableString(newString)
 	}
 	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
 	func updateTextureToConstantString(_ newString: String) {
@@ -185,7 +185,7 @@ class LanguageSurface: Node, Surface, Openable {
 		super.init(other: other)
 	}
 	func open() {
-		let i = Language.currentId
+		let i = Language.currentTileId
 		piu.tile = (Float(i % tex.m),
 					Float((i / tex.m) % tex.n))
 	}

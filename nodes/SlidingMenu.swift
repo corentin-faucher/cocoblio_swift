@@ -15,7 +15,8 @@ import Foundation
 * checkItem : Methode/ext de noeud pour mettre à jour les noeud-boutons.
 * getIndicesRangeAtOpening : exécuter à l'ouverture du sliding menu et retourne le range attendu des items.
 * getPosIndex : la position de l'indice où on est centré à l'ouverture. */
-class SlidingMenu : Node, Draggable, Scrollable, Openable {
+class SlidingMenu : Node, Scrollable, Openable, Closeable {
+	private unowned let metalView: CoqMetalView
 	private let nDisplayed: Int
     private let spacing: Float
 	private let addNewItem: ((_ menu: Node, _ index: Int) -> Node)
@@ -24,25 +25,24 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
     private var menuGrabPosY: Float? = nil
 	private var indicesRange: ClosedRange<Int>? = nil
     private var menu: Node! // Le menu qui "glisse" sur le noeud racine.
+	private var scrollBar: SlidingMenuScrollBar!
     private var vitY = SmoothPos(0, 4) // La vitesse lors du "fling"
 	private var vitYm1: Float = 0
     private var deltaT = Chrono() // Pour la distance parcourue
     private var flingChrono = Chrono() // Temps de "vol"
-    /** Le déplacement maximal du menu en y. 0 si n <= nD. */
-    private var menuDeltaYMax: Float {
-		return 0.5 * itemHeight * Float(max((indicesRange?.count ?? 0) - nDisplayed, 0))
-    }
+    
     private var itemHeight: Float {
         return height.realPos / Float(nDisplayed)
     }
     @discardableResult
-    init(_ refNode: Node, nDisplayed: Int,
+	init(_ refNode: Node, nDisplayed: Int, metalView: CoqMetalView,
         _ x: Float, _ y: Float, width: Float, height: Float,
         spacing: Float,
         addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Node),
         getIndicesRangeAtOpening: @escaping (() -> ClosedRange<Int>?),
         getPosIndex: @escaping (() -> Int)
     ) {
+		self.metalView = metalView
         self.nDisplayed = nDisplayed
         self.spacing = spacing
         self.addNewItem = addNewItem
@@ -52,12 +52,17 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
         super.init(refNode,
                    x, y, width, height, lambda: 10)
         makeSelectable()
-        menu = Node(self, 0, 0, width, height, lambda: 20)
+		let scrollBarWidth = width * 0.025
+		menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20)
+		
+		scrollBar = SlidingMenuScrollBar(parent: self, width: scrollBarWidth)
+		
         tryToAddFrame()
     }
-    required init(other: Node
-    ) {
+    required init(other: Node)
+	{
         let toCloneMenu = other as! SlidingMenu
+		metalView = toCloneMenu.metalView
         nDisplayed = toCloneMenu.nDisplayed
         spacing = toCloneMenu.spacing
         addNewItem = toCloneMenu.addNewItem
@@ -69,11 +74,31 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
         tryToAddFrame()
     }
     
-	/*-- Draggable --*/
-	#warning("utile pour iOS ? menuGrabPosY, drag avec pos...")
+	
+	/** OffsetRatio = */
+	func setOffsetRatio(_ offsetRatio: Float, letGo: Bool) {
+		let DeltaY = getMenuDeltaYMax()
+		let newy = menu.height.realPos * offsetRatio - DeltaY
+		if letGo {
+			setMenuYpos(yCandIn: newy, snap: true, fix: false)
+		} else {
+			menu.y.set(newy, true)
+		}
+		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
+		checkItemsVisibility(openNode: true)
+	}
+	/** Retourne menu.height / slidmenu.height. Typiquement > 1 (pas besoine de sliding menu si < 1) */
+	func getContentFactor() -> Float {
+		return menu.height.realPos / height.realPos
+	}
+	
+	/*-- Draggable (pour iOS) --*/
+	/*
 	func grab(relPosInit: Vector2) {
 		flingChrono.stop()
 		menuGrabPosY = relPosInit.y - menu.y.realPos
+		vitYm1 = 0
+		vitY.set(0)
 		deltaT.start()
 	}
 	func drag(relPos: Vector2) {
@@ -81,18 +106,26 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
 			printerror("drag pas init.")
 			return
 		}
+		guard deltaT.elsapsedSec > 0 else { return }
+		
+		let lastMenuY = menu.y.realPos
 		setMenuYpos(yCandIn: relPos.y - menuGrabPosY, snap: false, fix: false)
+		let menuDeltaY = menu.y.realPos - lastMenuY
 		checkItemsVisibility(openNode: true)
+		vitYm1 = vitY.realPos
+		vitY.set(menuDeltaY / deltaT.elsapsedSec)
+		deltaT.start()
 	}
-	func letGo(speed: Vector2?) {
-		// 0. Cas stop. Lâche sans bouger.
-		guard let speed = speed else {
+	func letGo() {
+		// 0. Cas stop. Lâche sans bouger. (vitesse négligeable)
+		vitY.set((vitY.realPos + vitYm1)/2)
+		print("letGo speed \(vitY.realPos)")
+		if abs(vitY.realPos) < 6 {
 			setMenuYpos(yCandIn: menu.y.realPos, snap: true, fix: false)
 			checkItemsVisibility(openNode: true)
 			return
 		}
 		// 1. Cas on laisse en "fling" (checkItemVisibilty s'occupe de mettre à jour la position)
-		vitY.set(speed.y/2, true, false)
 		flingChrono.start()
 		deltaT.start()
 		
@@ -101,11 +134,13 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
 	func justTap() {
 		printwarning("Unused.")
 	}
+	*/
 	
-	/*-- Scrollable --*/
-	
+	/*-- Scrollable (pour macOS et iPadOS avec trackpad/souris)     --*/
+	/*!! Pour aller vers le bas du menu -> scrollDeltaY < 0,        !!
+	  !! il faut envoyer le menu vers le haut -> menuDeltaY > 0 ... !!*/
 	func scroll(up: Bool) {
-		setMenuYpos(yCandIn: menu.y.realPos + (up ? itemHeight : -itemHeight), snap: true, fix: false)
+		setMenuYpos(yCandIn: menu.y.realPos + (up ? -itemHeight : itemHeight), snap: true, fix: false)
 		checkItemsVisibility(openNode: true)
 	}
 	func trackpadScrollBegan() {
@@ -114,18 +149,16 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
 		vitY.set(0)
 		deltaT.start()
 	}
-	
 	func trackpadScroll(deltaY: Float) {
-		let deltaY = 0.015 * Float(deltaY)
-		setMenuYpos(yCandIn: menu.y.realPos + deltaY, snap: false, fix: false)
+		let menuDeltaY = -0.015 * Float(deltaY)
+		setMenuYpos(yCandIn: menu.y.realPos + menuDeltaY, snap: false, fix: false)
 		checkItemsVisibility(openNode: true)
 		if deltaT.elsapsedSec > 0 {
 			vitYm1 = vitY.realPos
-			vitY.set(deltaY / deltaT.elsapsedSec)
+			vitY.set(menuDeltaY / deltaT.elsapsedSec)
 		}
 		deltaT.start()
 	}
-	
 	func trackpadScrollEnded() {
 		vitY.set((vitY.realPos + vitYm1)/2)
 		if abs(vitY.realPos) < 6 {
@@ -138,15 +171,20 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
 		checkFling()
 	}
 	
-	/*-- Openable --*/
-    
+	/*-- Openable/Closeable --*/
     func open() {
         func placeToOpenPos() {
 			let first = indicesRange?.first ?? 0
 			let last = indicesRange?.last ?? 0
 			let countMinusOne = last - first
-			let normalizedId = max(min(getPosIndex(), last), first) - first
 			
+			let normalizedId: Int
+			let indexAPriori = getPosIndex()
+			if let range = indicesRange, range.contains(indexAPriori) {
+				normalizedId = indexAPriori - first
+			} else {
+				normalizedId = 0
+			}
             setMenuYpos(yCandIn: itemHeight * (Float(normalizedId) - 0.5 * Float(countMinusOne)),
                         snap: true, fix: true)
         }
@@ -169,10 +207,15 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
             menu.disconnectChild(elder: true)
         }
         // 2. Ajout des items avec lambda addingItem
+		// et vérifier la taille du nub.
 		if let range = indicesRange {
+			let heightRatio = Float(nDisplayed) / max(1, Float(range.count))
+			scrollBar.setNubHeightWithRelHeight(heightRatio)
 			for i in range {
 				_ = addNewItem(menu, i)
 			}
+		} else {
+			scrollBar.setNubHeightWithRelHeight(1)
 		}
         // 3. Normaliser les hauteurs pour avoir itemHeight
         let sq = Squirrel(at: menu)
@@ -182,7 +225,7 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
         let smallItemHeight = itemHeight / spacing
         repeat {
             // Scaling -> taille attendu / taille actuelle
-            let scale = smallItemHeight / sq.pos.height.realPos
+			let scale = smallItemHeight / sq.pos.height.realPos
             sq.pos.scaleX.set(scale)
             sq.pos.scaleY.set(scale)
         } while (sq.goRight())
@@ -192,7 +235,15 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
                               ratio: 1, spacingRef: spacing)
         placeToOpenPos()
         checkItemsVisibility(openNode: false)
+		
+		// 5. Signaler sa présence (pour iOS)
+		metalView.addScrollingViewIfNeeded(with: self)
     }
+	func close() {
+		metalView.removeScrollingView()
+	}
+	
+	
     
     private func checkFling() {
 		guard flingChrono.isActive else {return}
@@ -251,9 +302,68 @@ class SlidingMenu : Node, Draggable, Scrollable, Openable {
     }
     private func setMenuYpos(yCandIn: Float, snap: Bool, fix: Bool) {
         // Il faut "snapper" à une position.
+		let DeltaY = getMenuDeltaYMax()
         let yCand = snap ?
-            round((yCandIn - menuDeltaYMax)/itemHeight) * itemHeight + menuDeltaYMax
+            round((yCandIn - DeltaY)/itemHeight) * itemHeight + DeltaY
             : yCandIn
-        menu.y.set(max(min(yCand, menuDeltaYMax), -menuDeltaYMax), fix, false)
+        menu.y.set(max(min(yCand, DeltaY), -DeltaY), fix, false)
+		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
     }
+	/** Le déplacement maximal du menu en y. 0 si n <= nD. */
+	private func getMenuDeltaYMax() -> Float {
+		return 0.5 * itemHeight * Float(max((indicesRange?.count ?? 0) - nDisplayed, 0))
+	}
+}
+
+fileprivate class SlidingMenuScrollBar : Node {
+	private var nub: Node!
+	private var nubTop: TiledSurface!
+	private var nubMid: TiledSurface!
+	private var nubBot: TiledSurface!
+	init(parent: SlidingMenu, width: Float) {
+		let parWidth = parent.width.realPos
+		let parHeight = parent.height.realPos
+		
+		super.init(parent, parWidth/2 - width/2, 0, width, parHeight)
+		
+		let backTex = Texture.tryToGetExistingPng("scroll_bar_back") ?? Texture.getNewPng("scroll_bar_back", m: 1, n: 3)
+		let frontTex = Texture.tryToGetExistingPng("scroll_bar_front") ?? Texture.getNewPng("scroll_bar_front", m: 1, n: 3)
+		
+		// Back of scrollBar
+		TiledSurface(self, pngTex: backTex, 0, parHeight/2 - width/2, width)
+		let midSec = TiledSurface(self, pngTex: backTex, 0, 0, width, i: 1, flags: Flag1.surfaceDontRespectRatio)
+		midSec.height.set(parHeight - 2*width)
+		TiledSurface(self, pngTex: backTex, 0, -parHeight/2 + width/2, width, i: 2)
+		
+		// Nub (sliding)
+		nub = Node(self, 0, parHeight/4, width, width*3, lambda: 30)
+		nubTop = TiledSurface(nub, pngTex: frontTex, 0, width, width)
+		nubMid = TiledSurface(nub, pngTex: frontTex, 0, 0, width, i: 1, flags: Flag1.surfaceDontRespectRatio)
+		nubBot = TiledSurface(nub, pngTex: frontTex, 0, -width, width, i: 2)
+	}
+	required init(other: Node) {
+		fatalError("init(other:) has not been implemented")
+	}
+	
+	func setNubHeightWithRelHeight(_ newRelHeight: Float) {
+		guard newRelHeight < 1, newRelHeight > 0 else {
+			addFlags(Flag1.hidden)
+			closeBranch()
+			return
+		}
+		removeFlags(Flag1.hidden)
+		let w = width.realPos
+		let heightTmp = height.realPos * newRelHeight
+		
+		let heightMid = max(0, heightTmp - 2 * w)
+		nub.height.set(heightMid + 2 * w)
+		nubTop.y.set((heightMid + w)/2)
+		nubBot.y.set(-(heightMid + w)/2)
+		nubMid.height.set(heightMid)
+	}
+	
+	func setNubRelY(_ newRelY: Float) {
+		let DeltaY = (height.realPos - nub.height.realPos)/2
+		nub.y.pos = -newRelY * DeltaY
+	}
 }

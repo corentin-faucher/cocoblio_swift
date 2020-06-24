@@ -40,6 +40,19 @@ class Mesh {
 			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
 		}
     }
+	init(other: Mesh) {
+		vertices = other.vertices
+		indices = other.indices
+		primitiveType = other.primitiveType
+		cullMode = other.cullMode
+		// Init buffers
+		let dataSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
+		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: dataSize, options: [])
+		if !indices.isEmpty {
+			let indDataSize = indices.count * MemoryLayout.size(ofValue: indices[0])
+			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
+		}
+	}
 	/** Must be called after making all changes on vertices to update the verticesBuffer. */
 	func updateVerticesBuffer() {
 		let dataSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])

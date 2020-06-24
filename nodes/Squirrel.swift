@@ -11,6 +11,7 @@ class Squirrel {
     enum RelativeScaleInit {
         case ones
         case scales
+		case deltas
     }
     /*-- Données de bases et computed properties --*/
     /// Position dans l'arbre (noeud) de l'écureuil.
@@ -44,10 +45,10 @@ class Squirrel {
         root =  pos
         v = Vector2(pos.x.realPos, pos.y.realPos)
         switch scaleInit {
-        case .ones: vS = Vector2(1,1)
-        case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
+        	case .ones: vS = Vector2(1,1)
+        	case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
             //        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
-            //        case .scaledSizes: vS = Vector2(pos.deltaX * 2, pos.deltaY * 2)
+			case .deltas: vS = Vector2(pos.deltaX, pos.deltaY)
         }
     }
     /// Initialise avec une position relative au lieu de la position du noeud.
@@ -60,14 +61,14 @@ class Squirrel {
         case .ones: vS = Vector2(1,1)
         case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
             //        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
-            //        case .scaledSizes: vS = Vector2(pos.deltaX * 2, pos.deltaY * 2)
+			case .deltas: vS = Vector2(pos.deltaX, pos.deltaY)
         }
     }
     
     /*--- Déplacements ----*/
-    /** Déconnecte où on est et va au petit (pas défaut) frère.
+    /** Déconnecte où on est et va au petit (par défaut) frère.
      * Si ne peut aller au frère, va au parent.
-     * Throw une erreur si ne peut aller au parent. */
+     * Retourne false si doit aller au parent. */
     func disconnectAndGoToBroOrUp(little: Bool = true) -> Bool {
         let toDelete = pos
         if let bro = (little ? pos.littleBro : pos.bigBro) {
@@ -216,13 +217,15 @@ class Squirrel {
         return true
     }
     func goToNextNode() -> Bool {
-        if goDown() {return true}
+		if goDown() { return true }
         while !goRight() {
             if !goUp() {
                 printerror("Pas de root.")
                 return false
-            } else if pos === root {
-                return false
+			} else {
+				if pos === root {
+					return false
+				}
             }
         }
         return true

@@ -28,7 +28,7 @@ class Texture {
 	let isLocalized: Bool
 	
 	/*-- Methods --*/
-	func updateString(_ string: String) {
+	func updateAsMutableString(_ string: String) {
 		guard isString, isMutable else {
 			printerror("N'est pas une texture de string ou n'est pas mutable."); return
 		}
@@ -67,9 +67,11 @@ class Texture {
 	private func drawAsString() {
 		// 1. Font et dimension de la string
 		#if os(OSX)
-		let font = NSFont(name: "American Typewriter", size: Texture.fontSize)
+		let font = NSFont(name: "American Typewriter", size: 100)// Texture.fontSize)
+		let color = NSColor.white
 		#else
-		let font = UIFont(name: "American Typewriter", size: Texture.fontSize)
+		let font = UIFont(name: "American Typewriter", size: 100)// Texture.fontSize)
+		let color = UIColor.white
 		#endif
 		// 2. Paragraph style
 		let paragraphStyle = NSMutableParagraphStyle()
@@ -78,13 +80,13 @@ class Texture {
 		// 3. Attributs de la string (color, font, paragraph style)
 		var attributes: [NSAttributedString.Key : Any] = [:]
 		attributes[.font] = font
-		attributes[.foregroundColor] = NSColor.white
+		attributes[.foregroundColor] = color
 		attributes[.paragraphStyle] = paragraphStyle
 		// 4. Init de la NSString
 		let str: NSString
 		if string.count > 0 {
 			if isLocalized {
-				str = NSString(string: string.localized ?? "🦆\(string)")
+				str = NSString(string: string.localizedOrDucked)
 			} else {
 				str = NSString(string: string)
 			}
@@ -92,9 +94,10 @@ class Texture {
 			str = " "
 		}
 		// 5. Mesure des dimensions de la string
+		// (tester avec "j"...)
 		let strSizes = str.size(withAttributes: attributes)
-		let contextWidth = Int(ceil(strSizes.width) + Texture.fontSize / 4)
 		let contextHeight = Int(ceil(strSizes.height)) + 2
+		let contextWidth =  Int(ceil(strSizes.width) + strSizes.height * Texture.characterSpacing)
 		// 6. Création d'un context CoreGraphics
 		let colorSpace = CGColorSpaceCreateDeviceRGB()
 		guard let context = CGContext(data: nil,
@@ -114,15 +117,22 @@ class Texture {
 		NSGraphicsContext.saveGraphicsState()
 		let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
 		NSGraphicsContext.current = nsgcontext
-		str.draw(in: NSRect(x: 0, y: 0, width: contextWidth, height: contextHeight),
+		// Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
+		let ypos: Int = Int(strSizes.height)/2 - contextHeight/2
+		str.draw(in: NSRect(x: 0, y: ypos, width: contextWidth, height: contextHeight),
 				 withAttributes: attributes)
 		NSGraphicsContext.restoreGraphicsState()
 		#else
 		UIGraphicsPushContext(context)
+		// Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
 		context.scaleBy(x: 1, y: -1)
-		str.draw(at: CGPoint(x: 0, y: -strSizes.height), withAttributes: attributes)
+		let ypos: Int = -Int(strSizes.height)/2 - contextHeight/2
+		let xpos: Int = -Int(strSizes.width)/2 + contextWidth/2
+//		str.draw(in: CGRect(x: 0, y: ypos, width: contextWidth, height: contextWidth), withAttributes: attributes)
+		str.draw(at: CGPoint(x: xpos, y: ypos), withAttributes: attributes)
 		UIGraphicsPopContext()
 		#endif
+		
 		// 8. Créer une image du context et en faire une texture.
 		let image = context.makeImage()
 		mtlTexture = try! Texture.textureLoader.newTexture(cgImage: image!, options: nil)
@@ -148,6 +158,7 @@ class Texture {
 	
 	/*-- Static fields --*/
 	/*-- Les textures disponible par défault. --*/
+	static let characterSpacing: CGFloat = 0.23
 	static private(set) var fontSize: CGFloat = 64
 	static let defaultString = Texture(string: "🦆", isMutable: false, isLocalized: false)
 	static let testFrame = getNewPng("test_frame", m: 1, n: 1, showWarning: false)
@@ -265,6 +276,7 @@ class Texture {
 	static func initWith(device: MTLDevice, drawableSize: CGSize) {
 		fontSize = getCandidateFontSize(from: drawableSize)
 		textureLoader = MTKTextureLoader(device: device)
+		loaded = true
 	}
 	
 	static private(set) var loaded: Bool = false

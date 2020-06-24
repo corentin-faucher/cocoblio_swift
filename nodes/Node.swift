@@ -19,7 +19,7 @@ class Node : CopyableNode {
     /*-- Fields --*/
     /** Flags : Les options sur le noeud. */
     private var flags: Int
-    
+	let id: Int
     /** Positions, tailles, etc. */
     var x, y, z, width, height, scaleX, scaleY: SmoothPos
     /** Demi espace occupé en x. (width * scaleX) / 2 */
@@ -70,6 +70,11 @@ class Node : CopyableNode {
         while sq.goUpP() {}
         return sq.v
     }
+	func getAbsPosAndDelta() -> (pos: Vector2, deltas: Vector2) {
+		let sq = Squirrel(at: self, scaleInit: .deltas)
+		while sq.goUpPS() {}
+		return (sq.v, sq.vS)
+	}
 	func getPosInGrandPa(_ grandPa: Node) -> Vector2 {
 		let sq = Squirrel(at: self)
 		repeat {
@@ -100,6 +105,9 @@ class Node : CopyableNode {
     /*-- Constructeurs... */
     /** Noeud "vide" et "seul" */
     init(parent: Node?) {
+		id = Node.nodeCounter
+		Node.nodeCounter &+= 1
+		
         flags = 0
         x = SmoothPos(0)
         y = SmoothPos(0)
@@ -117,6 +125,8 @@ class Node : CopyableNode {
     init(_ refNode: Node?,
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, lambda: Float = 0,
          flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false) {
+		id = Node.nodeCounter
+		Node.nodeCounter &+= 1
         // 1. Données de base
         self.flags = flags
         self.x = SmoothPos(x, lambda)
@@ -139,6 +149,8 @@ class Node : CopyableNode {
     /** Constructeur de copie. */
     required init(other: Node) {
         // 1. Données de base (SmPos et PerInst. sont des struct)
+		id = Node.nodeCounter
+		Node.nodeCounter &+= 1
         self.flags = other.flags
         self.x = other.x
         self.y = other.y
@@ -155,8 +167,7 @@ class Node : CopyableNode {
     /** Se retire de sa chaine de frère et met les optionals à nil.
      *  Sera effacé par l'ARC, si n'est pas référencié(swift) ou ramassé par le GC?(Kotlin) */
     func disconnect() {
-		#warning("Tester: pas de 'deconnexion' et retrait des strong en dernier.")
-        // 1. Retrait
+		// 1. Retrait
         if let theBigBro = bigBro {
             theBigBro.littleBro = littleBro
         } else { // Pas de grand frère -> probablement l'ainé.
@@ -168,10 +179,12 @@ class Node : CopyableNode {
             parent?.lastChild = bigBro
         }
 
-        // 2. Déconnexion
+        // 2. Déconnexion (superflu)
+		/*
         parent = nil
         littleBro = nil
         bigBro = nil
+		*/
     }
     /** Deconnexion d'un descendant, i.e. Effacement direct.
      *  Retourne "true" s'il y a un descendant a effacer. */
@@ -351,27 +364,29 @@ class Node : CopyableNode {
     /*-- Private stuff... --*/
     /** Connect au parent. (Doit être fullyDeconnect -> optionals à nil.) */
     private func connectToParent(_ parent: Node, asElder: Bool) {
-		#warning("Check aver if let")
-        // Dans tout les cas, on a le parent:
+		// Dans tout les cas, on a le parent:
         self.parent = parent
-        // Cas parent pas d'enfants
-        if parent.firstChild == nil {
-            parent.firstChild = self
-            parent.lastChild = self
-            return
-        }
+		
+		guard let oldParentFirstChild = parent.firstChild,
+			let oldParentLastChild = parent.lastChild
+		else {
+			// Cas parent pas d'enfants
+			parent.firstChild = self
+			parent.lastChild = self
+			return
+		}
         // Ajout au début
         if asElder {
             // Insertion
-            self.littleBro = parent.firstChild
+            self.littleBro = oldParentFirstChild
             // Branchement
-            parent.firstChild!.bigBro = self
+            oldParentFirstChild.bigBro = self
             parent.firstChild = self
         } else { // Ajout à la fin de la chaine
             // Insertion
-            self.bigBro = parent.lastChild
+            self.bigBro = oldParentLastChild
             // Branchement
-            parent.lastChild!.littleBro = self
+            oldParentLastChild.littleBro = self
             parent.lastChild = self
         }
     }
@@ -423,5 +438,7 @@ class Node : CopyableNode {
     
     // Option de debbuging (ajouter des frame aux noeuds).
     static var showFrame = false
+	
+	private static var nodeCounter: Int = 0
 }
 

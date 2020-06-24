@@ -8,7 +8,7 @@
 
 import Foundation
 
-/** Un bouton switch est seulement Draggable, pas Actionnable.
+/** Un bouton switch est seulement Draggable, pas Actionnable. (L'action est faite lors de justTap et drag.)
  * Par contre il y a tout de même la méthode "action" qui doit être overridé.
  * L'action a lieu lors du drag. (ou du "justTouch") */
 class SwitchButton : Node, Draggable {
@@ -18,7 +18,8 @@ class SwitchButton : Node, Draggable {
     
     init(_ refNode: Node?, isOn: Bool,
          _ x: Float, _ y: Float, _ height: Float,
-         lambda: Float = 0, flags: Int = 0) {
+         lambda: Float = 0, flags: Int = 0)
+	{
         self.isOn = isOn
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
         scaleX.set(height)
@@ -44,13 +45,11 @@ class SwitchButton : Node, Draggable {
 		
         setBackColor()
     }
-    
 	func fix(isOn: Bool) {
 		self.isOn = isOn
 		nub.x.set(isOn ? 0.375 : -0.375)
 		setBackColor()
 	}
-	
     func action() {
         printerror("To be overridden.")
     }
@@ -59,7 +58,7 @@ class SwitchButton : Node, Draggable {
 	func justTap() {
 		isOn = !isOn
 		setBackColor()
-		letGo(speed: nil)
+		letGo()
 		action()
 	}
     
@@ -81,7 +80,7 @@ class SwitchButton : Node, Draggable {
     }
     
     /** Ne fait que placer le nub comme il faut. (À faire après avoir dragué.) */
-    func letGo(speed: Vector2?) {
+    func letGo() {
         nub.x.pos = isOn ? 0.375 : -0.375
     }
     
@@ -92,4 +91,63 @@ class SwitchButton : Node, Draggable {
             back.piu.color = [1, 0.3, 0.1, 1]
         }
     }
+}
+
+class SliderButton : Node, Draggable {
+	// value entre 0 et 1.
+	private(set) var value: Float
+	private var nub: TiledSurface!
+	private let slideWidth: Float
+	
+	init(parent: Node, value: Float,
+		 _ x: Float, _ y: Float, _ height: Float, slideWidth: Float,
+		 lambda: Float = 0, flags: Int = 0)
+	{
+		self.slideWidth = max(slideWidth, height)
+		self.value = value
+		super.init(parent, x, y, self.slideWidth + height, height,
+				   lambda: lambda, flags: flags)
+		initStructure()
+	}
+	required init(other: Node) {
+		let otherSlider = other as! SliderButton
+		self.value = otherSlider.value
+		self.slideWidth = otherSlider.slideWidth
+		super.init(other: other)
+		initStructure()
+	}
+	private func initStructure() {
+		makeSelectable()
+		
+		Bar(parent: self, framing: .inside, delta: 0.25 * height.realPos, width: slideWidth, texture:
+			Texture.tryToGetExistingPng("bar_in") ?? Texture.getNewPng("bar_in", m: 1, n: 1))
+		
+		let xPos = (value - 0.5) * slideWidth
+		
+		nub = TiledSurface(self, pngTex:
+			Texture.tryToGetExistingPng("switch_front") ?? Texture.getNewPng("switch_front", m: 1, n: 1),
+						   xPos, 0, height.realPos, lambda: 20)
+	}
+	
+	func grab(relPosInit: Vector2) {
+		// (pass)
+	}
+	
+	func drag(relPos: Vector2) {
+		// 1. Ajustement de la position du nub.
+		nub.x.pos = min(max(relPos.x, -slideWidth/2), slideWidth/2)
+		value = nub.x.realPos / slideWidth + 0.5
+		// 2. Action!
+		action()
+	}
+	func action() {
+		printerror("To be overridden.")
+	}
+	
+	func letGo() {
+		// (pass)
+	}
+	func justTap() {
+		// (pass)
+	}
 }

@@ -11,7 +11,7 @@ import Foundation
 struct GlobalChrono {
     // Getters
     /// Active/désactive le chrono du temps écoulé.
-    /// Setter à true a pour effet de "toucher" le chrono (évite de s'endormir).
+    /// Setter à false a pour effet de "toucher" le chrono (évite de s'endormir).
     static var isPaused: Bool {
         set {
             if !newValue { // isPaused == false -> isActive == true
@@ -26,7 +26,7 @@ struct GlobalChrono {
         get { return !isActive }
     }
     static var shouldSleep: Bool {
-        return touchElapsed > 30000
+        return touchElapsed > 15000
     }
     private(set) static var elapsedMS: Int64 = 0
     static var elapsedSec: Float {

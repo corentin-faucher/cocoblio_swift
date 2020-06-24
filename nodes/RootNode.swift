@@ -29,7 +29,7 @@ class RootNode : Node, Reshapable {
     
     init(refNode: Node?, metalView: CoqMetalView) {
 		self.metalView = metalView
-        super.init(refNode, 0, 0, 4, 4, lambda: 0, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot)
+        super.init(refNode, 0, 0, 4, 4, lambda: 5, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot)
         z.set(4)
     }
     required init(other: Node) {
@@ -58,6 +58,7 @@ class AppRootBase : RootNode {
 	/** Cas particulier de selectedNode. */
 	var grabbedNode: Draggable? = nil
 	var cursor: Cursorable? = nil
+	var changeScreenAction: (()->Void)? = nil
 	
 	
 	init(metalView: CoqMetalView) {
@@ -104,5 +105,6 @@ class AppRootBase : RootNode {
 		// 3. Ouverture du nouvel écran.
 		activeScreen = theNewScreen
 		theNewScreen.openBranch()
+		changeScreenAction?.self()
 	}
 }

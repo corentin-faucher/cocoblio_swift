@@ -200,26 +200,28 @@ extension Array where Element == UInt32 {
 		}
 		return intArray
 	}
-	mutating func decode(key: UInt32) {
+	func decoded(key: UInt32) -> Array<UInt32> {
+		var intArray = self
 		guard var uA: UInt32 = self.last else {
-			printerror("Pas d'élément."); return
+			printerror("Pas d'élément."); return []
 		}
 		var uD: UInt32
 		var uE: UInt32 = 0
 		for index in 0...(count-2) {
-			uD = self[index] ^ uE ^ uA
-			uE = self[index]
-			self[index] = uD
+			uD = intArray[index] ^ uE ^ uA
+			uE = intArray[index]
+			intArray[index] = uD
 			uA = (uA<<1) ^ (uA>>1)
 		}
 		uA = 0xeafc8f75 ^ key
 		uE = 0
 		for index in indices {
-			uD = self[index] ^ uE ^ uA
-			uE = self[index]
-			self[index] = uD
+			uD = intArray[index] ^ uE ^ uA
+			uE = intArray[index]
+			intArray[index] = uD
 			uA = (uA<<1) ^ (uA>>1)
 		}
+		return intArray
 	}
 }
 
