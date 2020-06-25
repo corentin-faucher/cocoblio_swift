@@ -118,6 +118,26 @@ enum Language : LanguageInfo, CaseIterable {
 		printwarning("Language not found. Taking default: \(defaultLanguage).")
 		return defaultLanguage
 	}
+	
+	static func getLanguageFromOldId(_ oldId: Int) -> Language? {
+		switch oldId {
+			case 0: return .french
+			case 1: return .english
+			case 2: return .japanese
+			case 3: return .german
+			case 4: return .chinese_simpl
+			case 5: return .italian
+			case 6: return .spanish
+			case 7: return .arabic
+			case 8: return .greek
+			case 9: return .russian
+			case 10: return .swedish
+			case 11: return .chinese_trad
+			case 12: return .portuguese
+			case 13: return .korean
+			default: return nil
+		}
+	}
     
 	/*-- Private stuff... --*/
 	static private(set) var currentBundle: Bundle = Bundle.main
