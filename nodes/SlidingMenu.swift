@@ -87,6 +87,9 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
 		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
 		checkItemsVisibility(openNode: true)
 	}
+	func getOffSetRatio() -> Float {
+		return (menu.y.realPos + getMenuDeltaYMax()) / menu.height.realPos
+	}
 	/** Retourne menu.height / slidmenu.height. Typiquement > 1 (pas besoine de sliding menu si < 1) */
 	func getContentFactor() -> Float {
 		return menu.height.realPos / height.realPos

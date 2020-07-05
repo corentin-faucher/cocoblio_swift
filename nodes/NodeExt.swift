@@ -146,6 +146,9 @@ extension Node {
         if (alignOpt & AlignOpt.dontUpdateSizes == 0) {
             width.set(w, fix, setAsDef)
             height.set(h, fix, setAsDef)
+			if containsAFlag(Flag1.giveSizesToBigBroFrame), let frame = bigBro as? Frame {
+				frame.update(width: w, height: h, fix: fix)
+			}
         }
         // 4. Aligner les éléments
         sq = Squirrel(at: self)

@@ -31,6 +31,9 @@ extension FileManager {
 			case (true, false): return .file
 		}
 	}
+	var applicationSupportDirectory: URL {
+		return try! url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+	}
 }
 
 extension URL {
@@ -69,45 +72,5 @@ extension URL {
 	}
 }
 
-
-extension Array {
-	/** Création à partir du ficher. */
-	/*init?(contentsOf url: URL) {
-		guard let data = try? Data(contentsOf: url) else {
-			return nil
-		}
-		self.init(data.withUnsafeBytes {
-			$0.bindMemory(to: Element.self)
-		})
-	}*/
-	
-	/** Création à partir d'un fichier encodé. */
-	init?(contentsOf url: URL, encodedWith key: UInt32) {
-		guard let data = try? Data(contentsOf: url) else {
-			return nil
-		}
-		let uintArr = data.withUnsafeBytes {
-			Array<UInt32>($0.bindMemory(to: UInt32.self))
-		}
-		self.init(uintArr.decoded(key: key).serialized(to: Element.self))
-	}
-	
-	/** Écriture dans un fichier encodé. */
-	func write(to url: URL, encodedWith key: UInt32) {
-		let encoded = self.serialized(to: UInt32.self).encoded(key: key)
-		let size = encoded.count * MemoryLayout<UInt32>.size
-		let data = Data(bytes: encoded, count: size)
-		do { try data.write(to: url) }
-		catch { printerror(error.localizedDescription) }
-	}
-	
-	/*
-	func write(to url: URL) {
-		let size = count * MemoryLayout<Element>.size
-		let data = Data(bytes: self, count: size)
-		do {try data.write(to: url)}
-		catch {printerror(error.localizedDescription)}
-	}*/
-}
 
 

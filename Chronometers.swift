@@ -26,7 +26,7 @@ struct GlobalChrono {
         get { return !isActive }
     }
     static var shouldSleep: Bool {
-        return touchElapsed > 15000
+        return touchElapsed > 18000
     }
     private(set) static var elapsedMS: Int64 = 0
     static var elapsedSec: Float {

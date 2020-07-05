@@ -283,7 +283,7 @@ extension Renderer: MTKViewDelegate {
 			else {return}
 		let commandBuffer = commandQueue.makeCommandBuffer()
 		guard let cmdenc = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-			print("Error loading commandEncoder"); return}
+			printerror("Error loading commandEncoder"); return}
 		commandEncoder = cmdenc
 		cmdenc.setFragmentSamplerState(samplerState, index: 0)
 		cmdenc.setRenderPipelineState(pipelineState)

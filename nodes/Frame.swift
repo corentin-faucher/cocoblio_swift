@@ -86,7 +86,7 @@ class Bar : Node, Surface {
 }
 
 class Frame : Node, Surface {
-	let tex: Texture
+	var tex: Texture
 	let mesh: Mesh
 	var trShow = SmTrans()
 	let delta: Float

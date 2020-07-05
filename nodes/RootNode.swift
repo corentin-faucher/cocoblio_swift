@@ -85,7 +85,6 @@ class AppRootBase : RootNode {
 			lastScreen.closeBranch()
 			if !lastScreen.containsAFlag(Flag1.persistentScreen) {
 				Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
-//					printdebug("Disconnecting \(lastScreen).")
 					lastScreen.disconnect()
 				}
 			}

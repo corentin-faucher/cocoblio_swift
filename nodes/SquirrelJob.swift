@@ -96,7 +96,7 @@ extension Node {
      * 3. visite si est une branche avec "show".
      * (show peut être ajouté manuellement avant pour afficher une branche cachée)
      * (show peut avoir été ajouté exterieurement) */
-    func openBranch() {
+    final func openBranch() {
         (self as? Openable)?.open()
         if !containsAFlag(Flag1.hidden) {
             addFlags(Flag1.show)

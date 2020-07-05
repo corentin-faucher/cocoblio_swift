@@ -179,52 +179,33 @@ extension UInt32 {
         9, 9, 9]
 }
 
-extension Array where Element == UInt32 {
-	func encoded(key: UInt32) -> Array<UInt32> {
-		var intArray = self
+extension String {
+	func toUInt32Key() -> UInt32 {
+		if isEmpty {
+			printerror("Empty string, no UInt32Key.")
+			return 0
+		}
+		var tmp = self
 		
-		var uA: UInt32 = 0xeafc8f75 ^ key
-		var uE: UInt32 = 0
-		for index in intArray.indices {
-			uE = intArray[index] ^ uA ^ uE
-			intArray[index] = uE
-			uA = (uA<<1) ^ (uA>>1)
+		switch (utf8CString.count-1) % 4 {
+			case 1: tmp += "abc"
+			case 2: tmp += "ef"
+			case 3: tmp += "g"
+			default: break
 		}
-		// 2e passe (laisse le dernier)
-		uA = uE
-		uE = 0
-		for index in (0...(intArray.count-2)) {
-			uE = intArray[index] ^ uA ^ uE
-			intArray[index] = uE
-			uA = (uA<<1) ^ (uA>>1)
+		
+		guard let data = tmp.data(using: .utf8) else {
+			printerror("No string?"); return 0
 		}
-		return intArray
-	}
-	func decoded(key: UInt32) -> Array<UInt32> {
-		var intArray = self
-		guard var uA: UInt32 = self.last else {
-			printerror("Pas d'élément."); return []
+		let uintArr: [UInt32] = data.toArray(type: UInt32.self)
+		var key: UInt32 = 0
+		for uint in uintArr {
+			key ^= uint
+			key = key << 1 ^ key >> 1
 		}
-		var uD: UInt32
-		var uE: UInt32 = 0
-		for index in 0...(count-2) {
-			uD = intArray[index] ^ uE ^ uA
-			uE = intArray[index]
-			intArray[index] = uD
-			uA = (uA<<1) ^ (uA>>1)
-		}
-		uA = 0xeafc8f75 ^ key
-		uE = 0
-		for index in indices {
-			uD = intArray[index] ^ uE ^ uA
-			uE = intArray[index]
-			intArray[index] = uD
-			uA = (uA<<1) ^ (uA>>1)
-		}
-		return intArray
+		return key
 	}
 }
-
 
 
 // Garbage
