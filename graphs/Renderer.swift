@@ -12,6 +12,8 @@ protocol CoqMetalView : MTKView {
 	var root: AppRootBase! { get }
 	var renderer: Renderer! {get }
 	var isTransitioning: Bool { get set }
+	/* Juste pour macOS (pause automatique quand on change d'application) */
+	var canPauseWhenResignActive: Bool { get set }
 	
 	/** Le vrai frame de la vue y compris les bords où il ne devrait pas y avoir d'objet importants). */
 	var fullFrame: CGSize { get set }
@@ -296,7 +298,7 @@ extension Renderer: MTKViewDelegate {
 		
 		// 1. Check le chrono/sleep.
 		GlobalChrono.update()
-		if GlobalChrono.shouldSleep {
+		if GlobalChrono.shouldSleep, metalView.canPauseWhenResignActive {
 			view.isPaused = true
 		}
 		

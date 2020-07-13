@@ -178,8 +178,8 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
     func open() {
         func placeToOpenPos() {
 			let first = indicesRange?.first ?? 0
-			let last = indicesRange?.last ?? 0
-			let countMinusOne = last - first
+//			let last = indicesRange?.last ?? 0
+//			let countMinusOne = last - first
 			
 			let normalizedId: Int
 			let indexAPriori = getPosIndex()
@@ -188,8 +188,10 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
 			} else {
 				normalizedId = 0
 			}
-            setMenuYpos(yCandIn: itemHeight * (Float(normalizedId) - 0.5 * Float(countMinusOne)),
-                        snap: true, fix: true)
+			
+			let y0 = itemHeight * Float(normalizedId) - getMenuDeltaYMax()
+//			let y0 = itemHeight * Float(normalizedId) - 0.5 * itemHeight * Float(countMinusOne)
+            setMenuYpos(yCandIn: y0, snap: true, fix: true)
         }
         // Mettre tout de suite le flag "show".
         if(!menu.containsAFlag(Flag1.hidden)) {

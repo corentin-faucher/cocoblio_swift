@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 	
 	func applicationWillResignActive(_ notification: Notification) {
+		guard metalView.canPauseWhenResignActive else { return }
 		metalView.isPaused = true
 		Sound.suspend()
 		Texture.suspend()
