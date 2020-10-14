@@ -198,7 +198,15 @@ class Renderer : NSObject {
         /*-- Init du pipeline --*/
         let library = device.makeDefaultLibrary()
         let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
+		#if os(OSX)
         renderPipelineDescriptor.vertexFunction = library?.makeFunction(name: "vertex_function")
+		#else
+		if #available(iOS 14.0, *) {
+			renderPipelineDescriptor.vertexFunction = library?.makeFunction(name: "vertex_function")
+		} else {
+			renderPipelineDescriptor.vertexFunction = library?.makeFunction(name: "vertex_function_ios13")
+		}
+		#endif
         renderPipelineDescriptor.fragmentFunction = library?.makeFunction(name: "fragment_function")
         renderPipelineDescriptor.depthAttachmentPixelFormat = metalView.depthStencilPixelFormat
         let colorAtt: MTLRenderPipelineColorAttachmentDescriptor = renderPipelineDescriptor.colorAttachments[0]
@@ -208,7 +216,11 @@ class Renderer : NSObject {
         #if os(OSX)
         colorAtt.sourceRGBBlendFactor = .sourceAlpha
         #else
-        colorAtt.sourceRGBBlendFactor = .one
+		if #available(iOS 14.0, *) {
+			colorAtt.sourceRGBBlendFactor = .sourceAlpha
+		} else {
+			colorAtt.sourceRGBBlendFactor = .one
+		}
         #endif
         colorAtt.destinationRGBBlendFactor = .oneMinusSourceAlpha
         
