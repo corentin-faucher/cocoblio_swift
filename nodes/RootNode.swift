@@ -29,7 +29,7 @@ class RootNode : Node, Reshapable {
     
     init(refNode: Node?, metalView: CoqMetalView) {
 		self.metalView = metalView
-        super.init(refNode, 0, 0, 4, 4, lambda: 5, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot)
+        super.init(refNode, 0, 0, 4, 4, lambda: 5, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot|Flag1.isRoot)
         z.set(4)
     }
     required init(other: Node) {

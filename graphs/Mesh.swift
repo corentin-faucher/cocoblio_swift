@@ -18,10 +18,11 @@ class Mesh {
     
 	/*-- Fields --*/
 	var vertices: [Vertex] = []
+    let verticesSize: Int
 	var indices: [UInt16] = []
 	let primitiveType: MTLPrimitiveType
     let cullMode: MTLCullMode
-    private(set) var verticesBuffer: MTLBuffer? = nil
+//    private(set) var verticesBuffer: MTLBuffer? = nil
     private(set) var indicesBuffer: MTLBuffer? = nil
     
     /*-- Methods --*/
@@ -33,8 +34,8 @@ class Mesh {
         primitiveType = primitive
         self.cullMode = cullMode
 		// Init buffers
-		let dataSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
-		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: dataSize, options: [])
+        verticesSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
+//		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: verticesSize, options: [])
 		if !indices.isEmpty {
 			let indDataSize = indices.count * MemoryLayout.size(ofValue: indices[0])
 			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
@@ -42,22 +43,21 @@ class Mesh {
     }
 	init(other: Mesh) {
 		vertices = other.vertices
+        verticesSize = other.verticesSize
 		indices = other.indices
 		primitiveType = other.primitiveType
 		cullMode = other.cullMode
-		// Init buffers
-		let dataSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
-		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: dataSize, options: [])
+		// Init bufferss
+//		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: dataSize, options: [])
 		if !indices.isEmpty {
 			let indDataSize = indices.count * MemoryLayout.size(ofValue: indices[0])
 			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
 		}
 	}
-	/** Must be called after making all changes on vertices to update the verticesBuffer. */
-	func updateVerticesBuffer() {
-		let dataSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
-		verticesBuffer?.contents().copyMemory(from: vertices, byteCount: dataSize)
-	}
+    
+//	func updateVerticesBuffer() {
+//		verticesBuffer?.contents().copyMemory(from: vertices, byteCount: verticesSize)
+//	}
     
     /*-- Statics: meshes de bases et gestion de la mesh présente. --*/
 	/*-- Static fields --*/
@@ -143,6 +143,6 @@ class Mesh {
             fan.vertices[i].uv = (0.5 - 0.5 * sin(ratio * 2 * .pi * (Float)(i-1) / 8),
                                   0.5 - 0.5 * cos(ratio * 2 * .pi * (Float)(i-1) / 8))
         }
-		fan.updateVerticesBuffer()
+//		fan.updateVerticesBuffer()
     }
 }

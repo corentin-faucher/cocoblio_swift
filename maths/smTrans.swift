@@ -15,14 +15,14 @@ struct SmTrans {
     }
     
     mutating func get() -> Float {
-        switch transEnum {
-        case .goingDown:
+        switch transState {
+        case SmTrans.goingDown:
             if chrono.elapsedMS16 > transTime {
-                transEnum = .isDown
+                transState = SmTrans.isDown
             }
-        case .goingUp:
+        case SmTrans.goingUp:
             if chrono.elapsedMS16 > transTime {
-                transEnum = .isUp
+                transState = SmTrans.isUp
             }
         default: break
         }
@@ -31,80 +31,76 @@ struct SmTrans {
     
     mutating func set(isOn: Bool) {
         if isOn {
-            switch transEnum {
-            case .isDown:
-                if extraState.contains(.hard) {
-                    transEnum = .isUp
+            switch transState {
+            case SmTrans.isDown:
+                if extraState & SmTrans.hard != 0 {
+                    transState = SmTrans.isUp
                 } else {
                     chrono.start()
-                    transEnum = .goingUp
+                    transState = SmTrans.goingUp
                 }
-            case .goingUp:
+            case SmTrans.goingUp:
                 if chrono.elapsedMS16 > transTime {
-                    transEnum = .isUp
+                    transState = SmTrans.isUp
                 }
-            case .goingDown:
+            case SmTrans.goingDown:
                 let time = chrono.elapsedMS16
                 if time < transTime {
                     chrono.setElapsedTo(newTimeMS: transTime - time)
                 } else {
                     chrono.start()
                 }
-                transEnum = .goingUp
+                transState = SmTrans.goingUp
             default: break
             }
         } else {
-            switch transEnum {
-            case .isUp:
-                if extraState.contains(.hard) {
-                    transEnum = .isDown
+            switch transState {
+            case SmTrans.isUp:
+                if extraState & SmTrans.hard != 0 {
+                    transState = SmTrans.isDown
                 } else {
                     chrono.start()
-                    transEnum = .goingDown
+                    transState = SmTrans.goingDown
                 }
-            case .goingDown:
+            case SmTrans.goingDown:
                 if chrono.elapsedMS16 > transTime {
-                    transEnum = .isDown
+                    transState = SmTrans.isDown
                 }
-            case .goingUp:
+            case SmTrans.goingUp:
                 let time = chrono.elapsedMS16
                 if time < transTime {
                     chrono.setElapsedTo(newTimeMS: transTime - time)
                 } else {
                     chrono.start()
                 }
-                transEnum = .goingDown
+                transState = SmTrans.goingDown
             default: break
             }
         }
     }
     
     mutating func hardSet(isOn: Bool) {
-        transEnum = isOn ? .isUp : .isDown
+        transState = isOn ? SmTrans.isUp : SmTrans.isDown
     }
     mutating func setOptions(isHard: Bool, isPoping: Bool) {
         if isHard {
-            extraState.formUnion(.hard)
+            extraState |= SmTrans.hard
         } else {
-            extraState.subtract(.hard)
+            extraState &= ~SmTrans.hard
         }
         if isPoping {
-            extraState.formUnion(.poping)
+            extraState |= SmTrans.poping
         } else {
-            extraState.subtract(.poping)
+            extraState &= ~SmTrans.poping
         }
     }
     var isActive: Bool {
-        return transEnum != .isDown
+        return transState != SmTrans.isDown
     }
     
-    var extraState = ExtraState()
-    struct ExtraState: OptionSet {
-        let rawValue: UInt8
-        static let poping = ExtraState(rawValue: 1<<0)
-        static let hard = ExtraState(rawValue: 1<<1)
-        static let semi = ExtraState(rawValue: 1<<2)
-    }
+    
+    
+    
     // Private stuff...
     private func privateGet() -> Float {
         func pipPop() -> Float {
@@ -122,18 +118,23 @@ struct SmTrans {
             return (1 + cosf(.pi * ratio))/2
         }
         
-        switch transEnum {
-        case .isDown: return 0
-        case .isUp: return extraState.contains(.semi) ? SmTrans.semiFact : 1
-        case .goingUp: return (extraState.contains(.semi) ? SmTrans.semiFact : 1) *
-            (extraState.contains(.poping) ? pipPop() : smooth())
-        case .goingDown: return (extraState.contains(.semi) ? SmTrans.semiFact : 1) * smoothDown()
+        switch transState {
+        case SmTrans.isDown: return 0
+        case SmTrans.goingUp: return (extraState & SmTrans.semi != 0 ? SmTrans.semiFact : 1) *
+            (extraState & SmTrans.poping != 0 ? pipPop() : smooth())
+        case SmTrans.goingDown: return (extraState & SmTrans.semi != 0 ? SmTrans.semiFact : 1) * smoothDown()
+        default: return extraState & SmTrans.semi != 0 ? SmTrans.semiFact : 1
         }
     }
     
+    
+    //-- Data (private) --
     private var chrono = SmallChrono()
-    private var transEnum = TransEnum.isDown
     private var transTime: UInt16 = SmTrans.defTransTime
+    private var transState: UInt8 = 0
+    private var extraState: UInt8 = 0
+    
+    
     
     // Enum et static
     static func updateParameters(newPopFactor: Float?, newSemiFactor: Float?, newTransTime: UInt16?) {
@@ -154,6 +155,17 @@ struct SmTrans {
         case goingUp
         case goingDown
     }
+    //-- States
+    private static let poping: UInt8 = 1
+    private static let hard: UInt8 = 2
+    private static let semi: UInt8 = 4
+    
+    private static let isDown: UInt8 = 0
+    private static let goingUp: UInt8 = 1
+    private static let goingDown: UInt8 = 2
+    private static let isUp: UInt8 = 3
+    
+    //-- Parametres static
     private static var semiFact: Float = 0.4
     private static var defTransTime: UInt16 = 500
 	private static var a: Float = 0.75 + (0.2) * 0.2  // (pop factor est de 0.2 par défaut)

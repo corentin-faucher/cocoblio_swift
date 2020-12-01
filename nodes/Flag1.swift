@@ -16,9 +16,10 @@ enum Flag1 {
     static let exposed = 1<<2
     static let selectableRoot = 1<<3
     static let selectable = 1<<4
-    //static let reshapableRoot = 1<<5
     /** Noeud qui apparaît en grossisant. */
-    static let poping = 1<<6
+    static let poping = 1<<5
+    
+    static let isRoot = 1<<6
     
     /*-- Pour les surfaces --*/
     /** Par défaut on ajuste la largeur pour respecter les proportion d'une image. */

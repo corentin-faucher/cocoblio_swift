@@ -15,10 +15,7 @@ enum Framing {
 }
 
 /** Crée une barre. framing est pour l'emplacement des bords. width est la largeur du contenu (sans les bords). delta est la demi-épaisseur. */
-class Bar : Node, Surface {
-	let tex: Texture
-	let mesh: Mesh
-	var trShow = SmTrans()
+class Bar : Surface {
 	var framing: Framing
 	/// Demi-hauteur de la barre.
 	let delta: Float
@@ -27,31 +24,28 @@ class Bar : Node, Surface {
 	init(parent: Node, framing: Framing, delta: Float, width: Float, texture: Texture, lambda: Float = 0)
 	{	
 		self.delta = delta
-		self.tex = texture
 		self.framing = framing
-		
-		mesh = Mesh(vertices:
-			[((-0.5000, 0.5, 0), (0.000,0), (0,0,1)),
-			 ((-0.5000,-0.5, 0), (0.000,1), (0,0,1)),
-			 ((-0.1667, 0.5, 0), (0.333,0), (0,0,1)),
-			 ((-0.1667,-0.5, 0), (0.333,1), (0,0,1)),
-			 (( 0.1667, 0.5, 0), (0.667,0), (0,0,1)),
-			 (( 0.1667,-0.5, 0), (0.667,1), (0,0,1)),
-			 (( 0.5000, 0.5, 0), (1.000,0), (0,0,1)),
-			 (( 0.5000,-0.5, 0), (1.000,1), (0,0,1))],
-					indices: [],
-					primitive: .triangleStrip)
-		super.init(parent, 0, 0, delta * 4, delta * 2,
-				   lambda: lambda, flags: Flag1.surfaceDontRespectRatio)
+        super.init(parent, tex: texture, 0, 0, delta * 2, lambda: lambda, flags: Flag1.surfaceDontRespectRatio,
+                   mesh: Mesh(vertices:
+                                [((-0.5000, 0.5, 0), (0.000,0), (0,0,1)),
+                                 ((-0.5000,-0.5, 0), (0.000,1), (0,0,1)),
+                                 ((-0.1667, 0.5, 0), (0.333,0), (0,0,1)),
+                                 ((-0.1667,-0.5, 0), (0.333,1), (0,0,1)),
+                                 (( 0.1667, 0.5, 0), (0.667,0), (0,0,1)),
+                                 (( 0.1667,-0.5, 0), (0.667,1), (0,0,1)),
+                                 (( 0.5000, 0.5, 0), (1.000,0), (0,0,1)),
+                                 (( 0.5000,-0.5, 0), (1.000,1), (0,0,1))],
+                                        indices: [],
+                                        primitive: .triangleStrip))
+        self.width.set(delta * 4)
 		update(width: width, fix: true)
 	}
 	required init(other: Node) {
 		let otherBar = other as! Bar
 		delta = otherBar.delta
-		mesh = Mesh(other: otherBar.mesh)
-		tex = otherBar.tex
 		framing = otherBar.framing
 		super.init(other: other)
+        mesh = Mesh(other: otherBar.mesh)
 	}
 	
 	func update(width: Float, fix: Bool) {
@@ -74,7 +68,7 @@ class Bar : Node, Surface {
 		mesh.vertices[4].position.0 =  xPos
 		mesh.vertices[5].position.0 =  xPos
 		
-		mesh.updateVerticesBuffer()
+//		mesh.updateVerticesBuffer()
 	}
 	
 	func updateWithLittleBro(fix: Bool) {
@@ -85,10 +79,7 @@ class Bar : Node, Surface {
 	}
 }
 
-class Frame : Node, Surface {
-	var tex: Texture
-	let mesh: Mesh
-	var trShow = SmTrans()
+class Frame : Surface {
 	let delta: Float
 	var framing: Framing
 	
@@ -96,49 +87,47 @@ class Frame : Node, Surface {
 	init(_ parent: Node, framing: Framing = .inside, delta: Float, lambda: Float = 0, texture: Texture,
 		 width: Float = 0, height: Float = 0, flags: Int = 0)
 	{
-		self.tex = texture
 		self.delta = delta
 		self.framing = framing
-		
-		mesh = Mesh(vertices:
-			[((-0.5000, 0.5000, 0), (0.000,0.000), (0,0,1)),
-			 ((-0.5000, 0.1667, 0), (0.000,0.333), (0,0,1)),
-			 ((-0.5000,-0.1667, 0), (0.000,0.667), (0,0,1)),
-			 ((-0.5000,-0.5000, 0), (0.000,1.000), (0,0,1)),
-			 ((-0.1667, 0.5000, 0), (0.333,0.000), (0,0,1)),
-			 ((-0.1667, 0.1667, 0), (0.333,0.333), (0,0,1)),
-			 ((-0.1667,-0.1667, 0), (0.333,0.667), (0,0,1)),
-			 ((-0.1667,-0.5000, 0), (0.333,1.000), (0,0,1)),
-			 (( 0.1667, 0.5000, 0), (0.667,0.000), (0,0,1)),
-			 (( 0.1667, 0.1667, 0), (0.667,0.333), (0,0,1)),
-			 (( 0.1667,-0.1667, 0), (0.667,0.667), (0,0,1)),
-			 (( 0.1667,-0.5000, 0), (0.667,1.000), (0,0,1)),
-			 (( 0.5000, 0.5000, 0), (1.000,0.000), (0,0,1)),
-			 (( 0.5000, 0.1667, 0), (1.000,0.333), (0,0,1)),
-			 (( 0.5000,-0.1667, 0), (1.000,0.667), (0,0,1)),
-			 (( 0.5000,-0.5000, 0), (1.000,1.000), (0,0,1))],
-					indices: [
-						0, 1, 4,  1, 5, 4,
-						1, 2, 5,  2, 6, 5,
-						2, 3, 6,  3, 7, 6,
-						4, 5, 8,  5, 9, 8,
-						5, 6, 9,  6, 10, 9,
-						6, 7, 10, 7, 11, 10,
-						8, 9, 12, 9, 13, 12,
-						9, 10, 13, 10, 14, 13,
-						10, 11, 14, 11, 15, 14 ],
-					primitive: .triangle)
-		super.init(parent, 0, 0, delta * 2, delta * 2, lambda: lambda, flags: flags | Flag1.surfaceDontRespectRatio)
+        super.init(parent, tex: texture, 0, 0, delta * 2, lambda: lambda, flags: flags | Flag1.surfaceDontRespectRatio,
+                   mesh: Mesh(vertices:
+                                [((-0.5000, 0.5000, 0), (0.000,0.000), (0,0,1)),
+                                 ((-0.5000, 0.1667, 0), (0.000,0.333), (0,0,1)),
+                                 ((-0.5000,-0.1667, 0), (0.000,0.667), (0,0,1)),
+                                 ((-0.5000,-0.5000, 0), (0.000,1.000), (0,0,1)),
+                                 ((-0.1667, 0.5000, 0), (0.333,0.000), (0,0,1)),
+                                 ((-0.1667, 0.1667, 0), (0.333,0.333), (0,0,1)),
+                                 ((-0.1667,-0.1667, 0), (0.333,0.667), (0,0,1)),
+                                 ((-0.1667,-0.5000, 0), (0.333,1.000), (0,0,1)),
+                                 (( 0.1667, 0.5000, 0), (0.667,0.000), (0,0,1)),
+                                 (( 0.1667, 0.1667, 0), (0.667,0.333), (0,0,1)),
+                                 (( 0.1667,-0.1667, 0), (0.667,0.667), (0,0,1)),
+                                 (( 0.1667,-0.5000, 0), (0.667,1.000), (0,0,1)),
+                                 (( 0.5000, 0.5000, 0), (1.000,0.000), (0,0,1)),
+                                 (( 0.5000, 0.1667, 0), (1.000,0.333), (0,0,1)),
+                                 (( 0.5000,-0.1667, 0), (1.000,0.667), (0,0,1)),
+                                 (( 0.5000,-0.5000, 0), (1.000,1.000), (0,0,1))],
+                                        indices: [
+                                            0, 1, 4,  1, 5, 4,
+                                            1, 2, 5,  2, 6, 5,
+                                            2, 3, 6,  3, 7, 6,
+                                            4, 5, 8,  5, 9, 8,
+                                            5, 6, 9,  6, 10, 9,
+                                            6, 7, 10, 7, 11, 10,
+                                            8, 9, 12, 9, 13, 12,
+                                            9, 10, 13, 10, 14, 13,
+                                            10, 11, 14, 11, 15, 14 ],
+                                        primitive: .triangle))
 		update(width: width, height: height, fix: true)
 	}
 	required init(other: Node)
 	{
 		let otherFrame = other as! Frame
-		tex = otherFrame.tex
 		delta = otherFrame.delta
 		framing = otherFrame.framing
-		mesh = Mesh(other: otherFrame.mesh)
 		super.init(other: other)
+        // Chaque frame a sa propre mesh...
+        mesh = Mesh(other: otherFrame.mesh)
 	}
 	func update(width: Float, height: Float, fix: Bool) {
 		guard width >= 0, height >= 0 else { printerror("width < 0 or height < 0"); return }
@@ -179,7 +168,8 @@ class Frame : Node, Surface {
 		mesh.vertices[10].position.1 = -yPos
 		mesh.vertices[14].position.1 = -yPos
 		
-		mesh.updateVerticesBuffer()
+//		mesh.updateVerticesBuffer()
+        
 		if let parent = parent, containsAFlag(Flag1.giveSizesToParent) {
 			parent.width.set(self.width.realPos)
 			parent.height.set(self.height.realPos)

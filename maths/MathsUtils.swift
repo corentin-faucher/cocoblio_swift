@@ -31,6 +31,18 @@ extension float4x4 {
         self.columns.3.z += self.columns.0.z * t.x + self.columns.1.z * t.y + self.columns.2.z * t.z
     }
     
+    mutating func setAndTranslate(ref: float4x4, with t: Vector3) {
+        self.columns.0 = ref.columns.0
+        self.columns.1 = ref.columns.1
+        self.columns.2 = ref.columns.2
+        self.columns.3 = [
+            ref.columns.3.x + ref.columns.0.x * t.x + ref.columns.1.x * t.y + ref.columns.2.x * t.z,
+            ref.columns.3.y + ref.columns.0.y * t.x + ref.columns.1.y * t.y + ref.columns.2.y * t.z,
+            ref.columns.3.z + ref.columns.0.z * t.x + ref.columns.1.z * t.y + ref.columns.2.z * t.z,
+            ref.columns.3.w
+        ]
+    }
+    
     mutating func rotateX(ofRadian theta: Float) {
         let c = cosf(theta)
         let s = sinf(theta)
@@ -76,6 +88,23 @@ extension float4x4 {
         self.columns.3.x += self.columns.1.x * ty + self.columns.2.x * tz
         self.columns.3.y += self.columns.1.y * ty + self.columns.2.y * tz
         self.columns.3.z += self.columns.1.z * ty + self.columns.2.z * tz
+    }
+    
+    mutating func setRotateYandTranslateYZ(ref: float4x4, thetaY: Float, ty: Float, tz: Float) {
+        let c = cosf(thetaY)
+        let s = sinf(thetaY)
+        
+        let v2_rot: Vector4 = s*ref.columns.0 + c*ref.columns.2
+        
+        self.columns.0 = c*ref.columns.0 - s*ref.columns.2
+        self.columns.1 = ref.columns.1
+        self.columns.2 = v2_rot
+        self.columns.3 = [
+            ref.columns.3.x + ref.columns.1.x * ty + v2_rot.x * tz,
+            ref.columns.3.y + ref.columns.1.y * ty + v2_rot.y * tz,
+            ref.columns.3.z + ref.columns.1.z * ty + v2_rot.z * tz,
+            ref.columns.3.w
+        ]
     }
     
     mutating func setToLookAt(eye: Vector3, center: Vector3, up: Vector3)
