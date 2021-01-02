@@ -8,6 +8,40 @@
 
 import Foundation
 
+/** Classe de base pour les boutons. Un bouton est un noeud sélectionnable
+ * (avec les flags selectable/selectableRoot) ayant la méthode "action()" qui doit être overridé. */
+class Button : Node {
+    init(_ refNode: Node?,
+         _ x: Float, _ y: Float, _ height: Float,
+         lambda: Float = 0, flags: Int = 0)
+    {
+        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
+        makeSelectable()
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+    
+    func action() {
+        printerror("To be overridden.")
+    }
+}
+
+
+/** Pour les noeuds "déplaçable".
+* 1. On prend le noeud : "grab",
+* 2. On le déplace : "drag",
+* 3. On le relâche : "letGo".
+* Les position sont dans le référentiel du Draggable.
+* On utilise les flags selectable et selectableRoot pour les trouver.
+* (On peut être draggable mais pas actionable, e.g. le sliding menu.) */
+protocol Draggable : Node {
+    func grab(relPosInit: Vector2)
+    func drag(relPos: Vector2)
+    func letGo() // (iOS ne fournit pas la vitesse)
+    func justTap()
+}
+
 /** Un bouton switch est seulement Draggable, pas Actionnable. (L'action est faite lors de justTap et drag.)
  * Par contre il y a tout de même la méthode "action" qui doit être overridé.
  * L'action a lieu lors du drag. (ou du "justTouch") */

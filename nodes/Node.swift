@@ -30,7 +30,7 @@ class Node : CopyableNode {
     var deltaY: Float {
         return height.realPos * scaleY.realPos / 2
     }
-    
+     
     /** Données d'affichage. */
     var piu : Renderer.PerInstanceUniforms
     
@@ -58,11 +58,28 @@ class Node : CopyableNode {
 		return (flags & flagsRef) != 0
 	}
 	func isDisplayActive() -> Bool {
-		if let surface = self as? Surface, surface.trShow.isActive {
-			return true
-		}
 		return containsAFlag(Flag1.show | Flag1.branchToDisplay)
 	}
+    /*-- Ouverture/ Fermeture --*/
+    /** Open "base" ajuste la position (fading et relativeToParent) */
+    func open() {
+        guard containsAFlag(Flag1.openFlags) else { return }
+        // 1. Set relatively to parent en priorité.
+        if containsAFlag(Flag1.relativeFlags) {
+            setRelativelyToParent(fix: true)
+            return
+        }
+        // 2. FadeIn, pour l'instant juste en x de la droite.
+        if !containsAFlag(Flag1.show) {
+            x.fadeIn()
+        }
+    }
+    func close() {
+        // Pour l'instant il n'y a que fadeInRight qui doit être "close".
+        if containsAFlag(Flag1.fadeInRight) {
+            x.fadeOut()
+        }
+    }
     /*-- Fonctions d'accès et Computed properties --*/
     /// Obtenir la position absolue d'un noeud.
     func getAbsPos() -> Vector2 {

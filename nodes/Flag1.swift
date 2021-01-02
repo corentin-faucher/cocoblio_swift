@@ -37,16 +37,19 @@ enum Flag1 {
     /** Paur l'affichage. La branche a encore des descendant à afficher. */
     static let branchToDisplay = 1<<13
     
-	/*-- Pour le protocole RelativeToParent --*/
+	/*-- Placements à l'ouverture --*/
     static let relativeToRight = 1<<14
     static let relativeToLeft = 1<<15
     static let relativeToTop = 1<<16
     static let relativeToBottom = 1<<17
-	static let allRelatives = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom
+    static let fadeInRight = 1<<18
+    static let relativeFlags = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom
+	static let openFlags = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom | fadeInRight
 	
-	static let notToAlign = 1<<18
+    /// Descendant ne devant pas être aligné
+	static let notToAlign = 1<<19
 	
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<19
+    static let firstCustomFlag = 1<<20
 }
 

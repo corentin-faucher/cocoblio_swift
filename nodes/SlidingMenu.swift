@@ -8,6 +8,15 @@
 
 import Foundation
 
+protocol Scrollable : Node {
+    /** Scrolling with wheel. */
+    func scroll(up: Bool)
+    /** Scrolling with trackpad. */
+    func trackpadScrollBegan()
+    func trackpadScroll(deltaY: Float)
+    func trackpadScrollEnded()
+}
+
 /** Menu déroulant: root->menu->(item1, item2,... )
 * Vide au départ, doit être rempli quand on veut l'afficher.
 * if(spacing < 1) -> Recouvrement, if(spacing > 1) -> espacement.
@@ -15,7 +24,7 @@ import Foundation
 * checkItem : Methode/ext de noeud pour mettre à jour les noeud-boutons.
 * getIndicesRangeAtOpening : exécuter à l'ouverture du sliding menu et retourne le range attendu des items.
 * getPosIndex : la position de l'indice où on est centré à l'ouverture. */
-class SlidingMenu : Node, Scrollable, Openable, Closeable {
+class SlidingMenu : Node, Scrollable { // Openable
 	private unowned let metalView: CoqMetalView
 	private let nDisplayed: Int
     private let spacing: Float
@@ -40,7 +49,8 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
         spacing: Float,
         addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Node),
         getIndicesRangeAtOpening: @escaping (() -> ClosedRange<Int>?),
-        getPosIndex: @escaping (() -> Int)
+        getPosIndex: @escaping (() -> Int),
+        flags: Int=0
     ) {
 		self.metalView = metalView
         self.nDisplayed = nDisplayed
@@ -50,7 +60,7 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
         self.getPosIndex = getPosIndex
         
         super.init(refNode,
-                   x, y, width, height, lambda: 10)
+                   x, y, width, height, lambda: 10, flags: flags)
         makeSelectable()
 		let scrollBarWidth = width * 0.025
 		menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20)
@@ -95,50 +105,6 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
 		return menu.height.realPos / height.realPos
 	}
 	
-	/*-- Draggable (pour iOS) --*/
-	/*
-	func grab(relPosInit: Vector2) {
-		flingChrono.stop()
-		menuGrabPosY = relPosInit.y - menu.y.realPos
-		vitYm1 = 0
-		vitY.set(0)
-		deltaT.start()
-	}
-	func drag(relPos: Vector2) {
-		guard let menuGrabPosY = menuGrabPosY else {
-			printerror("drag pas init.")
-			return
-		}
-		guard deltaT.elsapsedSec > 0 else { return }
-		
-		let lastMenuY = menu.y.realPos
-		setMenuYpos(yCandIn: relPos.y - menuGrabPosY, snap: false, fix: false)
-		let menuDeltaY = menu.y.realPos - lastMenuY
-		checkItemsVisibility(openNode: true)
-		vitYm1 = vitY.realPos
-		vitY.set(menuDeltaY / deltaT.elsapsedSec)
-		deltaT.start()
-	}
-	func letGo() {
-		// 0. Cas stop. Lâche sans bouger. (vitesse négligeable)
-		vitY.set((vitY.realPos + vitYm1)/2)
-		print("letGo speed \(vitY.realPos)")
-		if abs(vitY.realPos) < 6 {
-			setMenuYpos(yCandIn: menu.y.realPos, snap: true, fix: false)
-			checkItemsVisibility(openNode: true)
-			return
-		}
-		// 1. Cas on laisse en "fling" (checkItemVisibilty s'occupe de mettre à jour la position)
-		flingChrono.start()
-		deltaT.start()
-		
-		checkFling()
-	}
-	func justTap() {
-		printwarning("Unused.")
-	}
-	*/
-	
 	/*-- Scrollable (pour macOS et iPadOS avec trackpad/souris)     --*/
 	/*!! Pour aller vers le bas du menu -> scrollDeltaY < 0,        !!
 	  !! il faut envoyer le menu vers le haut -> menuDeltaY > 0 ... !!*/
@@ -175,7 +141,7 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
 	}
 	
 	/*-- Openable/Closeable --*/
-    func open() {
+    override func open() {
         func placeToOpenPos() {
 			let first = indicesRange?.first ?? 0
 //			let last = indicesRange?.last ?? 0
@@ -244,7 +210,8 @@ class SlidingMenu : Node, Scrollable, Openable, Closeable {
 		// 5. Signaler sa présence (pour iOS)
 		metalView.addScrollingViewIfNeeded(with: self)
     }
-	func close() {
+	override func close() {
+        super.close()
 		metalView.removeScrollingView()
 	}
 	
@@ -372,3 +339,50 @@ fileprivate class SlidingMenuScrollBar : Node {
 		nub.y.pos = -newRelY * DeltaY
 	}
 }
+
+// GARBAGE
+
+/*-- Draggable (pour iOS) --*/
+/*
+func grab(relPosInit: Vector2) {
+    flingChrono.stop()
+    menuGrabPosY = relPosInit.y - menu.y.realPos
+    vitYm1 = 0
+    vitY.set(0)
+    deltaT.start()
+}
+func drag(relPos: Vector2) {
+    guard let menuGrabPosY = menuGrabPosY else {
+        printerror("drag pas init.")
+        return
+    }
+    guard deltaT.elsapsedSec > 0 else { return }
+    
+    let lastMenuY = menu.y.realPos
+    setMenuYpos(yCandIn: relPos.y - menuGrabPosY, snap: false, fix: false)
+    let menuDeltaY = menu.y.realPos - lastMenuY
+    checkItemsVisibility(openNode: true)
+    vitYm1 = vitY.realPos
+    vitY.set(menuDeltaY / deltaT.elsapsedSec)
+    deltaT.start()
+}
+func letGo() {
+    // 0. Cas stop. Lâche sans bouger. (vitesse négligeable)
+    vitY.set((vitY.realPos + vitYm1)/2)
+    print("letGo speed \(vitY.realPos)")
+    if abs(vitY.realPos) < 6 {
+        setMenuYpos(yCandIn: menu.y.realPos, snap: true, fix: false)
+        checkItemsVisibility(openNode: true)
+        return
+    }
+    // 1. Cas on laisse en "fling" (checkItemVisibilty s'occupe de mettre à jour la position)
+    flingChrono.start()
+    deltaT.start()
+    
+    checkFling()
+}
+func justTap() {
+    printwarning("Unused.")
+}
+*/
+

@@ -91,20 +91,20 @@ extension Node {
     }
 
     /**  Pour chaque noeud :
-     * 1. Applique open pour les openable,
+     * 1. Applique open (avant d'ajouter "show"),
      * 2. ajoute "show" si non caché,
      * 3. visite si est une branche avec "show".
      * (show peut être ajouté manuellement avant pour afficher une branche cachée)
      * (show peut avoir été ajouté exterieurement) */
     final func openBranch() {
-        (self as? Openable)?.open()
+        self.open()
         if !containsAFlag(Flag1.hidden) {
             addFlags(Flag1.show)
         }
         guard containsAFlag(Flag1.show), let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
         while true {
-            (sq.pos as? Openable)?.open()
+            sq.pos.open()
             if !sq.pos.containsAFlag(Flag1.hidden) {
                 sq.pos.addFlags(Flag1.show)
             }
@@ -126,14 +126,14 @@ extension Node {
         if !containsAFlag(Flag1.exposed) {
             removeFlags(Flag1.show)
         }
-		(self as? Closeable)?.close()
+        close()
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
         while true {
             if !sq.pos.containsAFlag(Flag1.exposed) {
                 sq.pos.removeFlags(Flag1.show)
             }
-			(sq.pos as? Closeable)?.close()
+            sq.pos.close()
             
             if sq.goDown() {continue}
             while !sq.goRight() {

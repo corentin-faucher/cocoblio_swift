@@ -20,7 +20,8 @@ protocol KeyResponder : ScreenBase {
 	func modifiersChangedTo(_ newModifiers: UInt)
 }
 
-class ScreenBase : Node, Reshapable, Openable {
+class ScreenBase : Node, Reshapable //, Openable
+{
 	
 	/** Les écrans sont toujours ajoutés juste après l'ainé.
 	* add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
@@ -40,7 +41,7 @@ class ScreenBase : Node, Reshapable, Openable {
 		super.init(other: theOther)
 	}
 	
-	func open() {
+    override func open() {
 		alignScreenElements(isOpening: true)
 	}
 	

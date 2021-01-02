@@ -3,6 +3,8 @@
 extension Node : KotlinLikeScope {}
 
 extension Node {
+    /*-- Ajout de frame --*/
+    
 	/** Ajout d'un frame et string à un noeud. (e.g. remplir un bouton.)
 	* La hauteur devient 1 et ses scales deviennent sa hauteur.
 	* (Pour avoir les objets (label...) relatif au noeud.)
@@ -73,6 +75,9 @@ extension Node {
         TestFrame(self)
     }
     
+    
+    /*-- Ajustement de position/taille --*/
+    
     func adjustWidthAndHeightFromChildren() {
         var w: Float = 0
         var h: Float = 0
@@ -92,6 +97,24 @@ extension Node {
         } while (sq.goRightWithout(flag: Flag1.hidden))
         width.set(w)
         height.set(h)
+    }
+    
+    func setRelativelyToParent(fix: Bool) {
+        guard let theParent = parent else { return }
+        var xDec: Float = 0
+        var yDec: Float = 0
+        if containsAFlag(Flag1.relativeToRight) {
+            xDec = theParent.width.realPos * 0.5
+        } else if containsAFlag(Flag1.relativeToLeft) {
+            xDec = -theParent.width.realPos * 0.5
+        }
+        if (containsAFlag(Flag1.relativeToTop)) {
+            yDec = theParent.height.realPos * 0.5
+        } else if containsAFlag(Flag1.relativeToBottom) {
+            yDec = -theParent.height.realPos * 0.5
+        }
+        x.setRelToDef(shift: xDec, fix: fix)
+        y.setRelToDef(shift: yDec, fix: fix)
     }
     
     /** Aligner les descendants d'un noeud. */

@@ -1,41 +1,5 @@
 
 
-//protocol Surface : Node {
-//	var tex: Texture { get }
-//	var mesh: Mesh { get }
-//	var trShow: SmTrans { get set }
-//    var trExtra: SmTrans { get set }
-//	func updateRatio(fix: Bool)
-//}
-
-//protocol FlippableSurface {
-//	var trFlip: SmTrans { get set }
-//}
-
-//extension Surface {
-//	/** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
-//	* Sinon, on ne fait que vérifier le frame voisin
-//	* et le parent. */
-//	func updateRatio(fix: Bool) {
-//		guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
-//
-//		if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-//			width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
-//		} else {
-//			width.set(height.realPos * tex.ratio, fix, false)
-//		}
-//		if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
-//			bigBroFrame.updateWithLittleBro(fix: fix)
-//		}
-//		if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
-////			print("giveng size to parent.")
-//			theParent.width.set(width.realPos)
-//			theParent.height.set(height.realPos)
-//		}
-//	}
-//}
-
-
 class Surface: Node {
     var tex: Texture
     var mesh: Mesh
@@ -79,10 +43,15 @@ class Surface: Node {
             theParent.height.set(height.realPos)
         }
     }
+    
+    override func isDisplayActive() -> Bool {
+        return trShow.isActive
+    }
 }
 
 
-class StringSurface: Surface, Openable {
+class StringSurface: Surface //, Openable
+{
 	/** On prend pour aquis que la texture reçu est déjà une texture avec une string. */
 	@discardableResult
 	init(_ refNode: Node?, strTex: Texture,
@@ -120,8 +89,9 @@ class StringSurface: Surface, Openable {
 	required init(other: Node) {
 		super.init(other: other)
 	}
-	func open() {
+    override func open() {
 		updateRatio(fix: true)
+        super.open()
 	}
 	/** Change la texture du noeud (dervrait être une string). */
 	func updateTexture(_ newTexture: Texture) {
@@ -189,7 +159,8 @@ class TiledSurface: Surface {
 	}
 }
 
-class LanguageSurface: Surface, Openable {
+class LanguageSurface: Surface
+{
 	
 	@discardableResult
 	init(_ refNode: Node?, pngTex: Texture,
@@ -209,7 +180,8 @@ class LanguageSurface: Surface, Openable {
 	required init(other: Node) {
 		super.init(other: other)
 	}
-	func open() {
+    override func open() {
+        super.open()
 		let i = Language.currentTileId
 		piu.tile = (Float(i % tex.m),
 					Float((i / tex.m) % tex.n))
@@ -223,37 +195,10 @@ class LanguageSurface: Surface, Openable {
 	}
 }
 
-//class MeshSurface : Surface_ {
-//	let tex: Texture
-//	var mesh: Mesh
-//	var trShow: SmTrans
-//    var trExtra = SmTrans()
-//
-//	@discardableResult
-//	init(_ refNode: Node?, texture: Texture, mesh: Mesh,
-//		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
-//		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
-//	) {
-//		tex = texture
-//		self.mesh = mesh
-//		trShow = SmTrans()
-//		super.init(refNode, x, y, height, height, lambda: lambda, flags: flags|Flag1.isSurface,
-//				   asParent: asParent, asElderBigbro: asElderBigbro)
-//	}
-//	required init(other: Node) {
-//		let otherSurf = other as! MeshSurface
-//		tex = otherSurf.tex
-//		mesh = otherSurf.mesh
-//		trShow = otherSurf.trShow
-//		super.init(other: other)
-//	}
-//
-//	func updateRatio(fix: Bool) {
-//		printwarning("No updateRatio for MeshSurface.")
-//	}
-//}
 
-class TestFrame : Surface, Reshapable, Openable {
+
+class TestFrame : Surface, Reshapable
+{
 	@discardableResult
 	init(_ refNode: Node) {
         super.init(refNode, tex: Texture.testFrame, 0, 0, refNode.height.realPos, lambda: 10,
@@ -265,10 +210,11 @@ class TestFrame : Surface, Reshapable, Openable {
 		super.init(other: other)
 	}
 	
-	func open() {
+    override func open() {
 		guard let theParent = parent else { printerror("TestFrame sans parent."); return}
 		height.pos = theParent.height.realPos
 		width.pos = theParent.width.realPos
+        super.open()
 	}
 	
 	func reshape() -> Bool {
@@ -277,6 +223,72 @@ class TestFrame : Surface, Reshapable, Openable {
 	}
 }
 
+// GARBAGE
+
+//protocol Surface : Node {
+//    var tex: Texture { get }
+//    var mesh: Mesh { get }
+//    var trShow: SmTrans { get set }
+//    var trExtra: SmTrans { get set }
+//    func updateRatio(fix: Bool)
+//}
+
+//protocol FlippableSurface {
+//    var trFlip: SmTrans { get set }
+//}
+
+//extension Surface {
+//    /** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
+//    * Sinon, on ne fait que vérifier le frame voisin
+//    * et le parent. */
+//    func updateRatio(fix: Bool) {
+//        guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
+//
+//        if containsAFlag(Flag1.surfaceWithCeiledWidth) {
+//            width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
+//        } else {
+//            width.set(height.realPos * tex.ratio, fix, false)
+//        }
+//        if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
+//            bigBroFrame.updateWithLittleBro(fix: fix)
+//        }
+//        if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
+////            print("giveng size to parent.")
+//            theParent.width.set(width.realPos)
+//            theParent.height.set(height.realPos)
+//        }
+//    }
+//}
+
+//class MeshSurface : Surface_ {
+//    let tex: Texture
+//    var mesh: Mesh
+//    var trShow: SmTrans
+//    var trExtra = SmTrans()
+//
+//    @discardableResult
+//    init(_ refNode: Node?, texture: Texture, mesh: Mesh,
+//         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
+//         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
+//    ) {
+//        tex = texture
+//        self.mesh = mesh
+//        trShow = SmTrans()
+//        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags|Flag1.isSurface,
+//                   asParent: asParent, asElderBigbro: asElderBigbro)
+//    }
+//    required init(other: Node) {
+//        let otherSurf = other as! MeshSurface
+//        tex = otherSurf.tex
+//        mesh = otherSurf.mesh
+//        trShow = otherSurf.trShow
+//        super.init(other: other)
+//    }
+//
+//    func updateRatio(fix: Bool) {
+//        printwarning("No updateRatio for MeshSurface.")
+//    }
+//}
 /*
 class Surface : Node {
 var tex: Texture

@@ -71,7 +71,7 @@ enum Language : LanguageInfo, CaseIterable {
 	static var current: Language = getSystemLanguage() {
 		didSet {
 			guard current != oldValue else {return}
-			// (pour l'instant c'est juste l'arabe...)
+			// Lecture de droite à gauche (pour l'instant c'est juste l'arabe...)
 			currentIsRightToLeft = (current == .arabic)
 			currentDirectionFactor = currentIsRightToLeft ? -1 : 1
 			currentCharSpacing = evalCharSpacing()
@@ -112,6 +112,7 @@ enum Language : LanguageInfo, CaseIterable {
 				langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
 			}
 			if let language = Language(iso: langISO) {
+                printdebug("System language is \(language)")
 				return language
 			}
 		}
