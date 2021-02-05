@@ -33,7 +33,7 @@ class Surface: Node {
         if containsAFlag(Flag1.surfaceWithCeiledWidth) {
             width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
         } else {
-            width.set(height.realPos * tex.ratio, fix, false)
+            width.set(height.realPos * tex.ratio, fix, true)
         }
         if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
             bigBroFrame.updateWithLittleBro(fix: fix)

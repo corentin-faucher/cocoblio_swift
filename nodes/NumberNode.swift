@@ -16,13 +16,14 @@ class NumberNode : Node {
     private var extraDigit: Digit?
     private var spacing: Float
     private var sepSpacing: Float
+    private let showPlus: Bool
     
 	@discardableResult
     init(_ refNode: Node?, number: Int,
          _ x: Float, _ y: Float, height: Float, lambda: Float = 0,
 		 unitDecimal: Int = 0, digitsTex: Texture = Texture.blackDigits,
          separator: Digit = .dot, extraDigit: Digit? = nil,
-         spacing: Float = 0.83, separatorSpacing: Float = 0.5) {
+         spacing: Float = 0.83, separatorSpacing: Float = 0.5, showPlus: Bool = false) {
         self.digitsTex = digitsTex
         self.number = number
         self.unitDecimal = unitDecimal
@@ -30,6 +31,7 @@ class NumberNode : Node {
         self.extraDigit = extraDigit
         self.spacing = spacing
         self.sepSpacing = separatorSpacing
+        self.showPlus = showPlus
         super.init(refNode, x, y, 1, 1, lambda: lambda)
         scaleX.set(height)
         scaleY.set(height)
@@ -45,6 +47,7 @@ class NumberNode : Node {
         extraDigit = toCloneNumber.extraDigit
         spacing = toCloneNumber.spacing
         sepSpacing = toCloneNumber.sepSpacing
+        showPlus = toCloneNumber.showPlus
         super.init(other: other)
         update()
     }
@@ -69,6 +72,9 @@ class NumberNode : Node {
         sq.goDownForced(refSurf)
         if (isNegative) {
             (sq.pos as? TiledSurface)?.updateTile(Digit.minus.rawValue, 0)
+            sq.goRightForced(refSurf)
+        } else if showPlus {
+            (sq.pos as? TiledSurface)?.updateTile(Digit.plus.rawValue, 0)
             sq.goRightForced(refSurf)
         }
         // 2. Chiffres avant le "separator"

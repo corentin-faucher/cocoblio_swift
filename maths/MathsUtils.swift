@@ -176,9 +176,13 @@ extension Float {
         return self - ceilf((self - .pi) / (2 * .pi)) * 2 * .pi
     }
 	
+    // kotlin like utils...
 	func roundToInt() -> Int {
 		return Int(roundf(self))
 	}
+    func toInt() -> Int {
+        return Int(self)
+    }
 }
 
 extension UInt32 {

@@ -29,6 +29,7 @@ struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
             case "zh-Hant": id = 11
             case "pt": id = 12
             case "ko": id = 13
+            case "vi": id = 14
         default: printerror("Language non définie: \(value)"); id = 1
         }
     }
@@ -51,6 +52,7 @@ enum Language : LanguageInfo, CaseIterable {
     case portuguese = "pt"
     case russian = "ru"
     case swedish = "sv"
+    case vietnamese = "vi"
     case chinese_simpl = "zh-Hans"
     case chinese_trad = "zh-Hant"
     
@@ -136,6 +138,7 @@ enum Language : LanguageInfo, CaseIterable {
 			case 11: return .chinese_trad
 			case 12: return .portuguese
 			case 13: return .korean
+            case 14: return .vietnamese
 			default: return nil
 		}
 	}

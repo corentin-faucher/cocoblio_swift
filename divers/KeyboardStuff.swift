@@ -17,12 +17,24 @@ protocol KeyboardKey {
 	var keycode: UInt16 { get }
 	var keymod: UInt { get }
 	var isVirtual: Bool { get }
+    var char: Character? { get }
 }
 
 struct KeyData : KeyboardKey {
 	var keycode: UInt16
 	var keymod: UInt
 	var isVirtual: Bool
+    var char: Character?
+}
+
+/** Les char spéciaux et "importans" */
+enum SpChar {
+    static let delete: Character = "\u{8}"
+    static let tab: Character = "\t"
+    static let return_: Character = "\r"
+//    static let newline: Character = "\n"
+    static let space: Character = " "
+    static let ideographicSpace: Character = "　"
 }
 
 /** MyKeyCode... */
@@ -50,6 +62,7 @@ enum MKC {
 
 enum Keycode {
 	#if os(OSX)
+    // Voir hitoolbox events.h...
 	// Touches modifier
 	static let command: UInt16 = 0x37
 	static let shift: UInt16 = 0x38
@@ -131,3 +144,23 @@ enum Modifier {
 	#endif
 	static let shiftOrOption = shift | option
 }
+
+let keypadKeycodeToChar: [UInt16:Character] = [
+    0x41 : ".",
+    0x43 : "*",
+    0x45 : "+",
+    0x4B : "/",
+    0x4C : SpChar.return_,
+    0x4E : "-",
+    0x51 : "=",
+    0x52 : "0",
+    0x53 : "1",
+    0x54 : "2",
+    0x55 : "3",
+    0x56 : "4",
+    0x57 : "5",
+    0x58 : "6",
+    0x59 : "7",
+    0x5B : "8",
+    0x5C : "9"
+]

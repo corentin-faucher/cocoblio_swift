@@ -132,13 +132,16 @@ class SliderButton : Node, Draggable {
 	private(set) var value: Float
 	private var nub: TiledSurface!
 	private let slideWidth: Float
+    private let actionAtLetGo: Bool // Action apportée seulement à la fin quand on lâche le nub.
+        // Sinon action en continu...
 	
-	init(parent: Node, value: Float,
+    init(parent: Node, value: Float, actionAtLetGo: Bool,
 		 _ x: Float, _ y: Float, _ height: Float, slideWidth: Float,
 		 lambda: Float = 0, flags: Int = 0)
 	{
 		self.slideWidth = max(slideWidth, height)
 		self.value = value
+        self.actionAtLetGo = actionAtLetGo
 		super.init(parent, x, y, self.slideWidth + height, height,
 				   lambda: lambda, flags: flags)
 		initStructure()
@@ -147,6 +150,7 @@ class SliderButton : Node, Draggable {
 		let otherSlider = other as! SliderButton
 		self.value = otherSlider.value
 		self.slideWidth = otherSlider.slideWidth
+        self.actionAtLetGo = otherSlider.actionAtLetGo
 		super.init(other: other)
 		initStructure()
 	}
@@ -172,16 +176,20 @@ class SliderButton : Node, Draggable {
 		nub.x.pos = min(max(relPos.x, -slideWidth/2), slideWidth/2)
 		value = nub.x.realPos / slideWidth + 0.5
 		// 2. Action!
-		action()
+        if !actionAtLetGo {
+            action()
+        }
 	}
 	func action() {
 		printerror("To be overridden.")
 	}
 	
 	func letGo() {
-		// (pass)
+        if actionAtLetGo {
+            action()
+        }
 	}
 	func justTap() {
-		// (pass)
+		// (pass, il faut bouger au moins un peu le slider...)
 	}
 }

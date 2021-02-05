@@ -12,9 +12,9 @@ import Foundation
 * On utilise les flags selectable et selectableRoot pour les trouver. */
 // Obsolete ? -> mieux de faire une base class "button"
 // (une base class peut flager la branche par défaut, un protocol ne peut pas)
-protocol Actionable : Node {
-    func action()
-}
+//protocol Actionable : Node {
+//    func action()
+//}
 
 protocol Cursorable : Node {
 	func moveAt(_ pos: Vector2)
