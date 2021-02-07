@@ -342,7 +342,7 @@ fileprivate class SlidingMenuScrollBar : Node {
 
 // GARBAGE
 
-/*-- Draggable (pour iOS) --*/
+/*-- Draggable (pour iOS) obsolete -> Scrollable --*/
 /*
 func grab(relPosInit: Vector2) {
     flingChrono.stop()

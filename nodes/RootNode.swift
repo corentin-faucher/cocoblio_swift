@@ -18,7 +18,7 @@ import AppKit
 	 étant la première transformation pour tout les objets.
  	 Les positions (x,y,z) sont la position de la caméra.
  	 Par défaut on regarde vers l'origine (0,0,0). */
-class RootNode : Node, Reshapable {
+class RootNode : Node {
     private let up: Vector3 = [0, 1, 0]
     var yLookAt = SmoothPos(0, 5)
     unowned let metalView: CoqMetalView
@@ -45,7 +45,7 @@ class RootNode : Node, Reshapable {
                                     deltaX: Float(metalView.fullFrame.width),
                                     deltaY: Float(metalView.fullFrame.height))
     }
-    func reshape() -> Bool {
+    override func reshape() -> Bool {
         width.set(Float(metalView.usableFrame.width))
         height.set(Float(metalView.usableFrame.height))
         return true

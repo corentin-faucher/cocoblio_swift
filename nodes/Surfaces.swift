@@ -197,7 +197,7 @@ class LanguageSurface: Surface
 
 
 
-class TestFrame : Surface, Reshapable
+class TestFrame : Surface
 {
 	@discardableResult
 	init(_ refNode: Node) {
@@ -217,7 +217,7 @@ class TestFrame : Surface, Reshapable
         super.open()
 	}
 	
-	func reshape() -> Bool {
+	override func reshape() -> Bool {
 		open()
 		return false
 	}

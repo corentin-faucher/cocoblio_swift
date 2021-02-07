@@ -149,6 +149,8 @@ extension Renderer: MTKViewDelegate {
 			printerror("Not attach to CoqMetalView.")
 			return
 		}
+        
+        printdebug("mtkView(drawableSizeWillChange \(size)")
 	
 		Texture.checkFontSize(with: size)
 		
