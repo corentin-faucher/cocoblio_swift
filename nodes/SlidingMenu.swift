@@ -298,8 +298,8 @@ fileprivate class SlidingMenuScrollBar : Node {
 		
 		super.init(parent, parWidth/2 - width/2, 0, width, parHeight)
 		
-		let backTex = Texture.tryToGetExistingPng("scroll_bar_back") ?? Texture.getNewPng("scroll_bar_back", m: 1, n: 3)
-		let frontTex = Texture.tryToGetExistingPng("scroll_bar_front") ?? Texture.getNewPng("scroll_bar_front", m: 1, n: 3)
+        let backTex = Texture.getPng("scroll_bar_back")
+		let frontTex = Texture.getPng("scroll_bar_front")
 		
 		// Back of scrollBar
 		TiledSurface(self, pngTex: backTex, 0, parHeight/2 - width/2, width)

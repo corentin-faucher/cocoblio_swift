@@ -150,8 +150,6 @@ extension Renderer: MTKViewDelegate {
 			return
 		}
         
-        printdebug("mtkView(drawableSizeWillChange \(size)")
-	
 		Texture.checkFontSize(with: size)
 		
 		metalView.updateFrame()

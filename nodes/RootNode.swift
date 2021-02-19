@@ -76,7 +76,6 @@ class AppRootBase : RootNode {
 	final func changeActiveScreen(newScreen: ScreenBase?) {
 		// 0. Cas réouverture
 		if activeScreen === newScreen {
-			//newScreen?.closeBranch()
 			newScreen?.openBranch()
 			return
 		}

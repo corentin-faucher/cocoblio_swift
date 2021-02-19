@@ -8,6 +8,15 @@
 
 import MetalKit
 
+typealias Tiling = (m: Int, n: Int)
+
+enum TextureType {
+    case png
+    case constantString
+    case mutableString
+    case localizedString
+}
+
 /** Info d'une texture. m et n est le découpage en tiles.
  * Classe (par référence) car les noeuds ne font que y référer. */
 class Texture {
@@ -21,56 +30,50 @@ class Texture {
     let n: Int
     private(set) var string: String = ""
     private(set) var mtlTexture: MTLTexture? = nil
-    var ptu = PerTextureUniforms()
+    var ptu = PerTextureUniforms()  // Doit être mutable pour passer au MTLRenderCommandEncoder...
     private(set) var ratio: Float = 1
-	let isString: Bool
-	let isMutable: Bool
-	let isLocalized: Bool
+	let type: TextureType
 	
 	/*-- Methods --*/
 	func updateAsMutableString(_ string: String) {
-		guard isString, isMutable else {
-			printerror("N'est pas une texture de string ou n'est pas mutable."); return
+        guard type == .mutableString else {
+			printerror("N'est pas une texture de string mutable."); return
 		}
 		self.string = string
 		drawAsString()
 	}
 	    
 	// Private methods
-	/** Init comme png... */
-	private init(pngName: String, m: Int, n: Int) {
-		self.m = m
-		self.n = n
-		self.string = pngName
-		isString = false
-		isMutable = false
-		isLocalized = false
-		ptu.dim = (m: Float(m), n: Float(n))
-		drawAsPng()
-		Texture.allPngTextures.append(WeakElement(self))
-	}
-	/** Les texture de string sont soit constantes (mutable = false) soit modifiable.
-	 * Setter privé, car pour les constantes on stock dans un array pour évité les duplicas. */
-	private init(string: String, isMutable: Bool, isLocalized: Bool) {
-		m = 1
-		n = 1
-		self.string = string
-		isString = true
-		self.isMutable = isMutable
-		self.isLocalized = isLocalized
-		drawAsString()
-		Texture.allStringTextures.append(WeakElement(self))
-	}
+    private init(name: String, type: TextureType) {
+        string = name
+        self.type = type
+        
+        if type == .png {
+            if let tiling = Texture.pngNameToTiling[name] {
+                m = tiling.m; n = tiling.n
+                ptu.dim = (m: Float(m), n: Float(n))
+            } else {
+                printwarning("Pas de tiling pour png \(name).")
+                m = 1; n = 1
+            }
+            drawAsPng()
+        } else {
+            m = 1; n = 1
+            drawAsString()
+        }
+    }
+    
 	deinit {
 //		printdebug("Remove texture \(string)")
 	}
-	private func drawAsString() {
+	
+    private func drawAsString() {
 		// 1. Font et dimension de la string
 		#if os(OSX)
-		let font = NSFont(name: "American Typewriter", size: 100)// Texture.fontSize)
+		let font = NSFont(name: "American Typewriter", size: Texture.fontSize)
 		let color = NSColor.white
 		#else
-		let font = UIFont(name: "American Typewriter", size: 100)// Texture.fontSize)
+		let font = UIFont(name: "American Typewriter", size: Texture.fontSize)
 		let color = UIColor.white
 		#endif
 		// 2. Paragraph style
@@ -85,7 +88,7 @@ class Texture {
 		// 4. Init de la NSString
 		let str: NSString
 		if string.count > 0 {
-			if isLocalized {
+            if type == .localizedString {
 				str = NSString(string: string.localizedOrDucked)
 			} else {
 				str = NSString(string: string)
@@ -155,43 +158,51 @@ class Texture {
 		ptu.sizes = (Float(mtlTex.width), Float(mtlTex.height))
 		ratio = ptu.sizes.width / ptu.sizes.height * ptu.dim.n / ptu.dim.m
 	}
+    
 	
 	/*-- Static fields --*/
-	/*-- Les textures disponible par défault. --*/
-	static let characterSpacing: CGFloat = 0.23
-	static private(set) var fontSize: CGFloat = 64
-	static let defaultString = Texture(string: "🦆", isMutable: false, isLocalized: false)
-	static let testFrame = getNewPng("test_frame", m: 1, n: 1, showWarning: false)
-	static let blackDigits = getNewPng("digits_black", m: 12, n: 2, showWarning: false)
-	// On garde une référence pour libérer l'espace des textures quand on met l'application en pause (background)
-	private static var allStringTextures: [WeakElement<Texture>] = []
-	private static var allPngTextures: [WeakElement<Texture>] = []
-	// Liste (weak) des string constantes (non mutable) déjà définies
-	// (si plus besoin, la texture de la string disparait)
-	private static var cstStringsTex: [String: WeakElement<Texture>] = [:]
-	// Liste weak des string localisées
-	private static var locStringsTex: [String: WeakElement<Texture>] = [:]
-	// liste weak des png (juste pour être sur qu'il n'est pas déjà init)
-	private static var pngsTex: [String: WeakElement<Texture>] = [:]
-	/** Texture loader de Metal. Doit être initialisé par le renderer avec la device (gpu). */
-    private static var textureLoader: MTKTextureLoader!
+    // Textures accessibles par défaut...
+    static let defalutPng = Texture(name: "the_cat", type: .png)
+    static let defaultString = Texture(name: "🦆", type: .constantString)
+    static let testFrame = getPng("test_frame")
+    static let blackDigits = getPng("digits_black")
+    private static let defaultTiling: Tiling = (m: 1, n: 1)
+    static var pngNameToTiling: [String: Tiling] = [
+        "bar_in" : (m: 1, n: 1),
+        "digits_black" : (m: 12, n: 2),
+        "test_frame" : (m: 1, n: 1),
+        "scroll_bar_back" : (m: 1, n: 3),
+        "scroll_bar_front" : (m: 1, n: 3),
+        "switch_back" : (m: 1, n: 1),
+        "switch_front" : (m: 1, n: 1),
+        "the_cat" : (m: 1, n: 1),
+    ]
 	
+    // On garde une référence pour libérer l'espace et pour le resizing des strings.
+    private static var allStringTextures: [WeakElement<Texture>] = []
+    // On garde aussi les liste des constant et localized pour éviter les duplicats
+    private static var allConstantStringTextures: [String: WeakElement<Texture>] = [:]
+    private static var allLocalizedStringTextures: [String: WeakElement<Texture>] = [:]
+    // Pour les pngs la liste est pour le suspend/resume et éviter les duplicats.
+    private static var allPngTextures: [String: WeakElement<Texture>] = [:]
+    
 	/*-- Static method --*/
+    // Chargement et libération des textures (lors de pauses)
 	static func suspend() {
 		guard loaded else {printwarning("Textures already unloaded."); return}
 		loaded = false
 		allStringTextures.strip()
-		allPngTextures.strip()
 		for weaktexture in allStringTextures {
 			if let texture = weaktexture.value {
 				texture.mtlTexture = nil
 			}
 		}
-		for weaktexture in allPngTextures {
-			if let texture = weaktexture.value {
-				texture.mtlTexture = nil
-			}
-		}
+        allPngTextures.strip()
+        for (_, weaktexture) in allPngTextures {
+            if let texture = weaktexture.value {
+                texture.mtlTexture = nil
+            }
+        }
 	}
 	static func resume() {
 		guard !loaded else {printwarning("Textures already loaded."); return}
@@ -201,12 +212,14 @@ class Texture {
 				texture.drawAsString()
 			}
 		}
-		for weaktexture in allPngTextures {
-			if let texture = weaktexture.value {
-				texture.drawAsPng()
-			}
-		}
+        for (_, weaktexture) in allPngTextures {
+            if let texture = weaktexture.value {
+                texture.drawAsPng()
+            }
+        }
 	}
+    
+    // Taille des strings...
 	static func checkFontSize(with drawableSize: CGSize) {
 		let candidateFontSize = getCandidateFontSize(from: drawableSize)
 		// On redesine les strings seulement si un changement significatif.
@@ -219,72 +232,70 @@ class Texture {
 			}
 		}
 	}
+    static private func getCandidateFontSize(from drawableSize: CGSize) -> CGFloat {
+        return min(max(fontSizeRatio * min(drawableSize.width, drawableSize.height), minFontSize), maxFontSize)
+    }
+    static let characterSpacing: CGFloat = 0.23
+    static private(set) var fontSize: CGFloat = 64
+    static private let fontSizeRatio: CGFloat = 0.065
+    static private let minFontSize: CGFloat = 24
+    static private let maxFontSize: CGFloat = 120
+    
 	/** La texture d'une string mutable n'est pas partagé.
 	* Pour une string non mutable (constant), on garde une weak reference pour éviter les duplicas. */
-	static func getAsString(_ string: String, isMutable: Bool) -> Texture {
-		// Cas string mutable (editable, localisable), on donne une nouvelle texture.
-		if isMutable {
-			return Texture(string: string, isMutable: true, isLocalized: false)
-		}
-		// Cas "constant", on garde en mémoire dans cstStringsTex pour évité les duplicas
-		if let we = cstStringsTex[string], let tex = we.value {
-			return tex
-		}
-		let newTex = Texture(string: string, isMutable: false, isLocalized: false)
-		cstStringsTex[string] = WeakElement(newTex)
-		return newTex
-	}
-	/** Les strings localisées sont un peu comme les constantes (mais change quand on change de langue). */
-	static func getAsLocString(_ string: String) -> Texture {
-		// Vérif si déjà init...
-		if let we = locStringsTex[string], let tex = we.value {
-			return tex
-		}
-		let newTex = Texture(string: string, isMutable: false, isLocalized: true)
-		locStringsTex[string] = WeakElement(newTex)
-		return newTex
-	}
+    static func getConstantString(_ string: String) -> Texture {
+        if let we = allConstantStringTextures[string], let tex = we.value {
+            return tex
+        }
+        let newCstStr = Texture(name: string, type: .constantString)
+        allConstantStringTextures[string] = WeakElement(newCstStr)
+        allStringTextures.append(WeakElement(newCstStr))
+        return newCstStr
+    }
+    static func getNewMutableString(_ string: String = "") -> Texture {
+        let newMutStr = Texture(name: string, type: .mutableString)
+        allStringTextures.append(WeakElement(newMutStr))
+        return newMutStr
+    }
+    static func getLocalizedString(_ string: String) -> Texture {
+        if let we = allLocalizedStringTextures[string], let tex = we.value {
+            return tex
+        }
+        let newLocStr = Texture(name: string, type: .localizedString)
+        allLocalizedStringTextures[string] = WeakElement(newLocStr)
+        allStringTextures.append(WeakElement(newLocStr))
+        return newLocStr
+    }
+    // Lors d'un changement de langue...
 	static func updateAllLocStrings() {
 		// cleaning...
-		locStringsTex.strip()
+        allLocalizedStringTextures.strip()
 		// redraw...
-		for (_, weaktexture) in locStringsTex {
+		for (_, weaktexture) in allLocalizedStringTextures {
 			if let texture = weaktexture.value {
 				texture.drawAsString()
 			}
 		}
 	}
-	/** Les textures de png sont traités comme les texture de constant string,
-	* i.e. on garde une weak reference pour éviter les duplicas. */
-	static func getNewPng(_ pngName: String, m: Int, n: Int, showWarning: Bool = true) -> Texture {
-		if let we = pngsTex[pngName], let tex = we.value {
-			if showWarning {
-				printwarning("\(pngName) already init with \(tex.m)x\(tex.n) vs \(m)x\(n)")
-			}
-			return tex
-		}
-		let newTex = Texture(pngName: pngName, m: m, n: n)
-		pngsTex[pngName] = WeakElement(newTex)
-		return newTex
-	}
-	static func tryToGetExistingPng(_ pngName: String) -> Texture? {
-		guard let we = pngsTex[pngName], let tex = we.value else { return nil }
-		return tex
-	}
-	
+    static func getPng(_ pngName: String) -> Texture {
+        // 1. Cas déjà init.
+        if let we = allPngTextures[pngName], let tex = we.value {
+            return tex
+        }
+        let newPng = Texture(name: pngName, type: .png)
+        allPngTextures[pngName] = WeakElement(newPng)
+        return newPng
+    }
+    
+    
 	/** Init du loader de png avec le gpu (device). */
 	static func initWith(device: MTLDevice, drawableSize: CGSize) {
 		fontSize = getCandidateFontSize(from: drawableSize)
 		textureLoader = MTKTextureLoader(device: device)
 		loaded = true
 	}
-	
+    /** Texture loader de Metal. Doit être initialisé par le renderer avec la device (gpu). */
+    private static var textureLoader: MTKTextureLoader!
 	static private(set) var loaded: Bool = false
-	static private func getCandidateFontSize(from drawableSize: CGSize) -> CGFloat {
-		return min(max(fontSizeRatio * min(drawableSize.width, drawableSize.height), minFontSize), maxFontSize)
-	}
-	static private let fontSizeRatio: CGFloat = 0.065
-	static private let minFontSize: CGFloat = 24
-	static private let maxFontSize: CGFloat = 128
 }
 

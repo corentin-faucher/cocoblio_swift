@@ -135,7 +135,7 @@ extension Dictionary where Value : Strippable {
 }
 
 extension Dictionary {
-	mutating func addIfAbsent(key: Key, value: Value, showWarning: Bool = false) {
+	mutating func putIfAbsent(key: Key, value: Value, showWarning: Bool = false) {
 		if self[key] == nil {
 			self[key] = value
 		} else if showWarning {

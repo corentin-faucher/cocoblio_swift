@@ -59,7 +59,7 @@ class StringSurface: Surface //, Openable
 		 flags: Int = 0, ceiledWidth: Float? = nil,
 		 asParent: Bool = true, asElderBigbro: Bool = false
 	) {
-		guard strTex.isString else {
+        guard strTex.type != .png else {
 			printerror("Pas une texture de string")
             super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
                        mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
@@ -81,7 +81,7 @@ class StringSurface: Surface //, Openable
 					 flags: Int = 0, ceiledWidth: Float? = nil,
 					 asParent: Bool = true, asElderBigbro: Bool = false
 	) {
-		self.init(refNode, strTex: Texture.getAsString(cstString, isMutable: false),
+		self.init(refNode, strTex: Texture.getConstantString(cstString),
 				  x, y, height, lambda: lambda, flags: flags, //|Flag1.isSurface,
                   ceiledWidth: ceiledWidth,
 				  asParent: asParent, asElderBigbro: asElderBigbro)
@@ -95,7 +95,7 @@ class StringSurface: Surface //, Openable
 	}
 	/** Change la texture du noeud (dervrait être une string). */
 	func updateTexture(_ newTexture: Texture) {
-		guard newTexture.isString else {
+        guard newTexture.type != .png else {
 			printerror("Not a string texture")
 			return
 		}
@@ -103,7 +103,7 @@ class StringSurface: Surface //, Openable
 	}
 	/** "Convenience function": Ne change pas la texture. Ne fait que mettre à jour la string de la texture. */
 	func updateAsMutableString(_ newString: String) {
-		guard tex.isMutable else {
+        guard tex.type == .mutableString else {
 			printerror("Not a mutable string texture.")
 			return
 		}
@@ -111,7 +111,7 @@ class StringSurface: Surface //, Openable
 	}
 	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
 	func updateTextureToConstantString(_ newString: String) {
-		tex = Texture.getAsString(newString, isMutable: false)
+		tex = Texture.getConstantString(newString)
 	}
 }
 
@@ -122,7 +122,7 @@ class TiledSurface: Surface {
 		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
 		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
 	) {
-		guard !pngTex.isString else {
+        guard pngTex.type == .png else {
 			printerror("String texture (need standand texture).")
             super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
                        mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
@@ -151,8 +151,8 @@ class TiledSurface: Surface {
 	}
 	/** Ne change que la texture (pas de updateRatio). */
 	func updateTexture(_ newTexture: Texture) {
-		guard !newTexture.isString else {
-			printerror("String texture (need standand texture).")
+        guard newTexture.type == .png else {
+			printerror("Not a png texture.")
 			return
 		}
 		tex = newTexture
@@ -161,14 +161,13 @@ class TiledSurface: Surface {
 
 class LanguageSurface: Surface
 {
-	
 	@discardableResult
 	init(_ refNode: Node?, pngTex: Texture,
 		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
 		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
 	) {
-		guard !pngTex.isString else {
-			printerror("String texture (need standand texture).")
+        guard pngTex.type == .png else {
+			printerror("Not a png.")
             super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
                        mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
 			return
@@ -187,15 +186,13 @@ class LanguageSurface: Surface
 					Float((i / tex.m) % tex.n))
 	}
 	func updateTexture(_ newTexture: Texture) {
-		guard !newTexture.isString else {
-			printerror("String texture (need standand texture).")
+        guard newTexture.type == .png else {
+			printerror("Not a png.")
 			return
 		}
 		tex = newTexture
 	}
 }
-
-
 
 class TestFrame : Surface
 {

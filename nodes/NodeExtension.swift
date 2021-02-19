@@ -14,7 +14,7 @@ extension Node {
 	func fillWithFramedString(strTex: Texture, frameTex: Texture,
 							ceiledWidth: Float? = nil, relDelta: Float = 0.2) -> StringSurface? {
 		guard firstChild == nil else { printerror("A déjà quelque chose."); return nil }
-		guard strTex.isString, !frameTex.isString else {
+        guard strTex.type != .png, frameTex.type == .png else {
 			printerror("Bad textures"); return nil
 		}
 		
@@ -38,7 +38,7 @@ extension Node {
 						 _ x: Float, _ y: Float, _ height: Float,
 						 lambda: Float = 0, flags: Int = 0,
 						 ceiledWidth: Float? = nil, relDelta: Float = 0.2) -> StringSurface? {
-		guard strTex.isString, !frameTex.isString else {
+		guard strTex.type != .png, frameTex.type == .png else {
 			printerror("Bad textures"); return nil
 		}
 		let node = Node(self, x, y, ceiledWidth ?? height, height,
@@ -54,7 +54,7 @@ extension Node {
 							   _ x: Float, _ y: Float, _ height: Float, i: Int,
 						 lambda: Float = 0, flags: Int = 0,
 						 delta: Float = 0.4) -> TiledSurface? {
-		guard !surfTex.isString, !frameTex.isString else {
+        guard surfTex.type == .png, frameTex.type == .png else {
 			printerror("Bad textures"); return nil
 		}
 		let node = Node(self, x, y, height, height,

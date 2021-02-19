@@ -70,12 +70,8 @@ class SwitchButton : Node, Draggable {
     private func initStructure() {
         makeSelectable()
 		
-		back = TiledSurface(self, pngTex:
-			Texture.tryToGetExistingPng("switch_back") ?? Texture.getNewPng("switch_back", m: 1, n: 1),
-			0, 0, 1)
-		nub = TiledSurface(self, pngTex:
-			Texture.tryToGetExistingPng("switch_front") ?? Texture.getNewPng("switch_front", m: 1, n: 1),
-			isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
+        back = TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1)
+        nub = TiledSurface(self, pngTex: Texture.getPng("switch_front"), isOn ? 0.375 : -0.375, 0, 1, lambda: 10)
 		
         setBackColor()
     }
@@ -158,13 +154,12 @@ class SliderButton : Node, Draggable {
 		makeSelectable()
 		
 		Bar(parent: self, framing: .inside, delta: 0.25 * height.realPos, width: slideWidth, texture:
-			Texture.tryToGetExistingPng("bar_in") ?? Texture.getNewPng("bar_in", m: 1, n: 1))
+                Texture.getPng("bar_in"))
 		
 		let xPos = (value - 0.5) * slideWidth
 		
-		nub = TiledSurface(self, pngTex:
-			Texture.tryToGetExistingPng("switch_front") ?? Texture.getNewPng("switch_front", m: 1, n: 1),
-						   xPos, 0, height.realPos, lambda: 20)
+		nub = TiledSurface(self, pngTex: Texture.getPng("switch_front"),
+                           xPos, 0, height.realPos, lambda: 20)
 	}
 	
 	func grab(relPosInit: Vector2) {
