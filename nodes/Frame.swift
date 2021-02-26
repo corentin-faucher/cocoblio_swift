@@ -16,9 +16,8 @@ enum Framing {
 
 /** Crée une barre. framing est pour l'emplacement des bords. width est la largeur du contenu (sans les bords). delta est la demi-épaisseur. */
 class Bar : Surface {
-	var framing: Framing
-	/// Demi-hauteur de la barre.
-	let delta: Float
+	private var framing: Framing
+	private let delta: Float
 	
 	@discardableResult
 	init(parent: Node, framing: Framing, delta: Float, width: Float, texture: Texture, lambda: Float = 0)
@@ -80,16 +79,18 @@ class Bar : Surface {
 }
 
 class Frame : Surface {
-	let delta: Float
-	var framing: Framing
+	private let delta: Float
+	private var framing: Framing
 	
 	@discardableResult
-	init(_ parent: Node, framing: Framing = .inside, delta: Float, lambda: Float = 0, texture: Texture,
+	init(_ parent: Node, framing: Framing = .inside, delta: Float,
+         lambda: Float = 0, texture: Texture,
 		 width: Float = 0, height: Float = 0, flags: Int = 0)
 	{
 		self.delta = delta
 		self.framing = framing
-        super.init(parent, tex: texture, 0, 0, delta * 2, lambda: lambda, flags: flags | Flag1.surfaceDontRespectRatio,
+        super.init(parent, tex: texture, 0, 0, delta * 2,
+                   lambda: lambda, flags: flags | Flag1.surfaceDontRespectRatio,
                    mesh: Mesh(vertices:
                                 [((-0.5000, 0.5000, 0), (0.000,0.000), (0,0,1)),
                                  ((-0.5000, 0.1667, 0), (0.000,0.333), (0,0,1)),

@@ -84,7 +84,7 @@ struct Chrono {
 		return Int32(isActive ? (GlobalChrono.elapsedMS - time) : time)
 	}
     /// Le temps écoulé depuis "start()" en secondes.
-    var elsapsedSec: Float {
+    var elapsedSec: Float {
         return Float(elapsedMS64) / 1000
     }
     /// Le temps global où le chrono a commencé (en millisec).

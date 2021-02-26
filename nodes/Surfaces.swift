@@ -124,7 +124,7 @@ class TiledSurface: Surface {
 	) {
         guard pngTex.type == .png else {
 			printerror("String texture (need standand texture).")
-            super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
+            super.init(refNode, tex: Texture.defaultPng, x, y, height, lambda: lambda, flags: flags,
                        mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
 			return
 		}
@@ -168,7 +168,7 @@ class LanguageSurface: Surface
 	) {
         guard pngTex.type == .png else {
 			printerror("Not a png.")
-            super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
+            super.init(refNode, tex: Texture.defaultPng, x, y, height, lambda: lambda, flags: flags,
                        mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
 			return
 		}

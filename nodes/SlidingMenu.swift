@@ -85,7 +85,7 @@ class SlidingMenu : Node, Scrollable { // Openable
     }
     
 	
-	/** OffsetRatio = */
+	/** OffsetRatio */
 	func setOffsetRatio(_ offsetRatio: Float, letGo: Bool) {
 		let DeltaY = getMenuDeltaYMax()
 		let newy = menu.height.realPos * offsetRatio - DeltaY
@@ -119,12 +119,12 @@ class SlidingMenu : Node, Scrollable { // Openable
 		deltaT.start()
 	}
 	func trackpadScroll(deltaY: Float) {
-		let menuDeltaY = -0.015 * Float(deltaY)
+		let menuDeltaY = -0.015 * deltaY
 		setMenuYpos(yCandIn: menu.y.realPos + menuDeltaY, snap: false, fix: false)
 		checkItemsVisibility(openNode: true)
-		if deltaT.elsapsedSec > 0 {
+		if deltaT.elapsedSec > 0 {
 			vitYm1 = vitY.realPos
-			vitY.set(menuDeltaY / deltaT.elsapsedSec)
+			vitY.set(menuDeltaY / deltaT.elapsedSec)
 		}
 		deltaT.start()
 	}
@@ -144,9 +144,6 @@ class SlidingMenu : Node, Scrollable { // Openable
     override func open() {
         func placeToOpenPos() {
 			let first = indicesRange?.first ?? 0
-//			let last = indicesRange?.last ?? 0
-//			let countMinusOne = last - first
-			
 			let normalizedId: Int
 			let indexAPriori = getPosIndex()
 			if let range = indicesRange, range.contains(indexAPriori) {
@@ -156,7 +153,6 @@ class SlidingMenu : Node, Scrollable { // Openable
 			}
 			
 			let y0 = itemHeight * Float(normalizedId) - getMenuDeltaYMax()
-//			let y0 = itemHeight * Float(normalizedId) - 0.5 * itemHeight * Float(countMinusOne)
             setMenuYpos(yCandIn: y0, snap: true, fix: true)
         }
         // Mettre tout de suite le flag "show".
@@ -209,6 +205,9 @@ class SlidingMenu : Node, Scrollable { // Openable
 		
 		// 5. Signaler sa présence (pour iOS)
 		metalView.addScrollingViewIfNeeded(with: self)
+        
+        // 6. Open "node" : fadeIn, relativePos...
+        super.open()
     }
 	override func close() {
         super.close()
@@ -231,7 +230,7 @@ class SlidingMenu : Node, Scrollable { // Openable
             }
         }
         if (deltaT.elapsedMS64 > 30) {
-			let deltaY = deltaT.elsapsedSec * vitY.pos
+			let deltaY = deltaT.elapsedSec * vitY.pos
             setMenuYpos(yCandIn: menu.y.realPos + deltaY,
                         snap: false, fix: false)
             deltaT.start()

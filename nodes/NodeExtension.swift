@@ -20,6 +20,7 @@ extension Node {
 		
 		scaleX.set(height.realPos)
 		scaleY.set(height.realPos)
+        // (les vrais dimension width, height seront setté par le frame)
 		let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
 
 		Frame(self, delta: relDelta, lambda: 0,

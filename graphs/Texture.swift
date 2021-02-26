@@ -28,7 +28,7 @@ class Texture {
     /*-- Fields --*/
     let m: Int
     let n: Int
-    private(set) var string: String = ""
+    private(set) var name: String = ""
     private(set) var mtlTexture: MTLTexture? = nil
     var ptu = PerTextureUniforms()  // Doit être mutable pour passer au MTLRenderCommandEncoder...
     private(set) var ratio: Float = 1
@@ -39,13 +39,13 @@ class Texture {
         guard type == .mutableString else {
 			printerror("N'est pas une texture de string mutable."); return
 		}
-		self.string = string
+		self.name = string
 		drawAsString()
 	}
 	    
 	// Private methods
     private init(name: String, type: TextureType) {
-        string = name
+        self.name = name
         self.type = type
         
         if type == .png {
@@ -87,11 +87,11 @@ class Texture {
 		attributes[.paragraphStyle] = paragraphStyle
 		// 4. Init de la NSString
 		let str: NSString
-		if string.count > 0 {
+		if name.count > 0 {
             if type == .localizedString {
-				str = NSString(string: string.localizedOrDucked)
+				str = NSString(string: name.localizedOrDucked)
 			} else {
-				str = NSString(string: string)
+				str = NSString(string: name)
 			}
 		} else {
 			str = " "
@@ -109,7 +109,7 @@ class Texture {
 									  space: colorSpace,
 									  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
 			else {
-				printerror("Ne peut charger le CGContext pour : \"\(string)\"."); return
+				printerror("Ne peut charger le CGContext pour : \"\(name)\"."); return
 		}
 		// (lettres remplies avec le contour)
 		context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
@@ -142,8 +142,8 @@ class Texture {
 		setDims()
 	}
 	private func drawAsPng() {
-		guard let url = Bundle.main.url(forResource: string, withExtension: "png", subdirectory: "pngs") else {
-			printerror("Ne peut pas charger la surface \(string).")
+		guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs") else {
+			printerror("Ne peut pas charger la surface \(name).")
 			drawAsString()
 			return
 		}
@@ -162,7 +162,7 @@ class Texture {
 	
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
-    static let defalutPng = Texture(name: "the_cat", type: .png)
+    static let defaultPng = Texture(name: "the_cat", type: .png)
     static let defaultString = Texture(name: "🦆", type: .constantString)
     static let testFrame = getPng("test_frame")
     static let blackDigits = getPng("digits_black")

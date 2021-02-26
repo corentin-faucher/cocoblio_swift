@@ -27,10 +27,9 @@ protocol CoqMetalView : MTKView {
     func removeScrollingView()
 }
 
-fileprivate let ratioMin: CGFloat = 0.54
-fileprivate let ratioMax: CGFloat = 1.85
-
+/*
 extension CoqMetalView {
+    
     func getNormalizePositionFrom(_ locationInView: CGPoint, invertedY: Bool) -> Vector2 {
         return Vector2(Float((locationInView.x / bounds.width - 0.5) * fullFrame.width),
                        Float((invertedY ? -1 : 1) * (locationInView.y / bounds.height - 0.5) * fullFrame.height - usableFrame.origin.y))
@@ -47,6 +46,7 @@ extension CoqMetalView {
                       width: width,
                       height: height)
     }
+    
     func updateFrame() {
         let realRatio = frame.width / frame.height
         #if os(OSX)
@@ -105,4 +105,6 @@ extension CoqMetalView {
             fullFrame.height = fullFrame.width / realRatio        }
     }
     #endif
+ 
 }
+*/

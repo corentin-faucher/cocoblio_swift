@@ -152,12 +152,19 @@ extension Renderer: MTKViewDelegate {
         
 		Texture.checkFontSize(with: size)
 		
-		metalView.updateFrame()
-		if let root = metalView.root {
-			root.reshapeBranch()
-		}
-		view.isPaused = false
-		GlobalChrono.isPaused = false
+        view.isPaused = false
+        GlobalChrono.isPaused = false
+        
+        #if os(OSX)
+        guard let window = view.window else {printerror("No window."); return}
+        let headerHeight = window.styleMask.contains(.fullScreen) ? 22 : window.frame.height - window.contentLayoutRect.height
+        metalView.root?.updateFrame(to: metalView.frame.size,
+                                    withMargin: headerHeight, 0, 0, 0)
+        #else
+        let sa = view.safeAreaInsets
+        metalView.root?.updateFrame(to: metalView.frame.size,
+                                    withMargin: sa.top, sa.left, sa.bottom, sa.right)
+        #endif		
 	}
 	
 	func draw(in view: MTKView) {
@@ -166,8 +173,11 @@ extension Renderer: MTKViewDelegate {
 		}
 		guard !view.isPaused else { return }
 		#if !os(OSX)
-		if metalView.isTransitioning {
-			metalView.updateFrameInTransition()
+		if metalView.isTransitioning, let theFrame = metalView.layer.presentation()?.bounds.size {
+            let sa = view.safeAreaInsets
+            root.updateFrame(to: theFrame,
+                             withMargin: sa.top, sa.left, sa.bottom, sa.right,
+                             inTransition: true)
 		}
 		#endif
         
@@ -264,20 +274,17 @@ private extension Surface {
 private extension Node {
     func defaultSetForDrawing() -> Surface? {
         // 0. Cas Racine
-        if let root = self as? RootNode {
-            root.setModelAsCamera()
-            return nil
+        if containsAFlag(Flag1.isRoot) {
+            (self as! RootNode).setModelMatrix()
         }
         guard let theParent = parent else {
             printerror("Root n'est pas une RootNode.")
             return nil
         }
-        // 1. Init de la matrice model avec le parent.
-        piu.model = theParent.piu.model
         // 2. Cas branche
         if firstChild != nil {
-            piu.model.translate(with: Vector3(x.pos, y.pos, z.pos))
-            piu.model.scale(with: Vector3(scaleX.pos, scaleY.pos, 1))
+            piu.model.setAndTranslate(ref: theParent.piu.model, with: [x.pos, y.pos, z.pos])
+            piu.model.scale(with: [scaleX.pos, scaleY.pos, 1])
             return nil
         }
         // 3. Cas feuille
@@ -289,9 +296,9 @@ private extension Node {
         let alpha = surface.trShow.setAndGet(isOn: containsAFlag(Flag1.show))
         piu.color[3] = alpha
         // Rien à afficher...
-        if alpha == 0 { return nil }
-
-        piu.model.translate(with: [x.pos, y.pos, z.pos])
+        guard alpha > 0 else { return nil }
+        
+        piu.model.setAndTranslate(ref: theParent.piu.model, with: [x.pos, y.pos, z.pos])
         if (containsAFlag(Flag1.poping)) {
             piu.model.scale(with: [width.pos * alpha, height.pos * alpha, 1])
         } else {
