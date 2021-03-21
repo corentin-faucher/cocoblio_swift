@@ -1,4 +1,4 @@
-
+import Foundation
 
 class Surface: Node {
     var tex: Texture
@@ -16,6 +16,15 @@ class Surface: Node {
         self.trExtra = SmTrans()
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags, //|Flag1.isSurface,
                    asParent: asParent, asElderBigbro: asElderBigbro)
+    }
+    @discardableResult
+    convenience init(_ refNode: Node?, color: Vector4,
+         _ x: Float, _ y: Float, _ width: Float, _ height: Float, lambda: Float = 0,
+         flags: Int = 0, mesh: Mesh = .sprite, asParent: Bool = true, asElderBigbro: Bool = false) {
+        self.init(refNode, tex: Texture.justColor, x, y, height, lambda: lambda,
+                  flags: flags | Flag1.surfaceDontRespectRatio, mesh: mesh, asParent: asParent, asElderBigbro: asElderBigbro)
+        self.width.set(width)
+        piu.color = color
     }
     
     required init(other: Node) {
@@ -119,17 +128,17 @@ class StringSurface: Surface //, Openable
 class TiledSurface: Surface {
 	@discardableResult
 	init(_ refNode: Node?, pngTex: Texture,
-		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
-		 flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
+		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0, flags: Int = 0,
+         mesh: Mesh = .sprite, asParent: Bool = true, asElderBigbro: Bool = false
 	) {
         guard pngTex.type == .png else {
 			printerror("String texture (need standand texture).")
             super.init(refNode, tex: Texture.defaultPng, x, y, height, lambda: lambda, flags: flags,
-                       mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
+                       mesh: mesh, asParent: asParent, asElderBigbro: asElderBigbro)
 			return
 		}
         super.init(refNode, tex: pngTex, x, y, height, lambda: lambda, flags: flags,
-                   mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
+                   mesh: mesh, asParent: asParent, asElderBigbro: asElderBigbro)
 		updateRatio(fix: true)
 		updateTile(i, 0)
 	}
@@ -157,6 +166,57 @@ class TiledSurface: Surface {
 		}
 		tex = newTexture
 	}
+}
+
+final class PopDisk : TiledSurface {
+    private var timer1, timer2: Timer!
+    private var chrono = Chrono()
+    private let deltaT: Float
+    
+    @discardableResult
+    init?(_ refNode: Node, pngTex: Texture, deltaT: Float, _ x: Float, _ y: Float, _ height: Float,
+          lambda: Float, i: Int, flags: Int = 0
+    ) {
+        self.deltaT = deltaT
+        super.init(refNode, pngTex: pngTex, x, y, height,
+                   lambda: lambda, i: i, flags: flags, mesh: FanMesh())
+        (mesh as! FanMesh).update(with: 0)
+        chrono.start()
+        self.y.fadeInFromDef(delta: height)
+        width.fadeIn(delta: -height * 0.3)
+        self.height.fadeIn(delta: -height * 0.3)
+        openBranch()
+        
+        timer1 = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] (_) in
+            if let self = self {
+                (self.mesh as! FanMesh).update(with: min(self.chrono.elapsedSec / deltaT, 1))
+            }
+        }
+        timer2 = Timer.scheduledTimer(withTimeInterval: Double(deltaT), repeats: false) { [weak self] (_) in
+            self?.closeBranch()
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
+                self?.disconnect()
+            }
+        }
+        
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+    func discard() {
+        guard self.chrono.elapsedSec > 0.3*deltaT else {
+            Timer.scheduledTimer(withTimeInterval: 0.32*Double(deltaT) - Double(self.chrono.elapsedSec), repeats: false) { [weak self] (_) in
+                self?.discard()
+            }
+            return
+        }
+        closeBranch()
+        timer1.invalidate()
+        timer2.invalidate()
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
+            self?.disconnect()
+        }
+    }
 }
 
 class LanguageSurface: Surface

@@ -62,6 +62,12 @@ class Texture {
             drawAsString()
         }
     }
+    private init() {
+        self.name = "null"
+        self.type = .png // (pas vrament un png, mais couleur uniforme... compte comme image)
+        m = 1; n = 1
+        // (ptu reste aux valeurs par défaut)
+    }
     
 	deinit {
 //		printdebug("Remove texture \(string)")
@@ -162,6 +168,7 @@ class Texture {
 	
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
+    static let justColor = Texture() // Cas pas besoin de texture...
     static let defaultPng = Texture(name: "the_cat", type: .png)
     static let defaultString = Texture(name: "🦆", type: .constantString)
     static let testFrame = getPng("test_frame")

@@ -108,8 +108,8 @@ class Renderer : NSObject {
 		
 		/*-- Sampler state pour les textures --*/
         let samplerDescr = MTLSamplerDescriptor()
-		samplerDescr.magFilter = MTLSamplerMinMagFilter.linear
-		samplerDescr.minFilter = MTLSamplerMinMagFilter.linear
+        samplerDescr.magFilter = .linear
+        samplerDescr.minFilter = .linear
         samplerState = device.makeSamplerState(descriptor: samplerDescr)
 		
 		/*-- Depth (si besoin) --*/
@@ -152,8 +152,7 @@ extension Renderer: MTKViewDelegate {
         
 		Texture.checkFontSize(with: size)
 		
-        view.isPaused = false
-        GlobalChrono.isPaused = false
+        metalView.isPaused = false
         
         #if os(OSX)
         guard let window = view.window else {printerror("No window."); return}
@@ -203,6 +202,7 @@ extension Renderer: MTKViewDelegate {
 		guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
 		guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
 			printerror("Error loading commandEncoder"); return}
+        // *** On pourrait changer le sampler en fonction de la texture, e.g. pour texture linear ou nearest. ***
 		renderEncoder.setFragmentSamplerState(samplerState, index: 0)
 		renderEncoder.setRenderPipelineState(pipelineState)
 		if let dss = depthStencilState {

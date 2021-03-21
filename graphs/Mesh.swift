@@ -15,6 +15,7 @@ class Mesh {
      *  position (3 floats), uv (2 floats), vecteur normal (3 floats). */
     typealias Vertex = (position: (Float, Float, Float),
         uv: (Float, Float), normal: (Float, Float, Float))
+    static let defaultVertex: Vertex = ((0, 0, 0), (0,0), (0,0,1))
     
 	/*-- Fields --*/
 	var vertices: [Vertex] = []
@@ -55,19 +56,12 @@ class Mesh {
 		}
 	}
     
-//	func updateVerticesBuffer() {
-//		verticesBuffer?.contents().copyMemory(from: vertices, byteCount: verticesSize)
-//	}
-    
     /*-- Statics: meshes de bases et gestion de la mesh présente. --*/
 	/*-- Static fields --*/
 	// Meshes de base
 	static private(set) var sprite: Mesh!
 	static private(set) var triangle: Mesh!
-	static private(set) var fan: Mesh!
-	/** Graph z = f(x,y) */
-	static private(set) var graph: Mesh!
-	static let gridM = 20 // Nomebre de cases dans une grille (vertex = gridM+1)
+    
 	/** Réference ver le "gpu" pour setter les buffers. */
 	private static var device: MTLDevice!
 	
@@ -88,61 +82,139 @@ class Mesh {
 			 ((-0.433,-0.25, 0), (0.067,0.75), (0,0,1)),
 			 (( 0.433,-0.25, 0), (0.933,0.75), (0,0,1))],
 			indices: [])
-        // 3. fan
-		// Préparation des vertices de la fan.
-		var vertices = Array<Vertex>(repeating: ((0, 0, 0), (0,0), (0,0,1)), count: 10)
-		for i in 1...9 {
-			vertices[i].position = (-0.5 * sin(2 * .pi * (Float)(i-1) / 8),
-										0.5 * cos(2 * .pi * (Float)(i-1) / 8), 0)
-			vertices[i].uv = (0.5 - 0.5 * sin(2 * .pi * (Float)(i-1) / 8),
-								  0.5 - 0.5 * cos(2 * .pi * (Float)(i-1) / 8))
-		}
-		fan = Mesh(
-			vertices: vertices,
-			indices:
-			[0, 1, 2,
-			 0, 2, 3,
-			 0, 3, 4,
-			 0, 4, 5,
-			 0, 5, 6,
-			 0, 6, 7,
-			 0, 7, 8,
-			 0, 8, 9]
-		)
-        // 4. Grid
-		// Préparation des vertices et indices de la grille.
-        vertices = Array(repeating: ((0, 0, 0), (0,0), (0,0,1)), count: (gridM+1)*(gridM+1))
-        var indices = Array<UInt16>(repeating: 0, count: gridM*gridM*6)
-        for i in 0..<gridM {
-            for j in 0..<gridM {
-                let dec = i*gridM*6 + j*6
-                indices[dec]     = UInt16(i*(gridM+1) + j)
-                indices[dec + 1] = UInt16(i*(gridM+1) + j + 1)
-                indices[dec + 2] = UInt16((i+1)*(gridM+1) + j)
-                indices[dec + 3] = UInt16(i*(gridM+1) + j + 1)
-                indices[dec + 4] = UInt16((i+1)*(gridM+1) + j + 1)
-                indices[dec + 5] = UInt16((i+1)*(gridM+1) + j)
+    }
+}
+
+class FanMesh: Mesh {
+    init() {
+        var vertices = Array<Vertex>(repeating: ((0, 0, 0), (0.5, 0.5), (0,0,1)), count: 10)
+        for i in 1...9 {
+            vertices[i].position = (-0.5 * sin(2 * .pi * (Float)(i-1) / 8),
+                                        0.5 * cos(2 * .pi * (Float)(i-1) / 8), 0)
+            vertices[i].uv = (0.5 - 0.5 * sin(2 * .pi * (Float)(i-1) / 8),
+                                  0.5 - 0.5 * cos(2 * .pi * (Float)(i-1) / 8))
+        }
+        super.init(
+            vertices: vertices,
+            indices: [
+                    0, 1, 2,  0, 2, 3,
+                    0, 3, 4,  0, 4, 5,
+                    0, 5, 6,  0, 6, 7,
+                    0, 7, 8,  0, 8, 9])
+    }
+    func update(with ratio: Float) {
+        for i in 1...9 {
+            vertices[i].position = (-0.5 * sin(ratio * 2 * .pi * (Float)(i-1) / 8),
+                                        0.5 * cos(ratio * 2 * .pi * (Float)(i-1) / 8), 0)
+            vertices[i].uv = (0.5 - 0.5 * sin(ratio * 2 * .pi * (Float)(i-1) / 8),
+                                  0.5 - 0.5 * cos(ratio * 2 * .pi * (Float)(i-1) / 8))
+        }
+    }
+}
+
+// Les vertex de GraphMesh en x,y demeurent dans le rectangle [-0.5, 0.5] x [-0.5, 0.5] (comme le sprite).
+// De même, le domaine en x,y considéré pour z = f(x,y) est [-0.5, 0.5] x [-0.5, 0.5].
+class GraphMesh: Mesh {
+    let m: Int
+    let n: Int
+    init(m: Int, n: Int) {
+        self.m = m
+        self.n = n
+        var vertices = Array<Vertex>(repeating: Mesh.defaultVertex, count: (m+1)*(n+1))
+        var indices = Array<UInt16>(repeating: 0, count: m*n*6)
+        for i in 0..<m {
+            for j in 0..<n {
+                let dec = i*n*6 + j*6
+                indices[dec]     = UInt16(i*(n+1) + j)
+                indices[dec + 1] = UInt16(i*(n+1) + j + 1)
+                indices[dec + 2] = UInt16((i+1)*(n+1) + j)
+                indices[dec + 3] = UInt16(i*(n+1) + j + 1)
+                indices[dec + 4] = UInt16((i+1)*(n+1) + j + 1)
+                indices[dec + 5] = UInt16((i+1)*(n+1) + j)
             }
         }
-        for i in 0..<(gridM+1) {
-            for j in 0..<(gridM+1) {
-                vertices[i*(gridM+1) + j].uv = (Float(i) / Float(gridM), Float(j) / Float(gridM))
-                let x = 2 * Float(i) / Float(gridM) - 1
-                let y = 2 * Float(j) / Float(gridM) - 1
-                vertices[i*(gridM+1) + j].position = (x, y, pow(x,2) + pow(y,2))
+        for i in 0..<(m+1) {
+            for j in 0..<(n+1) {
+                vertices[i*(n+1) + j].uv = (Float(i) / Float(m), Float(j) / Float(n))
+                let x = Float(i) / Float(m) - 0.5
+                let y = Float(j) / Float(n) - 0.5
+                vertices[i*(n+1) + j].position = (x, y, pow(x,2) + pow(y,2))
                 
             }
         }
-		graph = Mesh(vertices: vertices, indices: indices)
+        super.init(vertices: vertices, indices: indices)
     }
-    static func setTheFan(with ratio: Float) {
-        if fan.vertices.count < 10 {printerror("Fan pas init."); return}
-        for i in 1...9 {
-            fan.vertices[i].position = (-0.5 * sin(ratio * 2 * .pi * (Float)(i-1) / 8),
-                                        0.5 * cos(ratio * 2 * .pi * (Float)(i-1) / 8), 0)
-            fan.vertices[i].uv = (0.5 - 0.5 * sin(ratio * 2 * .pi * (Float)(i-1) / 8),
-                                  0.5 - 0.5 * cos(ratio * 2 * .pi * (Float)(i-1) / 8))
+    func updateZ(with f: (Float, Float)->Float) {
+        for i in 0..<(m+1) {
+            for j in 0..<(n+1) {
+                vertices[i*(n+1) + j].uv = (Float(i) / Float(m), Float(j) / Float(n))
+                let x = Float(i) / Float(m) - 0.5
+                let y = Float(j) / Float(n) - 0.5
+                vertices[i*(n+1) + j].position.2 = f(x,y)
+            }
         }
-//		fan.updateVerticesBuffer()
+    }
+}
+
+class PlotMesh: Mesh {
+    // A priori, les xs/ys devraient êtr préformaté pour être contenu dans [-0.5, 0.5] x [-0.5, 0.5]...
+    // delta: épaisseur des lignes.
+    init(xs: [Float], ys: [Float], delta: Float = 0.02) {
+        guard xs.count == ys.count, xs.count > 1, delta > 0 else {
+            fatalError("Bad parameters...")
+        }
+        let n_lines = xs.count - 1
+        let n_points = xs.count
+        var vertices = Array<Vertex>(repeating: Mesh.defaultVertex, count: 4 * n_lines + 4 * n_points)
+        var indices = Array<UInt16>(repeating: 0, count: n_lines * 6 + n_points * 6)
+        for i in 0..<n_lines {
+            let theta = atan((ys[i+1] - ys[i]) / (xs[i+1] - xs[i]))
+            let deltax = delta * sin(theta)
+            let deltay = delta * cos(theta)
+            vertices[i * 4].position =     (xs[i]   - deltax, ys[i]   + deltay, 0)
+            vertices[i * 4].uv =     (0, 0)
+            vertices[i * 4 + 1].position = (xs[i]   + deltax, ys[i]   - deltay, 0)
+            vertices[i * 4 + 1].uv = (0, 1)
+            vertices[i * 4 + 2].position = (xs[i+1] - deltax, ys[i+1] + deltay, 0)
+            vertices[i * 4 + 2].uv = (0.5, 0)
+            vertices[i * 4 + 3].position = (xs[i+1] + deltax, ys[i+1] - deltay, 0)
+            vertices[i * 4 + 3].uv = (0.5, 1)
+            indices[i * 6] =     UInt16(i*4)
+            indices[i * 6 + 1] = UInt16(i*4 + 1)
+            indices[i * 6 + 2] = UInt16(i*4 + 2)
+            indices[i * 6 + 3] = UInt16(i*4 + 1)
+            indices[i * 6 + 4] = UInt16(i*4 + 2)
+            indices[i * 6 + 5] = UInt16(i*4 + 3)
+        }
+        let vert_dec = 4 * n_lines
+        let ind_dec = 4 * n_lines
+        let pts_delta = delta * 2
+        for i in 0..<n_points {
+            vertices[vert_dec + i * 4].position =     (xs[i] - pts_delta, ys[i] + pts_delta, 0)
+            vertices[vert_dec + i * 4].uv =     (0.5, 0)
+            vertices[vert_dec + i * 4 + 1].position = (xs[i] - pts_delta, ys[i] - pts_delta, 0)
+            vertices[vert_dec + i * 4 + 1].uv = (0.5, 1)
+            vertices[vert_dec + i * 4 + 2].position = (xs[i] + pts_delta, ys[i] + pts_delta, 0)
+            vertices[vert_dec + i * 4 + 2].uv = (1, 0)
+            vertices[vert_dec + i * 4 + 3].position = (xs[i] + pts_delta, ys[i] - pts_delta, 0)
+            vertices[vert_dec + i * 4 + 3].uv = (1, 1)
+            indices[ind_dec + i * 6] =     UInt16(i*4)
+            indices[ind_dec + i * 6 + 1] = UInt16(i*4 + 1)
+            indices[ind_dec + i * 6 + 2] = UInt16(i*4 + 2)
+            indices[ind_dec + i * 6 + 3] = UInt16(i*4 + 1)
+            indices[ind_dec + i * 6 + 4] = UInt16(i*4 + 2)
+            indices[ind_dec + i * 6 + 5] = UInt16(i*4 + 3)
+        }
+        super.init(vertices: vertices, indices: indices)
+    }
+}
+
+// Une grille normalisé dans le carré [-0.5, 0.5] x [-0.5, 0.5]
+// m, n: subdivisions en x/y.
+// delta: épaisseur des lignes.
+class GridMesh: Mesh {
+    init(m: Int, n: Int, delta: Float = 0.01) {
+        #warning("TODO...")
+        super.init(vertices: [], indices: [])
     }
 }

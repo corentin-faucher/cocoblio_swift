@@ -380,8 +380,5 @@ func letGo() {
     
     checkFling()
 }
-func justTap() {
-    printwarning("Unused.")
-}
 */
 
