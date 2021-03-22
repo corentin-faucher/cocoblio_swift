@@ -114,7 +114,6 @@ enum Language : LanguageInfo, CaseIterable {
 				langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
 			}
 			if let language = Language(iso: langISO) {
-                printdebug("System language is \(language)")
 				return language
 			}
 		}
