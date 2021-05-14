@@ -168,7 +168,7 @@ class Texture {
 	
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
-    static let justColor = Texture() // Cas pas besoin de texture...
+    static let justColor = Texture() // Cas pas besoin de texture. "justColor" est alors un "place holder" pour le tex d'une surface.
     static let defaultPng = Texture(name: "the_cat", type: .png)
     static let defaultString = Texture(name: "🦆", type: .constantString)
     static let testFrame = getPng("test_frame")

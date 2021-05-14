@@ -48,8 +48,10 @@ enum Flag1 {
 	
     /// Descendant ne devant pas être aligné
 	static let notToAlign = 1<<19
+    
+    static let stringRightJustified = 1<<20
 	
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<20
+    static let firstCustomFlag = 1<<21
 }
 

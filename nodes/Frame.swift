@@ -15,6 +15,7 @@ enum Framing {
 }
 
 /** Crée une barre. framing est pour l'emplacement des bords. width est la largeur du contenu (sans les bords). delta est la demi-épaisseur. */
+/** Ici, delta est la demi-hauteur de la barre. */
 class Bar : Surface {
 	private var framing: Framing
 	private let delta: Float
@@ -51,11 +52,11 @@ class Bar : Surface {
 		guard width >= 0 else {printerror("deltaX < 0"); return}
 		let smallDeltaX: Float
 		switch framing {
-			case .outside:
+			case .inside:
 				smallDeltaX = max(0, width/2 - 2 * delta)
 			case .center:
 				smallDeltaX = max(0, width/2 - delta)
-			case .inside:
+			case .outside:
 				smallDeltaX = width/2
 		}
 		
@@ -78,12 +79,13 @@ class Bar : Surface {
 	}
 }
 
+/** Ici, delta est la largeur des bords. (différent des barres) */
 class Frame : Surface {
 	private let delta: Float
 	private var framing: Framing
 	
 	@discardableResult
-	init(_ parent: Node, framing: Framing = .inside, delta: Float,
+	init(_ parent: Node, framing: Framing = .outside, delta: Float,
          lambda: Float = 0, texture: Texture,
 		 width: Float = 0, height: Float = 0, flags: Int = 0)
 	{
@@ -135,21 +137,21 @@ class Frame : Surface {
 		let smallDeltaX: Float
 		let smallDeltaY: Float
 		switch framing {
-			case .outside:
-				smallDeltaX = max(0, width/2 - 2 * delta)
-				smallDeltaY = max(0, height/2 - 2 * delta)
-			case .center:
+			case .inside:
 				smallDeltaX = max(0, width/2 - delta)
 				smallDeltaY = max(0, height/2 - delta)
-			case .inside:
+			case .center:
+				smallDeltaX = max(0, width/2 - delta/2)
+				smallDeltaY = max(0, height/2 - delta/2)
+			case .outside:
 				smallDeltaX = width/2
 				smallDeltaY = height/2
 		}
 		
-		let xPos = 0.5 * smallDeltaX / (smallDeltaX + 2 * delta)
-		let yPos = 0.5 * smallDeltaY / (smallDeltaY + 2 * delta)
-		self.width.set(2 * (smallDeltaX + 2 * delta), fix)
-		self.height.set(2 * (smallDeltaY + 2 * delta), fix)
+		let xPos = 0.5 * smallDeltaX / (smallDeltaX + delta)
+		let yPos = 0.5 * smallDeltaY / (smallDeltaY + delta)
+		self.width.set(2 * (smallDeltaX + delta), fix)
+		self.height.set(2 * (smallDeltaY + delta), fix)
 		
 		mesh.vertices[4].position.0 = -xPos
 		mesh.vertices[5].position.0 = -xPos

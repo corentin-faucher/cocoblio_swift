@@ -183,6 +183,18 @@ extension Float {
     func toInt() -> Int {
         return Int(self)
     }
+    
+    func toRoundedSubDiv() -> Float {
+        let pow10 = powf(10, floorf(log10f(self)))
+        let mantissa = self / pow10
+        if mantissa < 2 {
+            return pow10
+        }
+        if mantissa < 5 {
+            return pow10 * 2
+        }
+        return pow10 * 5
+    }
 }
 
 extension UInt32 {

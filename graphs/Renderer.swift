@@ -236,10 +236,12 @@ private extension Surface {
             renderer.currentPrimitiveType = mesh.primitiveType
             renderer.currentVertexCount = mesh.vertices.count
             renderEncoder.setCullMode(mesh.cullMode)
-            renderEncoder.setVertexBytes(mesh.vertices, length: mesh.verticesSize, index: Renderer.metalVerticesBufferIndex)
-//                commandEncoder.setVertexBuffer(newMesh.verticesBuffer,
-//                                               offset: 0,
-//                                               index: Renderer.metalVerticesBufferIndex)
+            
+            if let buffer = mesh.verticesBuffer {
+                renderEncoder.setVertexBuffer(buffer, offset: 0, index: Renderer.metalVerticesBufferIndex)
+            } else {
+                renderEncoder.setVertexBytes(mesh.vertices, length: mesh.verticesSize, index: Renderer.metalVerticesBufferIndex)
+            }
         }
         // 2. Mise a jour de la texture ?
 		if tex !== renderer.currentTexture {

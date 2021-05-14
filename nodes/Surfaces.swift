@@ -51,6 +51,9 @@ class Surface: Node {
             theParent.width.set(width.realPos)
             theParent.height.set(height.realPos)
         }
+        if containsAFlag(Flag1.stringRightJustified) {
+            x.setRelToDef(shift: -width.realPos/2, fix: fix)
+        }
     }
     
     override func isDisplayActive() -> Bool {

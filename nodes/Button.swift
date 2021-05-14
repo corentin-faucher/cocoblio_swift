@@ -48,14 +48,22 @@ class SecureButton : Node, Draggable {
     private var timer: Timer? = nil
     private let popTex: Texture
     private let popI: Int
+    private let failPopStringTex: Texture
+    private let failPopFrameTex: Texture
+    private unowned let screen: ScreenBase
     
-    init(_ refNode: Node?, holdTimeInSec: Float, popTex: Texture, popI: Int,
+    init(_ refNode: Node?,
+         holdTimeInSec: Float, popTex: Texture, popI: Int,
+         failPopStringTexture: Texture, failPopFrameTexture: Texture, screen: ScreenBase,
          _ x: Float, _ y: Float, _ height: Float,
          lambda: Float = 0, flags: Int = 0)
     {
         self.popTex = popTex
         self.popI = popI
         self.countdown = CountDown(ringSec: holdTimeInSec)
+        self.failPopStringTex = failPopStringTexture
+        self.failPopFrameTex = failPopFrameTexture
+        self.screen = screen
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
         makeSelectable()
     }
@@ -69,22 +77,30 @@ class SecureButton : Node, Draggable {
     func grab(relPosInit posInit: Vector2) {
         countdown.start()
         let h = height.realPos
+        if let disk = disk {
+            disk.disconnect()
+        }
         disk = PopDisk(self, pngTex: popTex, deltaT: countdown.ringTimeSec, -h/2, 0, h, lambda: 10, i: popI)
         timer = Timer.scheduledTimer(withTimeInterval: Double(countdown.ringTimeSec), repeats: false) { [weak self] _ in
-            self?.action()
+            guard let self = self else { return }
+            self.disk?.disconnect()
+            self.timer = nil
+            self.action()
         }
     }
-    /** Déplacement en cours du "nub", aura besoin de letGoNub.
-    * newX doit être dans le ref. du SwitchButton.
-    * Effectue l'action si changement d'état. */
+    
     func drag(relPos: Vector2) {
         // (pass)
     }
     
-    /** Ne fait que placer le nub comme il faut. (À faire après avoir dragué.) */
     func letGo() {
-        disk?.discard()
-        timer?.invalidate()
+        guard let timer = timer else { return }
+        disk?.discard() // discard va aussi disconnect le noeud.
+        disk = nil
+        timer.invalidate()
+        let (pos, delta) = self.getAbsPosAndDelta()
+        PopMessage(parent: screen, strTex: failPopStringTex, frameTex: failPopFrameTex,
+                   pos.x, pos.y + 1.5*delta.y, 0.1, appearTime: 0.1, disappearTime: 2, fadeInY: -2*delta.y)
     }
 }
 
@@ -198,7 +214,7 @@ class SliderButton : Node, Draggable {
 	private func initStructure() {
 		makeSelectable()
 		
-		Bar(parent: self, framing: .inside, delta: 0.25 * height.realPos, width: slideWidth, texture:
+        Bar(parent: self, framing: .outside, delta: 0.25 * height.realPos, width: slideWidth, texture:
                 Texture.getPng("bar_in"))
 		
 		let xPos = (value - 0.5) * slideWidth

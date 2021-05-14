@@ -19,16 +19,17 @@ class Mesh {
     
 	/*-- Fields --*/
 	var vertices: [Vertex] = []
-    let verticesSize: Int
+    var verticesSize: Int
 	var indices: [UInt16] = []
 	let primitiveType: MTLPrimitiveType
     let cullMode: MTLCullMode
-//    private(set) var verticesBuffer: MTLBuffer? = nil
+    private(set) var verticesBuffer: MTLBuffer? = nil
     private(set) var indicesBuffer: MTLBuffer? = nil
     
     /*-- Methods --*/
 	init(vertices: [Vertex], indices: [UInt16],
-		primitive: MTLPrimitiveType = .triangle, cullMode: MTLCullMode = .none
+         primitive: MTLPrimitiveType = .triangle, cullMode: MTLCullMode = .none,
+         withVerticesBuffer: Bool = false
 	) {
 		self.vertices = vertices
 		self.indices = indices
@@ -36,7 +37,9 @@ class Mesh {
         self.cullMode = cullMode
 		// Init buffers
         verticesSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
-//		verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: verticesSize, options: [])
+        if withVerticesBuffer {
+            verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: verticesSize, options: [])
+        }
 		if !indices.isEmpty {
 			let indDataSize = indices.count * MemoryLayout.size(ofValue: indices[0])
 			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
@@ -55,6 +58,18 @@ class Mesh {
 			indicesBuffer = Mesh.device.makeBuffer(bytes: indices, length: indDataSize, options: [])
 		}
 	}
+    
+    /** A utiliser pour mettre à jour le buffer des vertex SEULEMENT si on utilise le vertex buffer, i.e. pour un grand nombre de vertex.
+     *  (pour quelques vertex on passe directement l'array de vertex au renderer, voir Surface.draw dans Renderer) */
+    func updateVerticesBuffer(_ withVerticesBuffer: Bool = true)
+    {
+        verticesSize = vertices.count * MemoryLayout.size(ofValue: vertices[0])
+        if withVerticesBuffer {
+            verticesBuffer = Mesh.device.makeBuffer(bytes: vertices, length: verticesSize, options: [])
+        } else {
+            verticesBuffer = nil
+        }
+    }
     
     /*-- Statics: meshes de bases et gestion de la mesh présente. --*/
 	/*-- Static fields --*/
@@ -159,8 +174,8 @@ class GraphMesh: Mesh {
 class PlotMesh: Mesh {
     // A priori, les xs/ys devraient êtr préformaté pour être contenu dans [-0.5, 0.5] x [-0.5, 0.5]...
     // delta: épaisseur des lignes.
-    init(xs: [Float], ys: [Float], delta: Float = 0.02) {
-        guard xs.count == ys.count, xs.count > 1, delta > 0 else {
+    init(xs: [Float], ys: [Float], delta: Float = 0.02, ratio: Float = 1) {
+        guard xs.count == ys.count, xs.count > 0, delta > 0 else {
             fatalError("Bad parameters...")
         }
         let n_lines = xs.count - 1
@@ -169,16 +184,16 @@ class PlotMesh: Mesh {
         var indices = Array<UInt16>(repeating: 0, count: n_lines * 6 + n_points * 6)
         for i in 0..<n_lines {
             let theta = atan((ys[i+1] - ys[i]) / (xs[i+1] - xs[i]))
-            let deltax = delta * sin(theta)
+            let deltax = delta * sin(theta) / ratio
             let deltay = delta * cos(theta)
             vertices[i * 4].position =     (xs[i]   - deltax, ys[i]   + deltay, 0)
             vertices[i * 4].uv =     (0, 0)
             vertices[i * 4 + 1].position = (xs[i]   + deltax, ys[i]   - deltay, 0)
             vertices[i * 4 + 1].uv = (0, 1)
             vertices[i * 4 + 2].position = (xs[i+1] - deltax, ys[i+1] + deltay, 0)
-            vertices[i * 4 + 2].uv = (0.5, 0)
+            vertices[i * 4 + 2].uv = (0.75, 0)
             vertices[i * 4 + 3].position = (xs[i+1] + deltax, ys[i+1] - deltay, 0)
-            vertices[i * 4 + 3].uv = (0.5, 1)
+            vertices[i * 4 + 3].uv = (0.75, 1)
             indices[i * 6] =     UInt16(i*4)
             indices[i * 6 + 1] = UInt16(i*4 + 1)
             indices[i * 6 + 2] = UInt16(i*4 + 2)
@@ -187,34 +202,84 @@ class PlotMesh: Mesh {
             indices[i * 6 + 5] = UInt16(i*4 + 3)
         }
         let vert_dec = 4 * n_lines
-        let ind_dec = 4 * n_lines
-        let pts_delta = delta * 2
+        let ind_dec = 6 * n_lines
+        let pts_deltax = delta * 1.15 / ratio
+        let pts_deltay = delta * 1.15
         for i in 0..<n_points {
-            vertices[vert_dec + i * 4].position =     (xs[i] - pts_delta, ys[i] + pts_delta, 0)
-            vertices[vert_dec + i * 4].uv =     (0.5, 0)
-            vertices[vert_dec + i * 4 + 1].position = (xs[i] - pts_delta, ys[i] - pts_delta, 0)
-            vertices[vert_dec + i * 4 + 1].uv = (0.5, 1)
-            vertices[vert_dec + i * 4 + 2].position = (xs[i] + pts_delta, ys[i] + pts_delta, 0)
-            vertices[vert_dec + i * 4 + 2].uv = (1, 0)
-            vertices[vert_dec + i * 4 + 3].position = (xs[i] + pts_delta, ys[i] - pts_delta, 0)
-            vertices[vert_dec + i * 4 + 3].uv = (1, 1)
-            indices[ind_dec + i * 6] =     UInt16(i*4)
-            indices[ind_dec + i * 6 + 1] = UInt16(i*4 + 1)
-            indices[ind_dec + i * 6 + 2] = UInt16(i*4 + 2)
-            indices[ind_dec + i * 6 + 3] = UInt16(i*4 + 1)
-            indices[ind_dec + i * 6 + 4] = UInt16(i*4 + 2)
-            indices[ind_dec + i * 6 + 5] = UInt16(i*4 + 3)
+            vertices[vert_dec + i * 4].position =     (xs[i] - pts_deltax, ys[i] + pts_deltay, 0)
+            vertices[vert_dec + i * 4].uv =     (1, 0)
+            vertices[vert_dec + i * 4 + 1].position = (xs[i] - pts_deltax, ys[i] - pts_deltay, 0)
+            vertices[vert_dec + i * 4 + 1].uv = (1, 1)
+            vertices[vert_dec + i * 4 + 2].position = (xs[i] + pts_deltax, ys[i] + pts_deltay, 0)
+            vertices[vert_dec + i * 4 + 2].uv = (2, 0)
+            vertices[vert_dec + i * 4 + 3].position = (xs[i] + pts_deltax, ys[i] - pts_deltay, 0)
+            vertices[vert_dec + i * 4 + 3].uv = (2, 1)
+            indices[ind_dec + i * 6] =     UInt16(vert_dec + i*4)
+            indices[ind_dec + i * 6 + 1] = UInt16(vert_dec + i*4 + 1)
+            indices[ind_dec + i * 6 + 2] = UInt16(vert_dec + i*4 + 2)
+            indices[ind_dec + i * 6 + 3] = UInt16(vert_dec + i*4 + 1)
+            indices[ind_dec + i * 6 + 4] = UInt16(vert_dec + i*4 + 2)
+            indices[ind_dec + i * 6 + 5] = UInt16(vert_dec + i*4 + 3)
         }
-        super.init(vertices: vertices, indices: indices)
+        
+        super.init(vertices: vertices, indices: indices, withVerticesBuffer: true)
     }
 }
 
-// Une grille normalisé dans le carré [-0.5, 0.5] x [-0.5, 0.5]
-// m, n: subdivisions en x/y.
+// Ensemble de lignes verticales (aux xs) et de lignes horizontales (aux ys).
 // delta: épaisseur des lignes.
 class GridMesh: Mesh {
-    init(m: Int, n: Int, delta: Float = 0.01) {
-        #warning("TODO...")
-        super.init(vertices: [], indices: [])
+    init(xmin: Float, xmax: Float, xR: Float, deltaX: Float,
+         ymin: Float, ymax: Float, yR: Float, deltaY: Float,
+         lineWidthRatio: Float = 0.1)
+    {
+        let x0 = xR - floor((xR - xmin) / deltaX) * deltaX
+        let m = Int((xmax - x0) / deltaX) + 1
+        let xlinedelta = deltaX * lineWidthRatio * 0.5
+        let y0 = yR - floor((yR - ymin) / deltaY) * deltaY
+        let n = Int((ymax - y0) / deltaY) + 1
+        let ylinedelta = deltaY * lineWidthRatio * 0.5
+        
+        var vertices = Array<Vertex>(repeating: Mesh.defaultVertex, count: 4 * (m + n))
+        var indices = Array<UInt16>(repeating: 0, count: 6 * (m + n))
+        
+        for i in 0..<m {
+            let x = x0 + Float(i) * deltaX
+            vertices[i*4].position = (x - xlinedelta, ymax, 0)
+            vertices[i*4].uv = (0, 0)
+            vertices[i*4 + 1].position = (x - xlinedelta, ymin, 0)
+            vertices[i*4 + 1].uv = (0, 1)
+            vertices[i*4 + 2].position = (x + xlinedelta, ymax, 0)
+            vertices[i*4 + 2].uv = (1, 0)
+            vertices[i*4 + 3].position = (x + xlinedelta, ymin, 0)
+            vertices[i*4 + 3].uv = (1, 1)
+            indices[i * 6] =     UInt16(i*4)
+            indices[i * 6 + 1] = UInt16(i*4 + 1)
+            indices[i * 6 + 2] = UInt16(i*4 + 2)
+            indices[i * 6 + 3] = UInt16(i*4 + 1)
+            indices[i * 6 + 4] = UInt16(i*4 + 2)
+            indices[i * 6 + 5] = UInt16(i*4 + 3)
+        }
+        let vert_dec = 4 * m
+        let ind_dec = 6 * m
+        for i in 0..<n {
+            let y = y0 + Float(i) * deltaY
+            vertices[vert_dec + i*4].position = (xmin, y + ylinedelta, 0)
+            vertices[vert_dec + i*4].uv = (0, 0)
+            vertices[vert_dec + i*4 + 1].position = (xmin, y - ylinedelta, 0)
+            vertices[vert_dec + i*4 + 1].uv = (0, 1)
+            vertices[vert_dec + i*4 + 2].position = (xmax, y + ylinedelta, 0)
+            vertices[vert_dec + i*4 + 2].uv = (1, 0)
+            vertices[vert_dec + i*4 + 3].position = (xmax, y - ylinedelta, 0)
+            vertices[vert_dec + i*4 + 3].uv = (1, 1)
+            indices[ind_dec + i * 6] =     UInt16(vert_dec + i*4)
+            indices[ind_dec + i * 6 + 1] = UInt16(vert_dec + i*4 + 1)
+            indices[ind_dec + i * 6 + 2] = UInt16(vert_dec + i*4 + 2)
+            indices[ind_dec + i * 6 + 3] = UInt16(vert_dec + i*4 + 1)
+            indices[ind_dec + i * 6 + 4] = UInt16(vert_dec + i*4 + 2)
+            indices[ind_dec + i * 6 + 5] = UInt16(vert_dec + i*4 + 3)
+        }
+        
+        super.init(vertices: vertices, indices: indices, withVerticesBuffer: true)
     }
 }
