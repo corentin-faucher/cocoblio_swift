@@ -100,7 +100,7 @@ class SecureButton : Node, Draggable {
         timer.invalidate()
         let (pos, delta) = self.getAbsPosAndDelta()
         PopMessage(parent: screen, strTex: failPopStringTex, frameTex: failPopFrameTex,
-                   pos.x, pos.y + 1.5*delta.y, 0.1, appearTime: 0.1, disappearTime: 2, fadeInY: -2*delta.y)
+                   pos.x, pos.y, 0.1, appearTime: 0.1, disappearTime: 2, fadeY: 1.5*delta.y)
     }
 }
 
