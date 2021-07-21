@@ -12,6 +12,7 @@ protocol CoqMetalView : MTKView {
     var root: AppRootBase! { get }
     var renderer: Renderer! {get }
     var isTransitioning: Bool { get set }
+    var isDarkMode: Bool { get }
     /* Juste pour macOS (pause automatique quand on change d'application) */
     var canPauseWhenResignActive: Bool { get set }
     
@@ -25,6 +26,11 @@ protocol CoqMetalView : MTKView {
     // Pour la détection du scrolling dans iOS...
     func addScrollingViewIfNeeded(with slidingMenu: SlidingMenu)
     func removeScrollingView()
+//    #if os(OSX)
+//    var asAppleView: NSView { get }
+//    #else
+//    var asAppleView: UIView { get }
+//    #endif
 }
 
 /*

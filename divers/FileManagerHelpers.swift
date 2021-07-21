@@ -34,6 +34,19 @@ extension FileManager {
 	var applicationSupportDirectory: URL {
 		return try! url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
 	}
+    var iCloudDocuments: URL? {
+        guard let iCloudContainer = url(forUbiquityContainerIdentifier: nil) else { return nil }
+        let iCloudDocUrl = iCloudContainer.appendingPathComponent("Documents", isDirectory: true)
+        if !self.fileExists(atPath: iCloudDocUrl.path) {
+            do { try createDirectory(at: iCloudDocUrl,
+                                     withIntermediateDirectories: true, attributes: nil) }
+            catch {
+                printerror(error.localizedDescription)
+                return nil
+            }
+        }
+        return iCloudDocUrl
+    }
 }
 
 extension URL {

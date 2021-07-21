@@ -43,15 +43,21 @@ enum Flag1 {
     static let relativeToTop = 1<<16
     static let relativeToBottom = 1<<17
     static let fadeInRight = 1<<18
-    static let relativeFlags = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom
-	static let openFlags = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom | fadeInRight
+    static let rightJustified = 1<<19
+    static let leftJustified = 1<<20
+    static let topJustified = 1<<21
+    static let bottomJustified = 1<<22
+    static let relativeFlags = relativeToRight | relativeToLeft | relativeToTop | relativeToBottom |
+        rightJustified | leftJustified | topJustified | bottomJustified
+	static let openFlags =    relativeToRight | relativeToLeft | relativeToTop | relativeToBottom | fadeInRight |
+        rightJustified | leftJustified | topJustified | bottomJustified
 	
     /// Descendant ne devant pas être aligné
-	static let notToAlign = 1<<19
-    
-    static let stringRightJustified = 1<<20
+	static let notToAlign = 1<<23
 	
+    static let reshapableRoot = 1<<24
+    
     /** Le premier flag pouvant être utilisé dans un projet spécifique. */
-    static let firstCustomFlag = 1<<21
+    static let firstCustomFlag = 1<<25
 }
 

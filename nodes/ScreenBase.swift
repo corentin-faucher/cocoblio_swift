@@ -21,20 +21,19 @@ protocol KeyResponder : ScreenBase {
 }
 
 class ScreenBase : Node
-{	
-	/** Les écrans sont toujours ajoutés juste après l'ainé.
-	* add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
-	* i.e. les deux premiers écrans sont le back et le front respectivement,
-	* les autres sont au milieu. */
-	init(_ refNode: Node,
-		 flags: Int = 0
-	) {
-		if let bigBro = refNode.firstChild as? ScreenBase {
-			super.init(bigBro, 0, 0, 4, 4, lambda: 0, flags: flags, asParent: false, asElderBigbro: false)
-		} else {
-			super.init(refNode, 0, 0, 4, 4, lambda: 0, flags: flags)
-		}
-	}
+{
+    /** Les écrans sont toujours ajoutés juste après l'ainé.
+    * add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
+    * i.e. les deux premiers écrans sont le back et le front respectivement,
+    * les autres sont au milieu. */
+    required init(_ root: AppRootBase) {
+        if let bigBro = root.firstChild as? ScreenBase {
+            super.init(bigBro, 0, 0, 4, 4, lambda: 0, flags: Flag1.reshapableRoot,
+                       asParent: false, asElderBigbro: false)
+        } else {
+            super.init(root, 0, 0, 4, 4, lambda: 0, flags: Flag1.reshapableRoot)
+        }
+    }
 	required init(other: Node) {
 		let theOther = other as! ScreenBase
 		super.init(other: theOther)
@@ -44,9 +43,9 @@ class ScreenBase : Node
 		alignScreenElements(isOpening: true)
 	}
 	
-    override func reshape() -> Bool {
+    override func reshape() { //} -> Bool {
 		alignScreenElements(isOpening: false)
-		return true
+//		return true
 	}
 	
 	func alignScreenElements(isOpening: Bool) {
@@ -75,6 +74,8 @@ class ScreenBase : Node
 		}
 	}
 }
+
+
 /*
 /** PersistentScreen stay in the root structure after usage.
  * To be used with frequently used screen, e.g. MainMenu, backscreen... */

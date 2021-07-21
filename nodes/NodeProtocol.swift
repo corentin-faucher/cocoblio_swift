@@ -22,11 +22,5 @@ protocol Cursorable : Node {
 	func unclick()
 }
 
-/** Un noeud pouvant être reshapé (e.g. un screen).
-* (Reshape: ajustement des positions/dimensions en fonction du cadre du parent).
-* Return: True s'il y a eu changement du cadre, i.e. besoin d'un reshape pour les enfants. */
-//protocol Reshapable : Node {
-//    func reshape() -> Bool
-//}
 
 

@@ -52,8 +52,14 @@ class NumberNode : Node {
         update()
     }
     
-    func update(newNumber: Int, newUnitDecimal: Int? = nil, newSeparator: Digit? = nil) {
-        number = newNumber
+    func update(newNumber: Int?, newUnitDecimal: Int? = nil, newSeparator: Digit? = nil) {
+        guard let new = newNumber else {
+            while let child = firstChild {
+                child.disconnect()
+            }
+            return
+        }
+        number = new
         if let ud = newUnitDecimal { unitDecimal = ud }
         if let sep = newSeparator { separator = sep }
 

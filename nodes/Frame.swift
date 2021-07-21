@@ -176,6 +176,7 @@ class Frame : Surface {
 		if let parent = parent, containsAFlag(Flag1.giveSizesToParent) {
 			parent.width.set(self.width.realPos)
 			parent.height.set(self.height.realPos)
+            parent.setRelatively(fix: fix)
 		}
 	}
 	func updateWithLittleBro(fix: Bool) {

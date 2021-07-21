@@ -65,12 +65,9 @@ class Node : CopyableNode {
     func open() {
         guard containsAFlag(Flag1.openFlags) else { return }
         // 1. Set relatively to parent en priorité (incompatible avec FadeIn, les deux utilises x.defPos différemment)
-        if containsAFlag(Flag1.relativeFlags) {
-            setRelativelyToParent(fix: true)
-            return
-        }
+        setRelatively(fix: true)
         // 2. FadeIn, pour l'instant juste en x de la droite.
-        if !containsAFlag(Flag1.show) {
+        if !containsAFlag(Flag1.show), containsAFlag(Flag1.fadeInRight) {
             x.fadeIn()
         }
     }
@@ -80,10 +77,8 @@ class Node : CopyableNode {
             x.fadeOut()
         }
     }
-    func reshape() -> Bool {
-        guard containsAFlag(Flag1.relativeFlags) else {return false}
-        setRelativelyToParent(fix: false)
-        return false
+    func reshape() {
+        setRelatively(fix: false)
     }
     /*-- Fonctions d'accès et Computed properties --*/
     /// Obtenir la position absolue d'un noeud.

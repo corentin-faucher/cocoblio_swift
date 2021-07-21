@@ -50,9 +50,7 @@ class Surface: Node {
         if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
             theParent.width.set(width.realPos)
             theParent.height.set(height.realPos)
-        }
-        if containsAFlag(Flag1.stringRightJustified) {
-            x.setRelToDef(shift: -width.realPos/2, fix: fix)
+            theParent.setRelatively(fix: fix)
         }
     }
     
@@ -84,8 +82,7 @@ class StringSurface: Surface //, Openable
 		if ceiledWidth != nil {
 			addFlags(Flag1.surfaceWithCeiledWidth)
 		}
-		piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-		
+        piu.color = StringSurface.blackTextColor // (Text noir par défaut.)
 	}
 	@discardableResult
 	convenience init(_ refNode: Node?, cstString: String,
@@ -105,8 +102,8 @@ class StringSurface: Surface //, Openable
 		updateRatio(fix: true)
         super.open()
 	}
-	/** Change la texture du noeud (dervrait être une string). */
-	func updateTexture(_ newTexture: Texture) {
+	/** Change la texture du noeud (devrait être une string). */
+	func updateStringTexture(_ newTexture: Texture) {
         guard newTexture.type != .png else {
 			printerror("Not a string texture")
 			return
@@ -125,6 +122,9 @@ class StringSurface: Surface //, Openable
 	func updateTextureToConstantString(_ newString: String) {
 		tex = Texture.getConstantString(newString)
 	}
+    
+    static let blackTextColor: Vector4 = [0, 0, 0, 1]
+    static let whiteTextColor: Vector4 = [0.9, 0.9, 0.8, 1]
 }
 
 /** Surface avec tiles (e.g. ensemble de 4x4 icones dans un png.) */
@@ -277,9 +277,9 @@ class TestFrame : Surface
         super.open()
 	}
 	
-	override func reshape() -> Bool {
+    override func reshape() { //} -> Bool {
 		open()
-		return false
+//		return false
 	}
 }
 

@@ -74,12 +74,10 @@ class Texture {
 	}
 	
     private func drawAsString() {
-		// 1. Font et dimension de la string
+		// 1. Font et dimension de la string        
 		#if os(OSX)
-		let font = NSFont(name: "American Typewriter", size: Texture.fontSize)
 		let color = NSColor.white
 		#else
-		let font = UIFont(name: "American Typewriter", size: Texture.fontSize)
 		let color = UIColor.white
 		#endif
 		// 2. Paragraph style
@@ -88,14 +86,14 @@ class Texture {
 		paragraphStyle.lineBreakMode = NSLineBreakMode.byTruncatingTail
 		// 3. Attributs de la string (color, font, paragraph style)
 		var attributes: [NSAttributedString.Key : Any] = [:]
-		attributes[.font] = font
+        attributes[.font] = Texture.getAppleFont()
 		attributes[.foregroundColor] = color
 		attributes[.paragraphStyle] = paragraphStyle
 		// 4. Init de la NSString
 		let str: NSString
 		if name.count > 0 {
             if type == .localizedString {
-				str = NSString(string: name.localizedOrDucked)
+				str = NSString(string: name.localized)
 			} else {
 				str = NSString(string: name)
 			}
@@ -301,6 +299,17 @@ class Texture {
 		textureLoader = MTKTextureLoader(device: device)
 		loaded = true
 	}
+    
+    #if os(OSX)
+    static func getAppleFont(size: CGFloat = Texture.fontSize) -> NSFont? {
+        return NSFont(name: "American Typewriter", size: size)
+    }
+    #else
+    static func getAppleFont(size: CGFloat = Texture.fontSize) -> UIFont? {
+        return UIFont(name: "American Typewriter", size: size)
+    }
+    #endif
+    
     /** Texture loader de Metal. Doit être initialisé par le renderer avec la device (gpu). */
     private static var textureLoader: MTKTextureLoader!
 	static private(set) var loaded: Bool = false

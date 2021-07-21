@@ -25,48 +25,39 @@ protocol Scrollable : Node {
 * getIndicesRangeAtOpening : exécuter à l'ouverture du sliding menu et retourne le range attendu des items.
 * getPosIndex : la position de l'indice où on est centré à l'ouverture. */
 class SlidingMenu : Node, Scrollable { // Openable
+    var openPos: Int = 0            // Position du sliding menu à l'ouverture (premier élement en haut par défaut)
+    
 	private unowned let metalView: CoqMetalView
-	private let nDisplayed: Int
-    private let spacing: Float
-	private let addNewItem: ((_ menu: Node, _ index: Int) -> Node)
-    private let getIndicesRangeAtOpening: (() -> ClosedRange<Int>?)
-    private let getPosIndex: (() -> Int)
+	private let nDisplayed: Int     // Nombre d'items affichés (sans dérouler), e.g. 4.
+    private var nItems: Int = 0     // Nombre d'items dans le menu, e.g. 10.
+    private let spacing: Float      // Espacement -> ~1
     private var menuGrabPosY: Float? = nil
-	private var indicesRange: ClosedRange<Int>? = nil
-    private var menu: Node! // Le menu qui "glisse" sur le noeud racine.
+    private var menu: Node!         // Le menu qui "glisse" sur le noeud racine.
 	private var scrollBar: SlidingMenuScrollBar!
     private var vitY = SmoothPos(0, 4) // La vitesse lors du "fling"
-	private var vitYm1: Float = 0
-    private var deltaT = Chrono() // Pour la distance parcourue
+	private var vitYm1: Float = 0   // vitesse au temps précédent
+    private var deltaT = Chrono()   // Pour la distance parcourue
     private var flingChrono = Chrono() // Temps de "vol"
-    
     private var itemHeight: Float {
         return height.realPos / Float(nDisplayed)
     }
+    
     @discardableResult
 	init(_ refNode: Node, nDisplayed: Int, metalView: CoqMetalView,
         _ x: Float, _ y: Float, width: Float, height: Float,
-        spacing: Float,
-        addNewItem: @escaping ((_ menu: Node, _ index: Int) -> Node),
-        getIndicesRangeAtOpening: @escaping (() -> ClosedRange<Int>?),
-        getPosIndex: @escaping (() -> Int),
-        flags: Int=0
-    ) {
+        spacing: Float, flags: Int=0)
+    {
 		self.metalView = metalView
         self.nDisplayed = nDisplayed
         self.spacing = spacing
-        self.addNewItem = addNewItem
-        self.getIndicesRangeAtOpening = getIndicesRangeAtOpening
-        self.getPosIndex = getPosIndex
-        
         super.init(refNode,
-                   x, y, width, height, lambda: 10, flags: flags)
+                   x, y, width, height, lambda: 10,
+                   flags: flags | Flag1.selectableRoot)
         makeSelectable()
-		let scrollBarWidth = width * 0.025
-		menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20)
-		
+        
+		let scrollBarWidth = max(width, height) * 0.025
+        menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20, flags: Flag1.selectableRoot)
 		scrollBar = SlidingMenuScrollBar(parent: self, width: scrollBarWidth)
-		
         tryToAddFrame()
     }
     required init(other: Node)
@@ -75,20 +66,32 @@ class SlidingMenu : Node, Scrollable { // Openable
 		metalView = toCloneMenu.metalView
         nDisplayed = toCloneMenu.nDisplayed
         spacing = toCloneMenu.spacing
-        addNewItem = toCloneMenu.addNewItem
-        getIndicesRangeAtOpening = toCloneMenu.getIndicesRangeAtOpening
-        getPosIndex = toCloneMenu.getPosIndex
         super.init(other: other)
         makeSelectable()
+        
         menu = Node(self, 0, 0, width.realPos, height.realPos, lambda: 20)
         tryToAddFrame()
     }
     
+    /** Remplissage : Ajout d'un noeud. (Déplace le noeud avec simpleMoveToParent). */
+    func addItemInMenu(_ node: Node) {
+        node.simpleMoveToParent(menu, asElder: false)        
+        nItems += 1
+    }
+    func removeAllItemsInMenu() {
+        while let child = menu.firstChild {
+            child.disconnect()
+        }
+        nItems = 0
+    }
 	
-	/** OffsetRatio */
+	/** (pour UIScrollView) OffsetRatio : Déroulement des UIScrollView par rapport au haut. */
 	func setOffsetRatio(_ offsetRatio: Float, letGo: Bool) {
-		let DeltaY = getMenuDeltaYMax()
-		let newy = menu.height.realPos * offsetRatio - DeltaY
+        guard let DeltaY = getMenuDeltaYMax() else {
+            menu.y.set(0, true)
+            return
+        }
+        let newy = menu.height.realPos * offsetRatio - DeltaY
 		if letGo {
 			setMenuYpos(yCandIn: newy, snap: true, fix: false)
 		} else {
@@ -98,9 +101,10 @@ class SlidingMenu : Node, Scrollable { // Openable
 		checkItemsVisibility(openNode: true)
 	}
 	func getOffSetRatio() -> Float {
-		return (menu.y.realPos + getMenuDeltaYMax()) / menu.height.realPos
+        guard let DeltaY = getMenuDeltaYMax() else { return 0 }
+		return (menu.y.realPos + DeltaY) / menu.height.realPos
 	}
-	/** Retourne menu.height / slidmenu.height. Typiquement > 1 (pas besoine de sliding menu si < 1) */
+	/** (pour UIScrollView) Retourne menu.height / slidmenu.height. Typiquement > 1 (pas besoine de sliding menu si < 1) */
 	func getContentFactor() -> Float {
 		return menu.height.realPos / height.realPos
 	}
@@ -142,19 +146,6 @@ class SlidingMenu : Node, Scrollable { // Openable
 	
 	/*-- Openable/Closeable --*/
     override func open() {
-        func placeToOpenPos() {
-			let first = indicesRange?.first ?? 0
-			let normalizedId: Int
-			let indexAPriori = getPosIndex()
-			if let range = indicesRange, range.contains(indexAPriori) {
-				normalizedId = indexAPriori - first
-			} else {
-				normalizedId = 0
-			}
-			
-			let y0 = itemHeight * Float(normalizedId) - getMenuDeltaYMax()
-            setMenuYpos(yCandIn: y0, snap: true, fix: true)
-        }
         // Mettre tout de suite le flag "show".
         if(!menu.containsAFlag(Flag1.hidden)) {
             menu.addFlags(Flag1.show)
@@ -162,33 +153,13 @@ class SlidingMenu : Node, Scrollable { // Openable
         // 0. Cas pas de changements pour le IntRange,
         flingChrono.stop()
         deltaT.stop()
-        let newIndicesRange = getIndicesRangeAtOpening()
-        if (indicesRange == newIndicesRange) {
-            placeToOpenPos()
-            checkItemsVisibility(openNode: false)
-            return
-        }
-        // 1. Changement. Reset des noeuds s'il y en a...
-        indicesRange = newIndicesRange
-        while (menu.firstChild != nil) {
-            menu.disconnectChild(elder: true)
-        }
-        // 2. Ajout des items avec lambda addingItem
-		// et vérifier la taille du nub.
-		if let range = indicesRange {
-			let heightRatio = Float(nDisplayed) / max(1, Float(range.count))
-			scrollBar.setNubHeightWithRelHeight(heightRatio)
-			for i in range {
-				_ = addNewItem(menu, i)
-			}
-		} else {
-			scrollBar.setNubHeightWithRelHeight(1)
-		}
+        
+        // 1. Ajustement de la scroll bar
+        scrollBar.setNubHeightWithRelHeight(Float(nDisplayed) / max(1, Float(nItems)))
+        
         // 3. Normaliser les hauteurs pour avoir itemHeight
         let sq = Squirrel(at: menu)
-        if (!sq.goDown()) {
-            return
-        }
+        guard sq.goDown() else { return }  // (Il faut quelque chose dans le menu.)
         let smallItemHeight = itemHeight / spacing
         repeat {
             // Scaling -> taille attendu / taille actuelle
@@ -200,7 +171,13 @@ class SlidingMenu : Node, Scrollable { // Openable
         // 4. Aligner les éléments et placer au bon endroit.
         menu.alignTheChildren(alignOpt: AlignOpt.vertically | AlignOpt.fixPos,
                               ratio: 1, spacingRef: spacing)
-        placeToOpenPos()
+        if let deltaY = getMenuDeltaYMax() {
+            setMenuYpos(yCandIn: itemHeight * Float(openPos) - deltaY,
+                        snap: true, fix: true)
+        } else {
+            setMenuYpos(yCandIn: 0, snap: true, fix: true)
+        }
+        
         checkItemsVisibility(openNode: false)
 		
 		// 5. Signaler sa présence (pour iOS)
@@ -273,16 +250,20 @@ class SlidingMenu : Node, Scrollable { // Openable
     }
     private func setMenuYpos(yCandIn: Float, snap: Bool, fix: Bool) {
         // Il faut "snapper" à une position.
-		let DeltaY = getMenuDeltaYMax()
+        guard let DeltaY = getMenuDeltaYMax() else {
+            menu.y.set(0)
+            return
+        }
         let yCand = snap ?
             round((yCandIn - DeltaY)/itemHeight) * itemHeight + DeltaY
             : yCandIn
         menu.y.set(max(min(yCand, DeltaY), -DeltaY), fix, false)
 		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
     }
-	/** Le déplacement maximal du menu en y. 0 si n <= nD. */
-	private func getMenuDeltaYMax() -> Float {
-		return 0.5 * itemHeight * Float(max((indicesRange?.count ?? 0) - nDisplayed, 0))
+	/** Le déplacement maximal du menu en y. nil si n <= nD. */
+	private func getMenuDeltaYMax() -> Float? {
+        guard nItems > nDisplayed else { return nil }
+		return 0.5 * itemHeight * Float(nItems - nDisplayed)
 	}
 }
 
@@ -339,46 +320,4 @@ fileprivate class SlidingMenuScrollBar : Node {
 	}
 }
 
-// GARBAGE
-
-/*-- Draggable (pour iOS) obsolete -> Scrollable --*/
-/*
-func grab(relPosInit: Vector2) {
-    flingChrono.stop()
-    menuGrabPosY = relPosInit.y - menu.y.realPos
-    vitYm1 = 0
-    vitY.set(0)
-    deltaT.start()
-}
-func drag(relPos: Vector2) {
-    guard let menuGrabPosY = menuGrabPosY else {
-        printerror("drag pas init.")
-        return
-    }
-    guard deltaT.elsapsedSec > 0 else { return }
-    
-    let lastMenuY = menu.y.realPos
-    setMenuYpos(yCandIn: relPos.y - menuGrabPosY, snap: false, fix: false)
-    let menuDeltaY = menu.y.realPos - lastMenuY
-    checkItemsVisibility(openNode: true)
-    vitYm1 = vitY.realPos
-    vitY.set(menuDeltaY / deltaT.elsapsedSec)
-    deltaT.start()
-}
-func letGo() {
-    // 0. Cas stop. Lâche sans bouger. (vitesse négligeable)
-    vitY.set((vitY.realPos + vitYm1)/2)
-    print("letGo speed \(vitY.realPos)")
-    if abs(vitY.realPos) < 6 {
-        setMenuYpos(yCandIn: menu.y.realPos, snap: true, fix: false)
-        checkItemsVisibility(openNode: true)
-        return
-    }
-    // 1. Cas on laisse en "fling" (checkItemVisibilty s'occupe de mettre à jour la position)
-    flingChrono.start()
-    deltaT.start()
-    
-    checkFling()
-}
-*/
 

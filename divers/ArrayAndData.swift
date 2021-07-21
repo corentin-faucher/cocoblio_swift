@@ -113,7 +113,7 @@ extension Array {
 			.encoded(key: key)
 			.toData()
 		do { try data.write(to: url) }
-		catch { printerror(error.localizedDescription) }
+        catch { printerror(error.localizedDescription) }
 	}
 }
 

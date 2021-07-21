@@ -143,7 +143,22 @@ enum Language : LanguageInfo, CaseIterable {
 	}
     
 	/*-- Private stuff... --*/
-	static private(set) var currentBundle: Bundle = Bundle.main
+    static fileprivate let englishBundle: Bundle = {
+        guard let path = Bundle.main.path(forResource: Language.english.iso, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.english.iso)"); return Bundle.main }
+        guard let bundle = Bundle(path: path) else {
+            printerror("Ne peut charger le bundle en \(path)"); return Bundle.main }
+        return bundle
+    }()
+    static fileprivate let frenchBundle: Bundle = {
+        guard let path = Bundle.main.path(forResource: Language.french.iso, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.french.iso)"); return Bundle.main }
+        guard let bundle = Bundle(path: path) else {
+            printerror("Ne peut charger le bundle en \(path)"); return Bundle.main }
+        return bundle
+    }()
+	static private(set) var currentBundle: Bundle = englishBundle
+    
 	/** Écriture en arabe. */
 	static private(set) var currentIsRightToLeft = (Language.current == .arabic)
 	/** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
@@ -158,23 +173,45 @@ enum Language : LanguageInfo, CaseIterable {
 
 /** Extension pour les surfaces de string localisées. */
 extension String {
-    var localized: String? {
-		let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
-		guard locStr != "⁉️" else {
-			return nil
+    var localized: String {
+        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
+        if locStr != "⁉️" {
+            return locStr
 		}
-		return locStr
+        // Essayer avec le default bundle (english).
+        if Language.currentBundle !== Language.englishBundle {
+            let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.englishBundle, value: "⁉️", comment: "")
+            if locStr != "⁉️" {
+                return locStr
+            }
+        }
+		return "🦆\(self)"
     }
-	var localizedOrDucked: String {
-		return localized ?? "🦆\(self)"
-	}
-	var localizedWithMain: String? {
-		let locStr = NSLocalizedString(self, tableName: nil, bundle: Bundle.main, value: "⁉️", comment: "")
+    var localizedOrNil: String? {
+        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
+        if locStr != "⁉️" {
+            return locStr
+        } else {
+            return nil
+        }
+    }
+    /// Localisation par défaut (english).
+	var localizedEnglish: String? {
+        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.englishBundle, value: "⁉️", comment: "")
 		guard locStr != "⁉️" else {
 			return nil
 		}
 		return locStr
 	}
+    /// Seconde localization par défaut (français)
+    var localizedFrench: String? {
+        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.frenchBundle, value: "⁉️", comment: "")
+        guard locStr != "⁉️" else {
+            return nil
+        }
+        return locStr
+    }
+    
 }
 
 

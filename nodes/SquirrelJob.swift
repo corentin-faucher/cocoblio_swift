@@ -145,10 +145,17 @@ extension Node {
     }
     
     func reshapeBranch() {
-        guard containsAFlag(Flag1.show), reshape(), let firstChild = firstChild else {return}
+        guard containsAFlag(Flag1.show) else { return }
+        reshape()
+        guard containsAFlag(Flag1.reshapableRoot), let firstChild = firstChild else { return }
         let sq = Squirrel(at: firstChild)
         while true {
-            if sq.pos.containsAFlag(Flag1.show), sq.pos.reshape(), sq.goDown() {continue}
+            if sq.pos.containsAFlag(Flag1.show) {
+                sq.pos.reshape()
+                if sq.pos.containsAFlag(Flag1.reshapableRoot), sq.goDown() {
+                    continue
+                }
+            }
             while !sq.goRight() {
                 if !sq.goUp() {
                     printerror("Pas de branch."); return

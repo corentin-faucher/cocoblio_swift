@@ -26,7 +26,7 @@ class RootNode : Node {
     // et "frame" est le "full frame", i.e. la vue au complet.
     var frame = CGSize(width: 2, height: 2)
     private var yShift: CGFloat = 0
-    private var frameSizeInPx = CGSize(width: 100, height: 100)  // (en pixels)
+    private var frameSizeInPx = CGSize(width: 800, height: 600)  // (en pixels)
     private unowned let parentRoot: RootNode?
     
     /// Déplacement relatif de la vue dans son cadre (voir fullHeight vs usableHeight).
@@ -46,7 +46,7 @@ class RootNode : Node {
             self.parentRoot = nil
         }
         self.camera = Camera(0, 0, 4)
-        super.init(parent, 0, 0, 4, 4, lambda: 5, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot|Flag1.isRoot)
+        super.init(parent, 0, 0, 4, 4, lambda: 5, flags: Flag1.exposed|Flag1.show|Flag1.branchToDisplay|Flag1.selectableRoot|Flag1.isRoot|Flag1.reshapableRoot)
     }
     required init(other: Node) {
         parentRoot = (other as! RootNode).parentRoot
@@ -103,24 +103,27 @@ class RootNode : Node {
             Float((invertedY ? -1 : 1) * (locationInView.y / frameSizeInPx.height - 0.5) * frame.height + yShift)
         )
     }
-    func getFrameFrom(_ pos: Vector2, deltas: Vector2, invertedY: Bool) -> CGRect {
+    func getFrameFrom(_ pos: Vector2, deltas: Vector2) -> CGRect {
         let width: CGFloat = 2 * CGFloat(deltas.x) / frame.width * frameSizeInPx.width
         let height: CGFloat = 2 * CGFloat(deltas.y) / frame.height * frameSizeInPx.height
+        #if os(OSX)
+        let invertedY = false
+        #else
+        let invertedY = true
+        #endif
         return CGRect(x: (CGFloat(pos.x - deltas.x) / frame.width + 0.5) * frameSizeInPx.width,
                       y: ((CGFloat(pos.y - (invertedY ? -1 : 1) * deltas.y) - yShift) / (frame.height * (invertedY ? -1 : 1)) + 0.5) * frameSizeInPx.height,
                       width: width,
                       height: height)
     }
-    override func reshape() -> Bool {
-        guard let parentRoot = parentRoot else {
-            return true
-        }
+    override func reshape() {
+        guard let parentRoot = parentRoot else { return } // return true }
         frameSizeInPx = parentRoot.frameSizeInPx
         frame = parentRoot.frame
         width.set(parentRoot.width.realPos)
         height.set(parentRoot.height.realPos)
         yShift = parentRoot.yShift
-        return true
+//        return true
     }
 }
 

@@ -100,8 +100,8 @@ extension Node {
         height.set(h)
     }
     
-    func setRelativelyToParent(fix: Bool) {
-        guard let theParent = parent else { return }
+    func setRelatively(fix: Bool) {
+        guard containsAFlag(Flag1.relativeFlags), let theParent = parent else { return }
         var xDec: Float = 0
         var yDec: Float = 0
         if containsAFlag(Flag1.relativeToRight) {
@@ -109,10 +109,20 @@ extension Node {
         } else if containsAFlag(Flag1.relativeToLeft) {
             xDec = -theParent.width.realPos * 0.5
         }
-        if (containsAFlag(Flag1.relativeToTop)) {
+        if containsAFlag(Flag1.relativeToTop) {
             yDec = theParent.height.realPos * 0.5
         } else if containsAFlag(Flag1.relativeToBottom) {
             yDec = -theParent.height.realPos * 0.5
+        }
+        if containsAFlag(Flag1.rightJustified) {
+            xDec -= deltaX
+        } else if containsAFlag(Flag1.leftJustified) {
+            xDec += deltaX
+        }
+        if containsAFlag(Flag1.topJustified) {
+            yDec -= deltaY
+        } else if containsAFlag(Flag1.bottomJustified) {
+            yDec += deltaY
         }
         x.setRelToDef(shift: xDec, fix: fix)
         y.setRelToDef(shift: yDec, fix: fix)

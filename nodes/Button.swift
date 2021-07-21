@@ -50,11 +50,11 @@ class SecureButton : Node, Draggable {
     private let popI: Int
     private let failPopStringTex: Texture
     private let failPopFrameTex: Texture
-    private unowned let screen: ScreenBase
+    private unowned let front: ScreenBase
     
     init(_ refNode: Node?,
          holdTimeInSec: Float, popTex: Texture, popI: Int,
-         failPopStringTexture: Texture, failPopFrameTexture: Texture, screen: ScreenBase,
+         failPopStringTexture: Texture, failPopFrameTexture: Texture, frontScreen: ScreenBase,
          _ x: Float, _ y: Float, _ height: Float,
          lambda: Float = 0, flags: Int = 0)
     {
@@ -63,7 +63,7 @@ class SecureButton : Node, Draggable {
         self.countdown = CountDown(ringSec: holdTimeInSec)
         self.failPopStringTex = failPopStringTexture
         self.failPopFrameTex = failPopFrameTexture
-        self.screen = screen
+        self.front = frontScreen
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
         makeSelectable()
     }
@@ -99,7 +99,7 @@ class SecureButton : Node, Draggable {
         disk = nil
         timer.invalidate()
         let (pos, delta) = self.getAbsPosAndDelta()
-        PopMessage(parent: screen, strTex: failPopStringTex, frameTex: failPopFrameTex,
+        PopMessage(parent: front, strTex: failPopStringTex, frameTex: failPopFrameTex,
                    pos.x, pos.y, 0.1, appearTime: 0.1, disappearTime: 2, fadeY: 1.5*delta.y)
     }
 }
