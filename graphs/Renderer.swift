@@ -156,13 +156,15 @@ extension Renderer: MTKViewDelegate {
         
         #if os(OSX)
         guard let window = view.window else {printerror("No window."); return}
+        guard let root = metalView.root else { printerror("No root"); return }
         let headerHeight = window.styleMask.contains(.fullScreen) ? 22 : window.frame.height - window.contentLayoutRect.height
-        metalView.root?.updateFrame(to: metalView.frame.size,
-                                    withMargin: headerHeight, 0, 0, 0)
+        root.margins = Margins(top: headerHeight, left: 0, bottom: 0, right: 0)
+        root.frameSizeInPx = metalView.frame.size
+        root.updateFrame()
         #else
-        let sa = view.safeAreaInsets
-        metalView.root?.updateFrame(to: metalView.frame.size,
-                                    withMargin: sa.top, sa.left, sa.bottom, sa.right)
+        guard let root = metalView.root else { return }
+        root.frameSizeInPx = metalView.frame.size
+        root.updateFrame()
         #endif		
 	}
 	
@@ -172,14 +174,20 @@ extension Renderer: MTKViewDelegate {
 		}
 		guard !view.isPaused else { return }
 		#if !os(OSX)
-		if metalView.isTransitioning, let theFrame = metalView.layer.presentation()?.bounds.size {
-            let sa = view.safeAreaInsets
-            root.updateFrame(to: theFrame,
-                             withMargin: sa.top, sa.left, sa.bottom, sa.right,
-                             inTransition: true)
-		}
+		if metalView.isTransitioning {
+            if !metalView.didTransition, let theFrame = metalView.layer.presentation()?.bounds.size {
+                root.frameSizeInPx = theFrame
+                root.updateFrame(inTransition: true)
+            } else {
+                root.frameSizeInPx = view.frame.size
+                root.updateFrame()
+                // Transition fini, on remet les flags à false.0
+                metalView.isTransitioning = false
+                metalView.didTransition = false
+            }
+        }
 		#endif
-        
+                
         currentMesh = nil
         currentTexture = nil
         

@@ -11,6 +11,10 @@ import simd
 import CoreGraphics
 #if os(OSX)
 import AppKit
+typealias Margins = NSEdgeInsets
+#else
+import UIKit
+typealias Margins = UIEdgeInsets
 #endif
 
 fileprivate let ratioMin: CGFloat = 0.54
@@ -25,8 +29,10 @@ class RootNode : Node {
     // width et height sont le "cadre utilisable", i.e. où sont les objets ;
     // et "frame" est le "full frame", i.e. la vue au complet.
     var frame = CGSize(width: 2, height: 2)
+    // les marges (en pixels)
+    var margins: Margins = Margins(top: 5, left: 5, bottom: 5, right: 5)
+    var frameSizeInPx = CGSize(width: 800, height: 600)  // (en pixels)
     private var yShift: CGFloat = 0
-    private var frameSizeInPx = CGSize(width: 800, height: 600)  // (en pixels)
     private unowned let parentRoot: RootNode?
     
     /// Déplacement relatif de la vue dans son cadre (voir fullHeight vs usableHeight).
@@ -61,16 +67,13 @@ class RootNode : Node {
                                     deltaX: Float(frame.width),
                                     deltaY: Float(frame.height))
     }
-    func updateFrame(to newSize: CGSize,
-                     withMargin top: CGFloat, _ left: CGFloat, _ bottom: CGFloat, _ right: CGFloat,
-                     inTransition: Bool = false)
+    func updateFrame(inTransition: Bool = false)
     {
         // 0. Marges...
-        frameSizeInPx = newSize
-        let realRatio = newSize.width / newSize.height
-        let ratioT: CGFloat = top / frameSizeInPx.height + 0.01
-        let ratioB: CGFloat = bottom / frameSizeInPx.height + 0.01
-        let ratioLR: CGFloat = (left + right) / frameSizeInPx.width + 0.015
+        let realRatio = frameSizeInPx.width / frameSizeInPx.height
+        let ratioT: CGFloat = margins.top / frameSizeInPx.height + 0.01
+        let ratioB: CGFloat = margins.bottom / frameSizeInPx.height + 0.01
+        let ratioLR: CGFloat = (margins.left + margins.right) / frameSizeInPx.width + 0.015
         // 1. Full Frame
         if realRatio > 1 { // Landscape
             frame.height = 2 / ( 1 - ratioT - ratioB)

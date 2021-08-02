@@ -36,8 +36,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
 		if !Texture.loaded {
 			Texture.resume()
-			Sound.resume()
 		}
+        if !Sound.isLoaded {
+            Sound.resume()
+        }
         metalView.isSuspended = false
     }
 }

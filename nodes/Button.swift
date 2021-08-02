@@ -192,7 +192,7 @@ class SliderButton : Node, Draggable {
     private let actionAtLetGo: Bool // Action apportée seulement à la fin quand on lâche le nub.
         // Sinon action en continu...
 	
-    init(parent: Node, value: Float, actionAtLetGo: Bool,
+    init(parent: Node?, value: Float, actionAtLetGo: Bool,
 		 _ x: Float, _ y: Float, _ height: Float, slideWidth: Float,
 		 lambda: Float = 0, flags: Int = 0)
 	{
