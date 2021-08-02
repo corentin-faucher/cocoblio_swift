@@ -149,7 +149,7 @@ class TextViewWrapper : Node {
         super.open()
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textView.font = Texture.getAppleFont(size: frame.height * textRatio)
+        textView.font = Texture.getAppleFont(size: max(frame.height * textRatio, 14))
         #if os(OSX)
         if let scrollView = scrollView {
             root.metalView.addSubview(scrollView)
@@ -179,7 +179,7 @@ class TextViewWrapper : Node {
     override func reshape() {
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textView.font = Texture.getAppleFont(size: frame.height * textRatio)
+        textView.font = Texture.getAppleFont(size: max(frame.height * textRatio, 14))
         #if os(OSX)
         if let scrollView = scrollView {
             scrollView.frame = frame

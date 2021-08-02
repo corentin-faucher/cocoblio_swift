@@ -34,6 +34,7 @@ enum SpChar {
     static let return_: Character = "\r"
 //    static let newline: Character = "\n"
     static let space: Character = " "
+    static let nobreakSpace: Character = " "
     static let ideographicSpace: Character = "　"
 }
 

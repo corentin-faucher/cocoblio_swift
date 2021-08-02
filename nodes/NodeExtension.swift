@@ -228,6 +228,8 @@ extension Node {
 enum AlignOpt {
     static let vertically = 1
     static let dontUpdateSizes = 2
+    /** Ajoute de l'espacement supplémentaire entre les élément pour respecter le ratio w/h.
+     (Compact si option absente.) */
     static let respectRatio = 4
     static let fixPos = 8
     /** En horizontal, le "primary" est "x" des children,

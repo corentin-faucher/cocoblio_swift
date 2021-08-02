@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let sleepTime: Int64 = 16000
+
 struct GlobalChrono {
     // Getters
     /// Active/désactive le chrono du temps écoulé.
@@ -26,7 +28,7 @@ struct GlobalChrono {
         get { return !isActive }
     }
     static var shouldSleep: Bool {
-        return touchElapsed > 18000
+        return touchElapsed > sleepTime
     }
     private(set) static var elapsedMS: Int64 = 0
     static var elapsedSec: Float {

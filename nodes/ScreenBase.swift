@@ -22,6 +22,8 @@ protocol KeyResponder : ScreenBase {
 
 class ScreenBase : Node
 {
+    var compactAlign: Bool = false
+    var landscapePortraitThreshold: Float = 1
     /** Les écrans sont toujours ajoutés juste après l'ainé.
     * add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
     * i.e. les deux premiers écrans sont le back et le front respectivement,
@@ -52,8 +54,11 @@ class ScreenBase : Node
 		guard let theParent = parent else {printerror("Pas de parent."); return}
 		if !containsAFlag(Flag1.dontAlignScreenElements) {
 			let ceiledScreenRatio = theParent.width.realPos / theParent.height.realPos
-			var alignOpt = AlignOpt.respectRatio | AlignOpt.setSecondaryToDefPos
-			if (ceiledScreenRatio < 1) {
+            var alignOpt = AlignOpt.setSecondaryToDefPos
+            if !compactAlign {
+                alignOpt |= AlignOpt.respectRatio
+            }
+            if (ceiledScreenRatio < landscapePortraitThreshold) {
 				alignOpt |= AlignOpt.vertically
 			}
 			if (isOpening) {

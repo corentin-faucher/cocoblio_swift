@@ -17,9 +17,6 @@ import UIKit
 typealias Margins = UIEdgeInsets
 #endif
 
-fileprivate let ratioMin: CGFloat = 0.54
-fileprivate let ratioMax: CGFloat = 1.85
-
 /** Le noeud racine contrôle la caméra.
  	 En effet sa matrice "model" est une matrice "lookAt"
 	 étant la première transformation pour tout les objets. */
@@ -88,12 +85,14 @@ class RootNode : Node {
         }
         // 2. Usable Frame
         if realRatio > 1 { // Landscape
-            width.set(Float(min((1 - ratioLR) * frame.width, 2 * ratioMax)))
+            width.set(Float((1 - ratioLR) * frame.width))
+//            width.set(Float(min((1 - ratioLR) * frame.width, 2 * ratioMax)))
             height.set(2)
         }
         else {
             width.set(2)
-            height.set(Float(min((1 - ratioT - ratioB) * frame.height, 2 / ratioMin)))
+            height.set(Float((1 - ratioT - ratioB) * frame.height))
+//            height.set(Float(min((1 - ratioT - ratioB) * frame.height, 2 / ratioMin)))
         }
         // 3. Shift en y dû aux marge (pour le lookAt)
         yShift = (ratioT - ratioB) * frame.height / 2
