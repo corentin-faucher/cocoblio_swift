@@ -120,27 +120,6 @@ enum Language : LanguageInfo, CaseIterable {
 		printwarning("Language not found. Taking default: \(defaultLanguage).")
 		return defaultLanguage
 	}
-	
-	static func getLanguageFromOldId(_ oldId: Int) -> Language? {
-		switch oldId {
-			case 0: return .french
-			case 1: return .english
-			case 2: return .japanese
-			case 3: return .german
-			case 4: return .chinese_simpl
-			case 5: return .italian
-			case 6: return .spanish
-			case 7: return .arabic
-			case 8: return .greek
-			case 9: return .russian
-			case 10: return .swedish
-			case 11: return .chinese_trad
-			case 12: return .portuguese
-			case 13: return .korean
-            case 14: return .vietnamese
-			default: return nil
-		}
-	}
     
 	/*-- Private stuff... --*/
     static fileprivate let englishBundle: Bundle = {
@@ -157,7 +136,14 @@ enum Language : LanguageInfo, CaseIterable {
             printerror("Ne peut charger le bundle en \(path)"); return Bundle.main }
         return bundle
     }()
-	static private(set) var currentBundle: Bundle = englishBundle
+    static private(set) var currentBundle: Bundle = {
+        guard let path = Bundle.main.path(forResource: Language.currentIso, ofType: "lproj") else {
+            printerror("Ne peut trouver le fichier pour \(Language.currentIso)"); return Bundle.main }
+        guard let bundle = Bundle(path: path) else {
+            printerror("Ne peut charger le bundle en \(path)"); return Bundle.main
+        }
+        return bundle
+    }()
     
 	/** Écriture en arabe. */
 	static private(set) var currentIsRightToLeft = (Language.current == .arabic)
@@ -216,3 +202,25 @@ extension String {
 
 
 
+/* GARBAGE
+ static func getLanguageFromOldId(_ oldId: Int) -> Language? {
+     switch oldId {
+         case 0: return .french
+         case 1: return .english
+         case 2: return .japanese
+         case 3: return .german
+         case 4: return .chinese_simpl
+         case 5: return .italian
+         case 6: return .spanish
+         case 7: return .arabic
+         case 8: return .greek
+         case 9: return .russian
+         case 10: return .swedish
+         case 11: return .chinese_trad
+         case 12: return .portuguese
+         case 13: return .korean
+         case 14: return .vietnamese
+         default: return nil
+     }
+ }
+ */
