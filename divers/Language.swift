@@ -76,7 +76,6 @@ enum Language : LanguageInfo, CaseIterable {
 			// Lecture de droite à gauche (pour l'instant c'est juste l'arabe...)
 			currentIsRightToLeft = (current == .arabic)
 			currentDirectionFactor = currentIsRightToLeft ? -1 : 1
-			currentCharSpacing = evalCharSpacing()
 			
 			guard let path = Bundle.main.path(forResource: Language.currentIso, ofType: "lproj") else {
 				printerror("Ne peut trouver le fichier pour \(Language.currentIso)"); return}
@@ -149,12 +148,6 @@ enum Language : LanguageInfo, CaseIterable {
 	static private(set) var currentIsRightToLeft = (Language.current == .arabic)
 	/** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
 	static private(set) var currentDirectionFactor: Float = (Language.current == .arabic) ? -1 : 1
-	/** L'espacement entre les Char (différent pour l'arabe) */
-	static private(set) var currentCharSpacing: Float = evalCharSpacing()
-	static private func evalCharSpacing() -> Float {
-		currentIsRightToLeft ? -0.20
-			: -0.05
-	}
 }
 
 /** Extension pour les surfaces de string localisées. */

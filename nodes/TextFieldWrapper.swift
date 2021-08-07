@@ -107,7 +107,7 @@ class TextFieldWrapper : Node {
         textField.placeholder = placeHolder.localized
         #endif
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textField.font = Texture.getAppleFont(size: frame.height * 0.7)
+        textField.font = FontManager.currentWithSize(frame.height * 0.7)
         textField.frame = frame
         
         root.metalView.addSubview(textField)
@@ -119,7 +119,7 @@ class TextFieldWrapper : Node {
     override func reshape() {
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textField.font = Texture.getAppleFont(size: frame.height * 0.7)
+        textField.font = FontManager.currentWithSize(frame.height * 0.7)
         textField.frame = frame
     }
 }

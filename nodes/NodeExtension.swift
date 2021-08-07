@@ -27,8 +27,8 @@ extension Node {
 			  texture: frameTex, flags: Flag1.giveSizesToParent)
 		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
 									   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
+        stringSurf.x_margin = 0.5
 		stringSurf.updateRatio(fix: true)
-		
 		
 		return stringSurf
 	}
@@ -38,7 +38,8 @@ extension Node {
 	func addFramedString(strTex: Texture, frameTex: Texture,
 						 _ x: Float, _ y: Float, _ height: Float,
 						 lambda: Float = 0, flags: Int = 0,
-						 ceiledWidth: Float? = nil, relDelta: Float = 0.35) -> StringSurface? {
+						 ceiledWidth: Float? = nil, relDelta: Float = 0.35) -> StringSurface?
+    {
 		guard strTex.type != .png, frameTex.type == .png else {
 			printerror("Bad textures"); return nil
 		}

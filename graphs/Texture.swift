@@ -17,6 +17,8 @@ enum TextureType {
     case localizedString
 }
 
+//fileprivate let defaultFont: MyFont = .verdana
+
 /** Info d'une texture. m et n est le découpage en tiles.
  * Classe (par référence) car les noeuds ne font que y référer. */
 class Texture {
@@ -33,9 +35,12 @@ class Texture {
     var ptu = PerTextureUniforms()  // Doit être mutable pour passer au MTLRenderCommandEncoder...
     private(set) var ratio: Float = 1
 	let type: TextureType
+    var scaleX: Float = 1
+    var scaleY: Float = 1
+    let fontname: String?
 	
 	/*-- Methods --*/
-	func updateAsMutableString(_ string: String) {
+    func updateAsMutableString(_ string: String) {
         guard type == .mutableString else {
 			printerror("N'est pas une texture de string mutable."); return
 		}
@@ -44,7 +49,7 @@ class Texture {
 	}
 	    
 	// Private methods
-    private init(name: String, type: TextureType) {
+    private init(name: String, type: TextureType, fontname: String?) {
         self.name = name
         self.type = type
         
@@ -56,9 +61,11 @@ class Texture {
                 printwarning("Pas de tiling pour png \(name).")
                 m = 1; n = 1
             }
+            self.fontname = nil
             drawAsPng()
         } else {
             m = 1; n = 1
+            self.fontname = fontname
             drawAsString()
         }
     }
@@ -66,6 +73,7 @@ class Texture {
         self.name = "null"
         self.type = .png // (pas vrament un png, mais couleur uniforme... compte comme image)
         m = 1; n = 1
+        fontname = nil
         // (ptu reste aux valeurs par défaut)
     }
     
@@ -74,7 +82,21 @@ class Texture {
 	}
 	
     private func drawAsString() {
-		// 1. Font et dimension de la string        
+		// 1. Font et dimension de la string
+        let font: NSFont
+        let fontinfo: FontInfo
+        if let fontname = fontname {
+            if let fonttmp = NSFont(name: fontname, size: FontManager.current.pointSize) {
+                font = fonttmp
+            } else {
+                printerror("Cannot load font \(fontname).")
+                font = FontManager.current
+            }
+            fontinfo = FontManager.getFontInfo(fontname)
+        } else {
+            font = FontManager.current
+            fontinfo = FontManager.currentInfo
+        }
 		#if os(OSX)
 		let color = NSColor.white
 		#else
@@ -86,10 +108,9 @@ class Texture {
 		paragraphStyle.lineBreakMode = NSLineBreakMode.byTruncatingTail
 		// 3. Attributs de la string (color, font, paragraph style)
 		var attributes: [NSAttributedString.Key : Any] = [:]
-        attributes[.font] = Texture.getAppleFont()
+        attributes[.font] = font
 		attributes[.foregroundColor] = color
 		attributes[.paragraphStyle] = paragraphStyle
-		// 4. Init de la NSString
 		let str: NSString
 		if name.count > 0 {
             if type == .localizedString {
@@ -103,12 +124,17 @@ class Texture {
 		// 5. Mesure des dimensions de la string
 		// (tester avec "j"...)
 		let strSizes = str.size(withAttributes: attributes)
-		let contextHeight = Int(ceil(strSizes.height)) + 2
-		let contextWidth =  Int(ceil(strSizes.width) + strSizes.height * Texture.characterSpacing)
+        let extraWidth: CGFloat = 0.55 * fontinfo.size_x * font.xHeight
+        let contextHeight: CGFloat = 2.00 * fontinfo.size_y * font.xHeight
+        let contextWidth =  ceil(strSizes.width) + extraWidth
+        
+        scaleY = Float(1 / fontinfo.size_y)
+        scaleX = Float(strSizes.width / contextWidth)
+        
 		// 6. Création d'un context CoreGraphics
 		let colorSpace = CGColorSpaceCreateDeviceRGB()
 		guard let context = CGContext(data: nil,
-									  width: contextWidth, height: contextHeight,
+									  width: Int(contextWidth), height: Int(contextHeight),
 									  bitsPerComponent: 8, bytesPerRow: 0,
 									  space: colorSpace,
 									  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
@@ -125,9 +151,11 @@ class Texture {
 		let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
 		NSGraphicsContext.current = nsgcontext
 		// Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
-		let ypos: Int = Int(strSizes.height)/2 - contextHeight/2
-		str.draw(in: NSRect(x: 0, y: ypos, width: contextWidth, height: contextHeight),
-				 withAttributes: attributes)
+        let ypos = 0.43 * contextHeight - (font.xHeight/2 - font.descender)
+        str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
+//        str.draw(in: NSRect(x: 0, y: ydelta, width: contextWidth,
+//                            height: strSizes.height + 0),
+//				 withAttributes: attributes)
 		NSGraphicsContext.restoreGraphicsState()
 		#else
 		UIGraphicsPushContext(context)
@@ -167,8 +195,8 @@ class Texture {
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
     static let justColor = Texture() // Cas pas besoin de texture. "justColor" est alors un "place holder" pour le tex d'une surface.
-    static let defaultPng = Texture(name: "the_cat", type: .png)
-    static let defaultString = Texture(name: "🦆", type: .constantString)
+    static let defaultPng = Texture(name: "the_cat", type: .png, fontname: nil)
+    static let defaultString = Texture(name: "🦆", type: .constantString, fontname: nil)
     static let testFrame = getPng("test_frame")
     static let blackDigits = getPng("digits_black")
     private static let defaultTiling: Tiling = (m: 1, n: 1)
@@ -223,92 +251,67 @@ class Texture {
             }
         }
 	}
-    
-    // Taille des strings...
-	static func checkFontSize(with drawableSize: CGSize) {
-		let candidateFontSize = getCandidateFontSize(from: drawableSize)
-		// On redesine les strings seulement si un changement significatif.
-		guard (candidateFontSize/fontSize > 1.25) || (candidateFontSize/fontSize < 0.75) else {	return }
-		fontSize = candidateFontSize
-		allStringTextures.strip()
-		for weaktexture in allStringTextures {
-			if let texture = weaktexture.value {
-				texture.drawAsString()
-			}
-		}
-	}
-    static private func getCandidateFontSize(from drawableSize: CGSize) -> CGFloat {
-        return min(max(fontSizeRatio * min(drawableSize.width, drawableSize.height), minFontSize), maxFontSize)
+    // Après changement ou redimension de font... 
+    static func redrawAllStrings() {
+        allStringTextures.strip()
+        for weaktexture in allStringTextures {
+            if let texture = weaktexture.value {
+                texture.drawAsString()
+            }
+        }
     }
-    static let characterSpacing: CGFloat = 0.23
-    static private(set) var fontSize: CGFloat = 64
-    static private let fontSizeRatio: CGFloat = 0.065
-    static private let minFontSize: CGFloat = 24
-    static private let maxFontSize: CGFloat = 120
+    // Lors d'un changement de langue...
+    static func updateAllLocStrings() {
+        allLocalizedStringTextures.strip()
+        for (_, weaktexture) in allLocalizedStringTextures {
+            if let texture = weaktexture.value {
+                texture.drawAsString()
+            }
+        }
+    }
     
 	/** La texture d'une string mutable n'est pas partagé.
 	* Pour une string non mutable (constant), on garde une weak reference pour éviter les duplicas. */
-    static func getConstantString(_ string: String) -> Texture {
+    static func getConstantString(_ string: String, fontname: String? = nil) -> Texture {
         if let we = allConstantStringTextures[string], let tex = we.value {
             return tex
         }
-        let newCstStr = Texture(name: string, type: .constantString)
+        let newCstStr = Texture(name: string, type: .constantString, fontname: fontname)
         allConstantStringTextures[string] = WeakElement(newCstStr)
         allStringTextures.append(WeakElement(newCstStr))
         return newCstStr
     }
-    static func getNewMutableString(_ string: String = "") -> Texture {
-        let newMutStr = Texture(name: string, type: .mutableString)
+    static func getNewMutableString(_ string: String = "", fontname: String? = nil) -> Texture {
+        let newMutStr = Texture(name: string, type: .mutableString, fontname: fontname)
         allStringTextures.append(WeakElement(newMutStr))
         return newMutStr
     }
-    static func getLocalizedString(_ string: String) -> Texture {
+    static func getLocalizedString(_ string: String, fontname: String? = nil) -> Texture {
         if let we = allLocalizedStringTextures[string], let tex = we.value {
             return tex
         }
-        let newLocStr = Texture(name: string, type: .localizedString)
+        let newLocStr = Texture(name: string, type: .localizedString, fontname: fontname)
         allLocalizedStringTextures[string] = WeakElement(newLocStr)
         allStringTextures.append(WeakElement(newLocStr))
         return newLocStr
     }
-    // Lors d'un changement de langue...
-	static func updateAllLocStrings() {
-		// cleaning...
-        allLocalizedStringTextures.strip()
-		// redraw...
-		for (_, weaktexture) in allLocalizedStringTextures {
-			if let texture = weaktexture.value {
-				texture.drawAsString()
-			}
-		}
-	}
+    
     static func getPng(_ pngName: String) -> Texture {
         // 1. Cas déjà init.
         if let we = allPngTextures[pngName], let tex = we.value {
             return tex
         }
-        let newPng = Texture(name: pngName, type: .png)
+        let newPng = Texture(name: pngName, type: .png, fontname: nil)
         allPngTextures[pngName] = WeakElement(newPng)
         return newPng
     }
     
-    
 	/** Init du loader de png avec le gpu (device). */
 	static func initWith(device: MTLDevice, drawableSize: CGSize) {
-		fontSize = getCandidateFontSize(from: drawableSize)
+        FontManager.updateCurrentSize(with: drawableSize)
 		textureLoader = MTKTextureLoader(device: device)
 		loaded = true
 	}
-    
-    #if os(OSX)
-    static func getAppleFont(size: CGFloat = Texture.fontSize) -> NSFont? {
-        return NSFont(name: "American Typewriter", size: size)
-    }
-    #else
-    static func getAppleFont(size: CGFloat = Texture.fontSize) -> UIFont? {
-        return UIFont(name: "American Typewriter", size: size)
-    }
-    #endif
     
     /** Texture loader de Metal. Doit être initialisé par le renderer avec la device (gpu). */
     private static var textureLoader: MTKTextureLoader!

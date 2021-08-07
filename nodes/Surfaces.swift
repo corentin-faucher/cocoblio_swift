@@ -5,6 +5,7 @@ class Surface: Node {
     var mesh: Mesh
     var trShow: SmTrans
     var trExtra: SmTrans
+    var x_margin: Float = 0
     
     @discardableResult
     init(_ refNode: Node?, tex: Texture,
@@ -38,18 +39,23 @@ class Surface: Node {
     
     func updateRatio(fix: Bool) {
         guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
-        
+        // 1. Vérifier la largeur
         if containsAFlag(Flag1.surfaceWithCeiledWidth) {
             width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
         } else {
             width.set(height.realPos * tex.ratio, fix, true)
         }
+        // 2. Vérifier l'espacement en x/y.
+        scaleY.set(tex.scaleY) // y en premier... (scalex dépend de deltaY...)
+        scaleX.set(tex.scaleX + deltaY * x_margin / width.realPos)
+        // 3. Ajuster le frame (si besoin)
         if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
             bigBroFrame.updateWithLittleBro(fix: fix)
         }
+        // 4. Donner les dimensions au parent (si besoin)
         if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
-            theParent.width.set(width.realPos)
-            theParent.height.set(height.realPos)
+            theParent.width.set(deltaX * 2)
+            theParent.height.set(deltaY * 2)
             theParent.setRelatively(fix: fix)
         }
     }
@@ -62,11 +68,11 @@ class Surface: Node {
 
 class StringSurface: Surface //, Openable
 {
-	/** On prend pour aquis que la texture reçu est déjà une texture avec une string. */
+    /** On prend pour aquis que la texture reçu est déjà une texture avec une string. */
 	@discardableResult
 	init(_ refNode: Node?, strTex: Texture,
 		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-		 flags: Int = 0, ceiledWidth: Float? = nil,
+         flags: Int = 0, ceiledWidth: Float? = nil,
 		 asParent: Bool = true, asElderBigbro: Bool = false
 	) {
         guard strTex.type != .png else {
@@ -85,12 +91,12 @@ class StringSurface: Surface //, Openable
         piu.color = StringSurface.blackTextColor // (Text noir par défaut.)
 	}
 	@discardableResult
-	convenience init(_ refNode: Node?, cstString: String,
+    convenience init(_ refNode: Node?, cstString: String, fontname: String? = nil,
 					 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
 					 flags: Int = 0, ceiledWidth: Float? = nil,
 					 asParent: Bool = true, asElderBigbro: Bool = false
 	) {
-		self.init(refNode, strTex: Texture.getConstantString(cstString),
+		self.init(refNode, strTex: Texture.getConstantString(cstString, fontname: fontname),
 				  x, y, height, lambda: lambda, flags: flags, //|Flag1.isSurface,
                   ceiledWidth: ceiledWidth,
 				  asParent: asParent, asElderBigbro: asElderBigbro)
@@ -111,7 +117,7 @@ class StringSurface: Surface //, Openable
 		tex = newTexture
 	}
 	/** "Convenience function": Ne change pas la texture. Ne fait que mettre à jour la string de la texture. */
-	func updateAsMutableString(_ newString: String) {
+    func updateAsMutableString(_ newString: String, fontname: String? = nil) {
         guard tex.type == .mutableString else {
 			printerror("Not a mutable string texture.")
 			return
@@ -119,8 +125,8 @@ class StringSurface: Surface //, Openable
 		tex.updateAsMutableString(newString)
 	}
 	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
-	func updateTextureToConstantString(_ newString: String) {
-		tex = Texture.getConstantString(newString)
+    func updateTextureToConstantString(_ newString: String, fontname: String? = nil) {
+		tex = Texture.getConstantString(newString, fontname: fontname)
 	}
     
     static let blackTextColor: Vector4 = [0, 0, 0, 1]
