@@ -15,7 +15,7 @@ final class PopMessage : Node {
     private var abort: Bool = false
     
     @discardableResult
-    convenience init?(_ string: String, _ x: Float = 0, _ y: Float = 0, height: Float = 0.1,
+    convenience init?(_ string: String, _ x: Float = 0, _ y: Float = 0, height: Float = 0.2,
                       appearTime: Double = 0.2, disappearTime: Double = 2.5, ceiledWidth: Float? = nil,
                      fadeY: Float? = nil)
     {
@@ -29,7 +29,7 @@ final class PopMessage : Node {
     }
     
     @discardableResult
-    convenience init?(strTex: Texture, _ x: Float = 0, _ y: Float = 0, height: Float = 0.1,
+    convenience init?(strTex: Texture, _ x: Float = 0, _ y: Float = 0, height: Float = 0.2,
                       appearTime: Double = 0.2, disappearTime: Double = 2.5, ceiledWidth: Float? = nil,
                      fadeY: Float? = nil)
     {
@@ -39,6 +39,19 @@ final class PopMessage : Node {
         }
         self.init(parent: screen, strTex: strTex, frameTex: frameTex, x, y, height, appearTime: appearTime, disappearTime: disappearTime,
                   ceiledWidth: ceiledWidth, fadeY: fadeY)
+    }
+    
+    @discardableResult
+    convenience init?(over node: Node, message strTex: Texture)
+    {
+        guard let screen = PopMessage.defaultScreen, let frameTex = PopMessage.defaultFrameTex else {
+            printerror("PopMessages statics not init.")
+            return nil
+        }
+        let (pos, delta) = node.getAbsPosAndDelta()
+        self.init(parent: screen, strTex: strTex, frameTex: frameTex,
+                  pos.x, pos.y, 1.1*delta.y,
+                  appearTime: 0.1, disappearTime: 2.5, fadeY: 1.5*delta.y)
     }
     
     @discardableResult
@@ -54,9 +67,9 @@ final class PopMessage : Node {
         }
         super.init(parent, x, y, height, height,
                    lambda: 4,flags: Flag1.hidden | Flag1.notToAlign)
+        self.width.set(ceiledWidth ?? parent.width.realPos * 0.97)
         
-        fillWithFramedString(strTex: strTex, frameTex: frameTex,
-                             ceiledWidth: ceiledWidth ?? parent.width.realPos, relDelta: 0.2)
+        fillWithFrameAndString(frameTex: frameTex, deltaRatio: 0.2, strTex: strTex)
         
         Timer.scheduledTimer(withTimeInterval: appearTime, repeats: false) { [weak self] (_) in
             guard let self = self, !self.abort, let theParent = self.parent, theParent.containsAFlag(Flag1.show) else { return }

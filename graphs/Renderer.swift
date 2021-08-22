@@ -163,7 +163,7 @@ extension Renderer: MTKViewDelegate {
         root.updateFrame()
         #else
         guard let root = metalView.root else { return }
-        root.frameSizeInPx = metalView.frame.size_y
+        root.frameSizeInPx = metalView.frame.size
         root.updateFrame()
         #endif		
 	}
@@ -175,11 +175,11 @@ extension Renderer: MTKViewDelegate {
 		guard !view.isPaused else { return }
 		#if !os(OSX)
 		if metalView.isTransitioning {
-            if !metalView.didTransition, let theFrame = metalView.layer.presentation()?.bounds.size_y {
+            if !metalView.didTransition, let theFrame = metalView.layer.presentation()?.bounds.size {
                 root.frameSizeInPx = theFrame
                 root.updateFrame(inTransition: true)
             } else {
-                root.frameSizeInPx = view.frame.size_y
+                root.frameSizeInPx = view.frame.size
                 root.updateFrame()
                 // Transition fini, on remet les flags à false.0
                 metalView.isTransitioning = false

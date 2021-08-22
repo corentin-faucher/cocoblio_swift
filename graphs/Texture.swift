@@ -83,10 +83,16 @@ class Texture {
 	
     private func drawAsString() {
 		// 1. Font et dimension de la string
+        #if os(OSX)
+        let color = NSColor.white
         let font: NSFont
+        #else
+        let color = UIColor.white
+        let font: UIFont
+        #endif
         let fontinfo: FontInfo
         if let fontname = fontname {
-            if let fonttmp = NSFont(name: fontname, size: FontManager.current.pointSize) {
+            if let fonttmp = FontManager.getFont(name: fontname) {
                 font = fonttmp
             } else {
                 printerror("Cannot load font \(fontname).")
@@ -97,11 +103,7 @@ class Texture {
             font = FontManager.current
             fontinfo = FontManager.currentInfo
         }
-		#if os(OSX)
-		let color = NSColor.white
-		#else
-		let color = UIColor.white
-		#endif
+		
 		// 2. Paragraph style
 		let paragraphStyle = NSMutableParagraphStyle()
 		paragraphStyle.alignment = NSTextAlignment.center
@@ -124,6 +126,10 @@ class Texture {
 		// 5. Mesure des dimensions de la string
 		// (tester avec "j"...)
 		let strSizes = str.size(withAttributes: attributes)
+        guard strSizes.width > 0 else {
+            printerror("str width 0?")
+            return
+        }
         let extraWidth: CGFloat = 0.55 * fontinfo.size_x * font.xHeight
         let contextHeight: CGFloat = 2.00 * fontinfo.size_y * font.xHeight
         let contextWidth =  ceil(strSizes.width) + extraWidth
@@ -151,20 +157,15 @@ class Texture {
 		let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
 		NSGraphicsContext.current = nsgcontext
 		// Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
-        let ypos = 0.43 * contextHeight - (font.xHeight/2 - font.descender)
+        let ypos: CGFloat = 0.5 * contextHeight + (Texture.y_string_rel_shift - 0.5) * font.xHeight + font.descender
         str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
-//        str.draw(in: NSRect(x: 0, y: ydelta, width: contextWidth,
-//                            height: strSizes.height + 0),
-//				 withAttributes: attributes)
 		NSGraphicsContext.restoreGraphicsState()
 		#else
 		UIGraphicsPushContext(context)
 		// Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
 		context.scaleBy(x: 1, y: -1)
-		let ypos: Int = -Int(strSizes.height)/2 - contextHeight/2
-		let xpos: Int = -Int(strSizes.width)/2 + contextWidth/2
-//		str.draw(in: CGRect(x: 0, y: ypos, width: contextWidth, height: contextWidth), withAttributes: attributes)
-		str.draw(at: CGPoint(x: xpos, y: ypos), withAttributes: attributes)
+        let ypos: CGFloat = -strSizes.height - font.descender + (0.5 - Texture.y_string_rel_shift) * font.xHeight - 0.5 * contextHeight
+        str.draw(at: CGPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
 		UIGraphicsPopContext()
 		#endif
 		
@@ -194,6 +195,7 @@ class Texture {
 	
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
+    static let y_string_rel_shift: CGFloat = -0.15
     static let justColor = Texture() // Cas pas besoin de texture. "justColor" est alors un "place holder" pour le tex d'une surface.
     static let defaultPng = Texture(name: "the_cat", type: .png, fontname: nil)
     static let defaultString = Texture(name: "🦆", type: .constantString, fontname: nil)

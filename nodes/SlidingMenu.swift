@@ -57,6 +57,7 @@ class SlidingMenu : Node, Scrollable { // Openable
         
 		let scrollBarWidth = max(width, height) * 0.025
         menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20, flags: Flag1.selectableRoot)
+        menu.tryToAddFrame()
 		scrollBar = SlidingMenuScrollBar(parent: self, width: scrollBarWidth)
         tryToAddFrame()
     }
@@ -71,6 +72,10 @@ class SlidingMenu : Node, Scrollable { // Openable
         
         menu = Node(self, 0, 0, width.realPos, height.realPos, lambda: 20)
         tryToAddFrame()
+    }
+    
+    func getItemRelativeWidth() -> Float {
+        return menu.width.realPos / height.realPos * Float(nDisplayed) * spacing
     }
     
     /** Remplissage : Ajout d'un noeud. (Déplace le noeud avec simpleMoveToParent). */
@@ -171,6 +176,8 @@ class SlidingMenu : Node, Scrollable { // Openable
         // 4. Aligner les éléments et placer au bon endroit.
         menu.alignTheChildren(alignOpt: AlignOpt.vertically | AlignOpt.fixPos,
                               ratio: 1, spacingRef: spacing)
+        // (On remet la largeur à celle du sliding menu, pas la width max des éléments.)
+        menu.width.set(menu.width.defPos)
         if let deltaY = getMenuDeltaYMax() {
             setMenuYpos(yCandIn: itemHeight * Float(openPos) - deltaY,
                         snap: true, fix: true)

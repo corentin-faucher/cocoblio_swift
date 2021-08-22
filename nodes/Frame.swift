@@ -17,8 +17,8 @@ enum Framing {
 /** Crée une barre. framing est pour l'emplacement des bords. width est la largeur du contenu (sans les bords). delta est la demi-épaisseur. */
 /** Ici, delta est la demi-hauteur de la barre. */
 class Bar : Surface {
-	private var framing: Framing
-	private let delta: Float
+	let framing: Framing
+	let delta: Float
 	
 	@discardableResult
 	init(parent: Node, framing: Framing, delta: Float, width: Float, texture: Texture, lambda: Float = 0)
@@ -81,13 +81,12 @@ class Bar : Surface {
 
 /** Ici, delta est la largeur des bords. (différent des barres) */
 class Frame : Surface {
-	private let delta: Float
-	private var framing: Framing
+	let delta: Float
+	let framing: Framing
 	
 	@discardableResult
-	init(_ parent: Node, framing: Framing = .outside, delta: Float,
-         lambda: Float = 0, texture: Texture,
-		 width: Float = 0, height: Float = 0, flags: Int = 0)
+	init(_ parent: Node, framing: Framing = .outside, delta: Float, texture: Texture,
+		 width: Float?, height: Float?, lambda: Float = 0, flags: Int = 0)
 	{
 		self.delta = delta
 		self.framing = framing
@@ -121,7 +120,9 @@ class Frame : Surface {
                                             9, 10, 13, 10, 14, 13,
                                             10, 11, 14, 11, 15, 14 ],
                                         primitive: .triangle))
-		update(width: width, height: height, fix: true)
+        if let width = width, let height = height {
+            update(width: width, height: height, fix: true)
+        }
 	}
 	required init(other: Node)
 	{
@@ -132,6 +133,14 @@ class Frame : Surface {
         // Chaque frame a sa propre mesh...
         mesh = Mesh(other: otherFrame.mesh)
 	}
+    // Init d'un cadre pour un littleBro
+    @discardableResult
+    convenience init(_ parent: Node, framing: Framing = .outside, delta: Float, texture: Texture,
+                     lambda: Float = 0, flags: Int)
+    {
+        self.init(parent, framing: framing, delta: delta, texture: texture, width: nil, height: nil, lambda: lambda, flags: flags)
+    }
+    
 	func update(width: Float, height: Float, fix: Bool) {
 		guard width >= 0, height >= 0 else { printerror("width < 0 or height < 0"); return }
 		let smallDeltaX: Float
@@ -179,10 +188,68 @@ class Frame : Surface {
             parent.setRelatively(fix: fix)
 		}
 	}
+    @discardableResult
+    func addLittleBroString(strTex: Texture, framedWidth: Float, framedHeight: Float) -> StringSurface
+    {
+        if framedHeight < 3 * delta, framedWidth < 3 * delta {
+            printwarning("Frame too small.")
+        }
+        let str = StringSurface(self, strTex: strTex, 0, 0,
+                                max(framedHeight - 2 * delta, delta), flags: Flag1.giveSizesToBigBroFrame,
+                                ceiledWidth: max(framedWidth - 2 * delta, delta), asParent: false)
+        str.x_margin = 0.7
+        return str
+    }
 	func updateWithLittleBro(fix: Bool) {
 		guard let bro = littleBro else { return }
 		x.set(bro.x.realPos, fix)
 		y.set(bro.y.realPos, fix)
 		update(width: bro.deltaX * 2, height: bro.deltaY * 2, fix: fix)
 	}
+}
+
+extension Node {
+    /// Se base sur la taille du parent
+    func fillWithFrameAndString(frameTex: Texture, deltaRatio: Float, strTex: Texture)
+    {
+        let frame = Frame(self, delta: deltaRatio * self.height.defPos, texture: frameTex, flags: Flag1.giveSizesToParent)
+        frame.addLittleBroString(strTex: strTex, framedWidth: self.width.defPos, framedHeight: self.height.defPos)
+    }
+    /// N'ajuste pas la taille du parent
+    func addFrameAndString(frameTex: Texture, deltaRatio: Float, strTex: Texture, height: Float)
+    {
+        let frame = Frame(self, delta: deltaRatio * self.height.defPos, texture: frameTex, flags: 0)
+        frame.addLittleBroString(strTex: strTex, framedWidth: self.width.defPos, framedHeight: height)
+    }
+}
+
+class FramedString : Node {
+    var stringSurf: StringSurface {
+        get {
+            return lastChild as! StringSurface
+        }
+    }
+    var frame: Frame {
+        get {
+            return firstChild as! Frame
+        }
+    }
+    
+    @discardableResult
+    init(_ parent: Node?, strTex: Texture, frameTex: Texture,
+         _ x: Float, _ y: Float, width: Float, height: Float,
+         flags: Int = 0, deltaRatio: Float = 0.21, setWidth: Bool = false)
+    {
+        super.init(parent, x, y, width, height, flags: flags)
+        
+        let delta = min(deltaRatio * height, 0.45 * height)
+        let frame = Frame(self, delta: delta, texture: frameTex, flags: Flag1.giveSizesToParent)
+        let str = frame.addLittleBroString(strTex: strTex, framedWidth: width, framedHeight: height)
+        if setWidth {
+            str.setWidth(fix: true)
+        }
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
 }

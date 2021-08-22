@@ -98,9 +98,7 @@ class SecureButton : Node, Draggable {
         disk?.discard() // discard va aussi disconnect le noeud.
         disk = nil
         timer.invalidate()
-        let (pos, delta) = self.getAbsPosAndDelta()
-        PopMessage(parent: front, strTex: failPopStringTex, frameTex: failPopFrameTex,
-                   pos.x, pos.y, 0.1, appearTime: 0.1, disappearTime: 2, fadeY: 1.5*delta.y)
+        PopMessage(over: self, message: failPopStringTex)
     }
 }
 

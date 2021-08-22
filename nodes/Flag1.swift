@@ -24,7 +24,7 @@ enum Flag1 {
     /*-- Pour les surfaces --*/
     /** Par défaut on ajuste la largeur pour respecter les proportion d'une image. */
     static let surfaceDontRespectRatio = 1<<7
-    static let surfaceWithCeiledWidth = 1<<8
+    static let stringSurfaceWithCeiledWidth = 1<<8
     /*-- Pour les ajustement de height/width du parent ou du frame --*/
     static let giveSizesToBigBroFrame = 1<<9
     static let giveSizesToParent = 1<<10

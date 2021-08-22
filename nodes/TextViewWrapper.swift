@@ -41,12 +41,12 @@ class MyTextView : NSTextView {
         return super.performKeyEquivalent(with: event)
     }
     private let commandKey = NSEvent.ModifierFlags.command.rawValue
-    
 }
 
 
 fileprivate extension NSView {
     func setCorners() {
+        
         wantsLayer = true
         layer?.cornerRadius = 5
     }
@@ -106,9 +106,20 @@ class TextViewWrapper : Node {
             textView = MyTextView()
             textView.setCorners()
         }
+        if Language.currentIsRightToLeft {
+            textView.alignment = .right
+        } else {
+            textView.alignment = .left
+        }
         #else
         textView = MyTextView()
+        if Language.currentIsRightToLeft {
+            textView.textAlignment = .right
+        } else {
+            textView.textAlignment = .left
+        }
         #endif
+        
         
         self.textRatio = textHeightRatio
         self.root = root

@@ -37,17 +37,22 @@ class Surface: Node {
         super.init(other: other)
     }
     
-    func updateRatio(fix: Bool) {
+    override func isDisplayActive() -> Bool {
+        return trShow.isActive
+    }
+    
+    func setWidth(fix: Bool) {
         guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
-        // 1. Vérifier la largeur
-        if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-            width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
+        
+        // 1. Largeur en fonction du ratio, marge en x et plafond.
+        let extra_x = deltaY * x_margin
+        if containsAFlag(Flag1.stringSurfaceWithCeiledWidth), width.defPos > 2 * extra_x {
+            width.set(min((width.defPos - extra_x) / tex.scaleX, height.realPos * tex.ratio), fix, false)
         } else {
             width.set(height.realPos * tex.ratio, fix, true)
         }
-        // 2. Vérifier l'espacement en x/y.
-        scaleY.set(tex.scaleY) // y en premier... (scalex dépend de deltaY...)
-        scaleX.set(tex.scaleX + deltaY * x_margin / width.realPos)
+        // 2. Ajustement du spacing en x
+        scaleX.set(tex.scaleX + extra_x / width.realPos)
         // 3. Ajuster le frame (si besoin)
         if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
             bigBroFrame.updateWithLittleBro(fix: fix)
@@ -59,10 +64,6 @@ class Surface: Node {
             theParent.setRelatively(fix: fix)
         }
     }
-    
-    override func isDisplayActive() -> Bool {
-        return trShow.isActive
-    }
 }
 
 
@@ -73,8 +74,8 @@ class StringSurface: Surface //, Openable
 	init(_ refNode: Node?, strTex: Texture,
 		 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
          flags: Int = 0, ceiledWidth: Float? = nil,
-		 asParent: Bool = true, asElderBigbro: Bool = false
-	) {
+		 asParent: Bool = true, asElderBigbro: Bool = false)
+    {
         guard strTex.type != .png else {
 			printerror("Pas une texture de string")
             super.init(refNode, tex: Texture.defaultString, x, y, height, lambda: lambda, flags: flags,
@@ -86,7 +87,7 @@ class StringSurface: Surface //, Openable
                    mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
         width.set(ceiledWidth ?? height)
 		if ceiledWidth != nil {
-			addFlags(Flag1.surfaceWithCeiledWidth)
+			addFlags(Flag1.stringSurfaceWithCeiledWidth)
 		}
         piu.color = StringSurface.blackTextColor // (Text noir par défaut.)
 	}
@@ -94,8 +95,8 @@ class StringSurface: Surface //, Openable
     convenience init(_ refNode: Node?, cstString: String, fontname: String? = nil,
 					 _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
 					 flags: Int = 0, ceiledWidth: Float? = nil,
-					 asParent: Bool = true, asElderBigbro: Bool = false
-	) {
+					 asParent: Bool = true, asElderBigbro: Bool = false)
+    {
 		self.init(refNode, strTex: Texture.getConstantString(cstString, fontname: fontname),
 				  x, y, height, lambda: lambda, flags: flags, //|Flag1.isSurface,
                   ceiledWidth: ceiledWidth,
@@ -105,7 +106,7 @@ class StringSurface: Surface //, Openable
 		super.init(other: other)
 	}
     override func open() {
-		updateRatio(fix: true)
+		setWidth(fix: true)
         super.open()
 	}
 	/** Change la texture du noeud (devrait être une string). */
@@ -129,6 +130,16 @@ class StringSurface: Surface //, Openable
 		tex = Texture.getConstantString(newString, fontname: fontname)
 	}
     
+    override func setWidth(fix: Bool) {
+        // 1. Vérifier l'espacement en y.
+        scaleY.set(tex.scaleY) // y en premier... (scalex dépend de deltaY...)
+        // 2. Height s'ajuste au scaling pour garder deltay constant... defPos == 2 * deltaY
+        height.set(height.defPos / scaleY.realPos, fix, false)
+        
+        // 3. Ajuster la largeur comme pour les autres surface...
+        super.setWidth(fix: fix)
+    }
+    
     static let blackTextColor: Vector4 = [0, 0, 0, 1]
     static let whiteTextColor: Vector4 = [0.9, 0.9, 0.8, 1]
 }
@@ -148,7 +159,7 @@ class TiledSurface: Surface {
 		}
         super.init(refNode, tex: pngTex, x, y, height, lambda: lambda, flags: flags,
                    mesh: mesh, asParent: asParent, asElderBigbro: asElderBigbro)
-		updateRatio(fix: true)
+		setWidth(fix: true)
 		updateTile(i, 0)
 	}
 	required init(other: Node) {
@@ -167,7 +178,7 @@ class TiledSurface: Surface {
 	func updateTileJ(_ index: Int) {
 		piu.tile.j = Float(index % tex.n)
 	}
-	/** Ne change que la texture (pas de updateRatio). */
+	/** Ne change que la texture (pas de setWidth). */
 	func updateTexture(_ newTexture: Texture) {
         guard newTexture.type == .png else {
 			printerror("Not a png texture.")
@@ -243,7 +254,7 @@ class LanguageSurface: Surface
 		}
         super.init(refNode, tex: pngTex, x, y, height, lambda: lambda, flags: flags,
                    mesh: .sprite, asParent: asParent, asElderBigbro: asElderBigbro)
-		updateRatio(fix: true)
+		setWidth(fix: true)
 	}
 	required init(other: Node) {
 		super.init(other: other)
@@ -283,255 +294,7 @@ class TestFrame : Surface
         super.open()
 	}
 	
-    override func reshape() { //} -> Bool {
+    override func reshape() {
 		open()
-//		return false
 	}
 }
-
-// GARBAGE
-
-//protocol Surface : Node {
-//    var tex: Texture { get }
-//    var mesh: Mesh { get }
-//    var trShow: SmTrans { get set }
-//    var trExtra: SmTrans { get set }
-//    func updateRatio(fix: Bool)
-//}
-
-//protocol FlippableSurface {
-//    var trFlip: SmTrans { get set }
-//}
-
-//extension Surface {
-//    /** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
-//    * Sinon, on ne fait que vérifier le frame voisin
-//    * et le parent. */
-//    func updateRatio(fix: Bool) {
-//        guard !containsAFlag(Flag1.surfaceDontRespectRatio) else {return}
-//
-//        if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-//            width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
-//        } else {
-//            width.set(height.realPos * tex.ratio, fix, false)
-//        }
-//        if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
-//            bigBroFrame.updateWithLittleBro(fix: fix)
-//        }
-//        if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
-////            print("giveng size to parent.")
-//            theParent.width.set(width.realPos)
-//            theParent.height.set(height.realPos)
-//        }
-//    }
-//}
-
-//class MeshSurface : Surface_ {
-//    let tex: Texture
-//    var mesh: Mesh
-//    var trShow: SmTrans
-//    var trExtra = SmTrans()
-//
-//    @discardableResult
-//    init(_ refNode: Node?, texture: Texture, mesh: Mesh,
-//         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, i: Int = 0,
-//         flags: Int = 0, asParent: Bool = true, asElderBigbro: Bool = false
-//    ) {
-//        tex = texture
-//        self.mesh = mesh
-//        trShow = SmTrans()
-//        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags|Flag1.isSurface,
-//                   asParent: asParent, asElderBigbro: asElderBigbro)
-//    }
-//    required init(other: Node) {
-//        let otherSurf = other as! MeshSurface
-//        tex = otherSurf.tex
-//        mesh = otherSurf.mesh
-//        trShow = otherSurf.trShow
-//        super.init(other: other)
-//    }
-//
-//    func updateRatio(fix: Bool) {
-//        printwarning("No updateRatio for MeshSurface.")
-//    }
-//}
-/*
-class Surface : Node {
-var tex: Texture
-let mesh: Mesh
-var trShow: SmTrans
-
-/** Init comme une surface ordinaire (png) */
-@discardableResult
-init(_ refNode: Node?, pngID: String,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-i: Int = 0, flags: Int = 0,
-asParent: Bool = true, asElderBigbro: Bool = false, mesh: Mesh = Mesh.sprite) {
-self.tex = Texture.getPngTex(pngID: pngID)
-self.mesh = mesh
-self.trShow = SmTrans()
-super.init(refNode, x, y, height, height, lambda: lambda,
-flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
-updateTile(i, 0)
-updateRatio()
-}
-/** Init avec la texture directement. */
-init(_ refNode: Node?, texture: Texture,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-i: Int = 0, flags: Int = 0, ceiledWidth: Float? = nil,
-asParent: Bool = true, asElderBigbro: Bool = false, mesh: Mesh = Mesh.sprite) {
-self.tex = texture
-self.mesh = mesh
-self.trShow = SmTrans()
-super.init(refNode, x, y, ceiledWidth ?? height, height, lambda: lambda,
-flags: flags, asParent: asParent, asElderBigbro: asElderBigbro)
-if ceiledWidth != nil {
-addFlags(Flag1.surfaceWithCeiledWidth)
-}
-updateTile(i, 0)
-updateRatio()
-}
-required init(other: Node) {
-let otherSurf = other as! Surface
-tex = otherSurf.tex
-mesh = otherSurf.mesh
-trShow = SmTrans()
-super.init(other: other)
-}
-
-func updateForTex(pngID: String) {
-self.tex = Texture.getPngTex(pngID: pngID)
-updateRatio()
-}
-/** Si i > m -> va sur les lignes suivantes. */
-func updateTile(_ i: Int, _ j: Int) {
-piu.tile = (Float(i % tex.m),
-Float((j + i / tex.m) % tex.n))
-}
-/** Ne change que l'index "i" de la tile (ligne) */
-func updateTileI(_ index: Int) {
-piu.tile.i = Float(index % tex.m)
-}
-/** Ne change que l'index "j" de la tile (colonne) */
-func updateTileJ(_ index: Int) {
-piu.tile.j = Float(index % tex.n)
-}
-/** S'il n'y a pas le flag surfaceDontRespectRatio, la largeur est ajustée.
-* Sinon, on ne fait que vérifier le frame voisin
-* et le parent. */
-func updateRatio(fix: Bool = true) {
-if !containsAFlag(Flag1.surfaceDontRespectRatio) {
-if containsAFlag(Flag1.surfaceWithCeiledWidth) {
-width.set(min(height.realPos * tex.ratio, width.defPos), fix, false)
-} else {
-width.set(height.realPos * tex.ratio, fix, true)
-}
-}
-if containsAFlag(Flag1.giveSizesToBigBroFrame), let bigBroFrame = bigBro as? Frame {
-bigBroFrame.update(width: width.realPos, height: height.realPos, fix: true)
-}
-if containsAFlag(Flag1.giveSizesToParent), let theParent = parent  {
-theParent.width.set(width.realPos)
-theParent.height.set(height.realPos)
-}
-}
-}
-
-class LanguageSurface : Surface, Openable {
-func open() {
-print("Opening a LanguageSurface")
-updateTile(Language.currentId, 0)
-}
-// (C'est tout! on garde le reste comme Surface)
-}
-
-/** Surface d'une string constante. (non localisée, définie "on the fly".) */
-final class CstStrSurf : Surface {
-@discardableResult
-init(_ refNode: Node?, string: String,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-flags: Int = 0, ceiledWidth: Float? = nil,
-asParent: Bool = true, asElderBigbro: Bool = false) {
-super.init(refNode, texture: Texture.getConstantStringTex(string: string),
-x, y, height, lambda: lambda, i: 0,
-flags: flags, ceiledWidth: ceiledWidth,
-asParent: asParent, asElderBigbro: asElderBigbro)
-piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-}
-required init(other: Node) {
-super.init(other: other)
-}
-/** Changement pour une autre string constante. */
-func updateForCstStr(newString: String) {
-tex = Texture.getConstantStringTex(string: newString)
-updateRatio()
-}
-}
-
-/** Surface d'une string localisable.
-* (ne garde en mémoire ni la string ni la locStrID) */
-final class LocStrSurf : Surface, Openable {
-@discardableResult
-init(_ refNode: Node?, stringID: String,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-flags: Int = 0, ceiledWidth: Float? = nil,
-asParent: Bool = true, asElderBigbro: Bool = false) {
-super.init(refNode, texture: Texture.getLocalizedStringTex(textID: stringID),
-x, y, height, lambda: lambda, i: 0,
-flags: flags, ceiledWidth: ceiledWidth,
-asParent: asParent, asElderBigbro: asElderBigbro)
-piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-}
-required init(other: Node) {
-super.init(other: other)
-}
-
-func open() {
-updateRatio()
-}
-/** Changement d'une string localisée. */
-func updateForLocStr(stringID: String) {
-self.tex = Texture.getLocalizedStringTex(textID: stringID)
-updateRatio()
-}
-}
-
-final class EdtStrSurf : Surface, Openable {
-@discardableResult
-init(_ refNode: Node?, id: Int,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-flags: Int = 0, ceiledWidth: Float? = nil,
-asParent: Bool = true, asElderBigbro: Bool = false) {
-super.init(refNode, texture: Texture.getEditableStringTex(id: id),
-x, y, height, lambda: lambda, i: 0,
-flags: flags, ceiledWidth: ceiledWidth,
-asParent: asParent, asElderBigbro: asElderBigbro)
-piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-}
-init(_ refNode: Node?, id: Int, with string: String,
-_ x: Float, _ y: Float, _ height: Float, lambda: Float = 0,
-flags: Int = 0, ceiledWidth: Float? = nil,
-asParent: Bool = true, asElderBigbro: Bool = false) {
-super.init(refNode, texture: Texture.getEditableStringTex(id: id),
-x, y, height, lambda: lambda, i: 0,
-flags: flags, ceiledWidth: ceiledWidth,
-asParent: asParent, asElderBigbro: asElderBigbro)
-piu.color = [0, 0, 0, 1] // (Text noir par défaut.)
-Texture.setEditableString(id: id, newString: string)
-}
-required init(other: Node) {
-super.init(other: other)
-}
-func open() {
-updateRatio()
-}
-/** Changement pour une autre string editable */
-func updateForEdtStr(id: Int) {
-self.tex = Texture.getEditableStringTex(id: id)
-updateRatio()
-}
-func update() {
-updateRatio()
-}
-}
-*/

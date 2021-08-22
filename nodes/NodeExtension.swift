@@ -4,71 +4,6 @@ extension Node : KotlinLikeScope {}
 
 extension Node {
     /*-- Ajout de frame --*/
-    
-	/** Ajout d'un frame et string à un noeud. (e.g. remplir un bouton.)
-	* La hauteur devient 1 et ses scales deviennent sa hauteur.
-	* (Pour avoir les objets (label...) relatif au noeud.)
-	* Delta est un pourcentage de la hauteur.
-	* Retourne (seulement) la StringSurface ajoutée. */
-	@discardableResult
-	func fillWithFramedString(strTex: Texture, frameTex: Texture,
-							ceiledWidth: Float? = nil, relDelta: Float = 0.3) -> StringSurface? {
-		guard firstChild == nil else { printerror("A déjà quelque chose."); return nil }
-        guard strTex.type != .png, frameTex.type == .png else {
-			printerror("Bad textures"); return nil
-		}
-		
-		scaleX.set(height.realPos)
-		scaleY.set(height.realPos)
-        // (les vrais dimension width, height seront setté par le frame)
-		let scaleCeiledWidth = (ceiledWidth != nil) ? ceiledWidth! / height.realPos : nil
-
-		Frame(self, delta: relDelta, lambda: 0,
-			  texture: frameTex, flags: Flag1.giveSizesToParent)
-		let stringSurf = StringSurface(self, strTex: strTex, 0, 0, 1, lambda: 0,
-									   flags:Flag1.giveSizesToBigBroFrame, ceiledWidth: scaleCeiledWidth)
-        stringSurf.x_margin = 0.5
-		stringSurf.updateRatio(fix: true)
-		
-		return stringSurf
-	}
-	/** Ajout d'une StringSurface à la position voulue.
-	* Struct : root->{frame, string}. Retourne la StringSurface. */
-	@discardableResult
-	func addFramedString(strTex: Texture, frameTex: Texture,
-						 _ x: Float, _ y: Float, _ height: Float,
-						 lambda: Float = 0, flags: Int = 0,
-						 ceiledWidth: Float? = nil, relDelta: Float = 0.35) -> StringSurface?
-    {
-		guard strTex.type != .png, frameTex.type == .png else {
-			printerror("Bad textures"); return nil
-		}
-		let node = Node(self, x, y, ceiledWidth ?? height, height,
-			 lambda: lambda, flags: flags)
-		return node.fillWithFramedString(strTex: strTex,
-										 frameTex: frameTex,
-										 ceiledWidth: ceiledWidth, relDelta: relDelta)
-	}
-	/** Ajout d'une TiledSurface avec Frame.
-	* Struct : root->{frame, tiledSurface}. Retourne la TiledSurface. */
-	@discardableResult
-	func addFramedTiledSurface(surfTex: Texture, frameTex: Texture,
-							   _ x: Float, _ y: Float, _ height: Float, i: Int,
-						 lambda: Float = 0, flags: Int = 0,
-						 delta: Float = 0.4) -> TiledSurface? {
-        guard surfTex.type == .png, frameTex.type == .png else {
-			printerror("Bad textures"); return nil
-		}
-		let node = Node(self, x, y, height, height,
-						lambda: lambda, flags: flags)
-		
-		Frame(node, delta: delta * height, lambda: 0,
-			  texture: frameTex, flags: Flag1.giveSizesToParent)
-		let tiledSurf = TiledSurface(node, pngTex: surfTex, 0, 0, height, i: i, flags: Flag1.giveSizesToBigBroFrame)
-		return tiledSurf
-	}
-	
-	
     /** !Debug Option!
      * Ajout d'une surface "frame" pour visualiser la taille d'un "bloc".
      * L'option Node.showFrame doit être "true". */
@@ -78,8 +13,7 @@ extension Node {
     }
     
     
-    /*-- Ajustement de position/taille --*/
-    
+    /*-- Ajustement de position/taille --*/    
     func adjustWidthAndHeightFromChildren() {
         var w: Float = 0
         var h: Float = 0
@@ -141,7 +75,7 @@ extension Node {
         let horizontal = (alignOpt & AlignOpt.vertically == 0)
         let setAsDef = (alignOpt & AlignOpt.setAsDefPos != 0)
         let setSecondaryToDefPos = (alignOpt & AlignOpt.setSecondaryToDefPos != 0)
-        // 1. Setter largeur/hauteur
+        // 1. Mesurer largeur et hauteur requises
         var w: Float = 0
         var h: Float = 0
         var n: Int = 0
@@ -162,7 +96,7 @@ extension Node {
                 }
             } while sq.goRightWithout(flag: Flag1.hidden|Flag1.notToAlign)
         }
-        // 2. Ajuster l'espacement
+        // 2. Calculer l'espacement requis et ajuster w/h en fonction du ratio voulu.
         var spacing: Float = 0
         if (alignOpt & AlignOpt.respectRatio != 0) {
             if(horizontal) {
@@ -177,7 +111,7 @@ extension Node {
                 }
             }
         }
-        // 3. Setter les dims.
+        // 3. Mettre à jour largeur et hauteur du noeud parent.
         if (alignOpt & AlignOpt.dontUpdateSizes == 0) {
             width.set(w, fix, setAsDef)
             height.set(h, fix, setAsDef)

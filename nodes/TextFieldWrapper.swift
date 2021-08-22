@@ -8,10 +8,13 @@
 
 #if os(OSX)
 import AppKit
+fileprivate let text_relative_height: CGFloat = 0.65
 
-fileprivate class MyTextField : NSTextField {
+class MyTextField : NSTextField {
     init() {
         super.init(frame: NSRect())
+//        cell = MyTextFieldCell()
+        maximumNumberOfLines = 0
         wantsLayer = true
         layer?.cornerRadius = 7
         layer?.borderWidth = 1
@@ -33,6 +36,7 @@ fileprivate class MyTextField : NSTextField {
 }
 #else
 import UIKit
+fileprivate let text_relative_height: CGFloat = 0.65
 
 class MyTextField : UITextField {
     init() {
@@ -79,20 +83,49 @@ class TextFieldWrapper : Node {
         return Int(textField.string ?? "")
     }
     
+    #if os(OSX)
     @discardableResult
     init(_ refNode: Node?, root: AppRoot, string: String?, placeHolder: LocalizedString,
-         _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0)
+         _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0, delegate: NSTextFieldDelegate? = nil)
     {
         self.placeHolder = placeHolder
         self.root = root
         super.init(refNode, x, y, width, height, flags: flags)
         textField = MyTextField()
+        textField.delegate = delegate
         if let string = string {
             textField.string = string
+        }
+        if Language.currentIsRightToLeft {
+            textField.alignment = .right
+        } else {
+            textField.alignment = .left
         }
         // Cas particulier, il faut être visité lors d'un reshape (dépend de taille absolue).
         addRootFlag(Flag1.reshapableRoot)
     }
+    #else
+    @discardableResult
+    init(_ refNode: Node?, root: AppRoot, string: String?, placeHolder: LocalizedString,
+         _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0, delegate: UITextFieldDelegate? = nil)
+    {
+        self.placeHolder = placeHolder
+        self.root = root
+        super.init(refNode, x, y, width, height, flags: flags)
+        textField = MyTextField()
+        textField.delegate = delegate
+        if let string = string {
+            textField.string = string
+        }
+        if Language.currentIsRightToLeft {
+            textField.textAlignment = .right
+        } else {
+            textField.textAlignment = .left
+        }
+        // Cas particulier, il faut être visité lors d'un reshape (dépend de taille absolue).
+        addRootFlag(Flag1.reshapableRoot)
+    }
+    #endif
     required init(other: Node) {
         fatalError("init(other:) has not been implemented")
     }
@@ -107,7 +140,7 @@ class TextFieldWrapper : Node {
         textField.placeholder = placeHolder.localized
         #endif
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textField.font = FontManager.currentWithSize(frame.height * 0.7)
+        textField.font = FontManager.currentWithSize(text_relative_height * frame.height)
         textField.frame = frame
         
         root.metalView.addSubview(textField)
@@ -119,7 +152,7 @@ class TextFieldWrapper : Node {
     override func reshape() {
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        textField.font = FontManager.currentWithSize(frame.height * 0.7)
+        textField.font = FontManager.currentWithSize(text_relative_height * frame.height)
         textField.frame = frame
     }
 }
