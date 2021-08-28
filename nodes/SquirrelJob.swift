@@ -43,6 +43,22 @@ extension Node {
         }
     }
     
+    func doToBranch(_ block: (Node)->Void) {
+        block(self)
+        guard let firstChild = firstChild else {return}
+        let sq = Squirrel(at: firstChild)
+        while true {
+            block(sq.pos)
+            if sq.goDown() {continue}
+            while !sq.goRight() {
+                if !sq.goUp() {
+                    printerror("Pas de branch.")
+                    return
+                } else if sq.pos === self {return}
+            }
+        }
+    }
+    
     /** Retirer des flags à la loop de frère où se situe le noeud présent. */
     func removeBroLoopFlags(_ flags: Int) {
         removeFlags(flags)

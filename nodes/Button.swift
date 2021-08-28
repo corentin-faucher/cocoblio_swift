@@ -18,8 +18,16 @@ class Button : Node {
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
         makeSelectable()
     }
+    init(_ refNode: Node?,
+         _ x: Float, _ y: Float, _ width: Float, _ height: Float,
+         lambda: Float = 0, flags: Int = 0)
+    {
+        super.init(refNode, x, y, width, height, lambda: lambda, flags: flags)
+        makeSelectable()
+    }
     required init(other: Node) {
-        fatalError("init(other:) has not been implemented")
+        super.init(other: other)
+        makeSelectable()
     }
     
     func action() {
@@ -116,11 +124,9 @@ class SwitchButton : Node, Draggable {
          lambda: Float = 0, flags: Int = 0)
 	{
         self.isOn = isOn
-        super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
+        super.init(refNode, x, y, 2, 1, lambda: lambda, flags: flags)
         scaleX.set(height)
         scaleY.set(height)
-        self.height.set(1)
-        width.set(2)
         initStructure()
     }
     required init(other: Node) {
@@ -181,6 +187,27 @@ class SwitchButton : Node, Draggable {
         }
     }
 }
+
+/// Une switch qui ne marche pas (grayed out)
+class DummySwitchButton : Button {
+    override init(_ refNode: Node?,
+         _ x: Float, _ y: Float, _ height: Float, lambda: Float = 0, flags: Int = 0)
+    {
+        super.init(refNode, x, y, 2, 1, lambda: lambda, flags: flags)
+        scaleX.set(height)
+        scaleY.set(height)
+        
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = grayColor
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = grayColor2
+    }
+    required init(other: Node) {
+        super.init(other: other)
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = grayColor
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = grayColor2
+    }
+}
+fileprivate let grayColor: Vector4 = [0.75, 0.75, 0.75, 0.9]
+fileprivate let grayColor2: Vector4 = [0.90, 0.90, 0.90, 0.70]
 
 class SliderButton : Node, Draggable {
 	// value entre 0 et 1.

@@ -24,6 +24,7 @@ class ScreenBase : Node
 {
     var compactAlign: Bool = false
     var landscapePortraitThreshold: Float = 1
+    var icloudManager: ICloudDriveManager? = nil
     /** Les écrans sont toujours ajoutés juste après l'ainé.
     * add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
     * i.e. les deux premiers écrans sont le back et le front respectivement,
@@ -43,11 +44,15 @@ class ScreenBase : Node
 	
     override func open() {
 		alignScreenElements(isOpening: true)
+        icloudManager?.startWatching()
 	}
+    
+    override func close() {
+        icloudManager?.stopWatching()
+    }
 	
-    override func reshape() { //} -> Bool {
+    override func reshape() {
 		alignScreenElements(isOpening: false)
-//		return true
 	}
 	
 	func alignScreenElements(isOpening: Bool) {

@@ -89,7 +89,7 @@ class StringSurface: Surface //, Openable
 		if ceiledWidth != nil {
 			addFlags(Flag1.stringSurfaceWithCeiledWidth)
 		}
-        piu.color = StringSurface.blackTextColor // (Text noir par défaut.)
+        piu.color = StringSurface.blackTextColor4 // (Text noir par défaut.)
 	}
 	@discardableResult
     convenience init(_ refNode: Node?, cstString: String, fontname: String? = nil,
@@ -140,8 +140,10 @@ class StringSurface: Surface //, Openable
         super.setWidth(fix: fix)
     }
     
-    static let blackTextColor: Vector4 = [0, 0, 0, 1]
-    static let whiteTextColor: Vector4 = [0.9, 0.9, 0.8, 1]
+    static let blackTextColor3: Vector3 = [0, 0, 0]
+    static let whiteTextColor3: Vector3 = [0.9, 0.9, 0.8]
+    static let blackTextColor4: Vector4 = [0, 0, 0, 1]
+    static let whiteTextColor4: Vector4 = [0.9, 0.9, 0.8, 1]
 }
 
 /** Surface avec tiles (e.g. ensemble de 4x4 icones dans un png.) */

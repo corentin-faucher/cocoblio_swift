@@ -16,9 +16,10 @@ class Renderer : NSObject {
         var color = Vector4(repeating: 1)
         var tile: (i: Float32, j: Float32) = (0,0)
         var emph: Float32 = 0
-        var flags: Int32 = 0
-        
-        static let isOneSided: Int32 = 1
+        var show: Float32 = 0
+//        var flags: Int32 = 0
+//
+//        static let isOneSided: Int32 = 1
     }
 	/** Constante de l'affichage d'une frame pour les shaders. */
     struct PerFrameUniforms {
