@@ -33,8 +33,36 @@ class Button : Node {
     func action() {
         printerror("To be overridden.")
     }
+    func selecting() {
+        // (to be overridden if needed)
+    }
+    func unselecting() {
+        // (to be overridden if needed)
+    }
 }
 
+//class ButtonWithPop : Button {
+//    private weak var timer: Timer?
+//    
+//    required init(other: Node) {
+//        super.init(other: other)
+//    }
+//    override func action() {
+//        timer?.invalidate()
+//    }
+//    override func selecting() {
+//        timer?.invalidate()
+//        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false, block: { [weak self] _ in
+//            self?.setPopUp()
+//        })
+//    }
+//    override func unselecting() {
+//        timer?.invalidate()
+//    }
+//    func setPopUp() {
+//        printerror("To be overridden.")
+//    }
+//}
 
 /** Pour les noeuds "déplaçable".
 * 1. On prend le noeud : "grab",
@@ -58,11 +86,13 @@ class SecureButton : Node, Draggable {
     private let popI: Int
     private let failPopStringTex: Texture
     private let failPopFrameTex: Texture
-    private unowned let front: ScreenBase
+    private let failPopRatio: Float
     
     init(_ refNode: Node?,
          holdTimeInSec: Float, popTex: Texture, popI: Int,
-         failPopStringTexture: Texture, failPopFrameTexture: Texture, frontScreen: ScreenBase,
+         failPopStringTexture: Texture,
+         failPopFrameTexture: Texture,
+         failPopRatio: Float = 0.65,
          _ x: Float, _ y: Float, _ height: Float,
          lambda: Float = 0, flags: Int = 0)
     {
@@ -71,7 +101,7 @@ class SecureButton : Node, Draggable {
         self.countdown = CountDown(ringSec: holdTimeInSec)
         self.failPopStringTex = failPopStringTexture
         self.failPopFrameTex = failPopFrameTexture
-        self.front = frontScreen
+        self.failPopRatio = failPopRatio
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags)
         makeSelectable()
     }
@@ -106,7 +136,12 @@ class SecureButton : Node, Draggable {
         disk?.discard() // discard va aussi disconnect le noeud.
         disk = nil
         timer.invalidate()
-        PopMessage(over: self, message: failPopStringTex)
+        let h = height.realPos
+        PopMessage(over: self, inScreen: true,
+                   strTex: failPopStringTex, frameTex: nil,
+                   0, 0.5*h, width: 10*h, height: failPopRatio*h,
+                   fadePos: Vector2(0, -0.5*h), fadeScale: Vector2(-0.25, -0.25),
+                   appearTime: 0.1, disappearTime: 2.5)
     }
 }
 

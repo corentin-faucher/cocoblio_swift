@@ -86,11 +86,11 @@ class TextViewWrapper : Node {
     #if os(OSX)
     let scrollView: NSScrollView?
     #endif
-    private unowned let root: AppRoot
+    private unowned let root: AppRootBase
     private let textRatio: CGFloat
     
     @discardableResult
-    init(_ refNode: Node?, root: AppRoot, string: String?, editable: Bool, scrollable: Bool,
+    init(_ refNode: Node?, root: AppRootBase, string: String?, editable: Bool, scrollable: Bool,
          // linkSubString: String? = nil,
          _ x: Float, _ y: Float, _
             width: Float, _ height: Float, textHeightRatio: CGFloat)

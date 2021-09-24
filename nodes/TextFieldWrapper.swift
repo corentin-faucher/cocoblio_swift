@@ -68,8 +68,8 @@ class MyTextField : UITextField {
 /** Wrapper pour UITextField ou NSTextField. Un TextField est un petit champ pour une simple string à entrer. */
 class TextFieldWrapper : Node {
     private var textField: MyTextField!
-    fileprivate unowned let root: AppRoot
-    private let placeHolder: LocalizedString
+    fileprivate unowned let root: AppRootBase
+    private let placeHolder: String
     
     var string: String? {
         set {
@@ -85,10 +85,11 @@ class TextFieldWrapper : Node {
     
     #if os(OSX)
     @discardableResult
-    init(_ refNode: Node?, root: AppRoot, string: String?, placeHolder: LocalizedString,
+    init(_ refNode: Node?, root: AppRootBase, string: String?, placeHolder: String,
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0, delegate: NSTextFieldDelegate? = nil)
     {
         self.placeHolder = placeHolder
+        printdebug("Placeholder \(placeHolder)")
         self.root = root
         super.init(refNode, x, y, width, height, flags: flags)
         textField = MyTextField()
@@ -106,7 +107,7 @@ class TextFieldWrapper : Node {
     }
     #else
     @discardableResult
-    init(_ refNode: Node?, root: AppRoot, string: String?, placeHolder: LocalizedString,
+    init(_ refNode: Node?, root: AppRoot, string: String?, placeHolder: String,
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0, delegate: UITextFieldDelegate? = nil)
     {
         self.placeHolder = placeHolder
@@ -135,9 +136,9 @@ class TextFieldWrapper : Node {
         let (pos, delta) = getAbsPosAndDelta()
         
         #if os(OSX)
-        textField.placeholderString = placeHolder.localized
+        textField.placeholderString = placeHolder
         #else
-        textField.placeholder = placeHolder.localized
+        textField.placeholder = placeHolder
         #endif
         let frame = root.getFrameFrom(pos, deltas: delta)
         textField.font = FontManager.currentWithSize(text_relative_height * frame.height)

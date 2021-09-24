@@ -132,6 +132,7 @@ class RootNode : Node {
 
 
 class AppRootBase : RootNode {
+    unowned let metalView: CoqMetalView
 	private(set) var activeScreen: ScreenBase? = nil
 	var selectedNode: Node? = nil
 	/** Cas particulier de selectedNode. */
@@ -140,7 +141,8 @@ class AppRootBase : RootNode {
 	var changeScreenAction: (()->Void)? = nil
 	
 	
-	init() {
+    init(view: CoqMetalView) {
+        self.metalView = view
 		super.init(parent: nil, parentRoot: nil)
 	}
 	required init(other: Node) {
@@ -149,7 +151,7 @@ class AppRootBase : RootNode {
 	
 	/** Method called every frame by the renderer. To be overwritted. */
 	func willDrawFrame() {
-		printwarning("Plese override willDrawFrame...")
+        // (pass)
 	}
 	
 	final func changeActiveScreen(newScreen: ScreenBase?) {

@@ -17,6 +17,7 @@ class Squirrel {
     /// Position dans l'arbre (noeud) de l'écureuil.
     private(set) var pos: Node
     private let root: Node
+    // La position en mémoire est dans le référentiel de pos.parent. (pas de changement lors de goRight/goLeft)
     private(set) var v: Vector2
     private(set) var vS: Vector2
     /// Vérifie si on tombe dans le cadre du noeud présent (pos).

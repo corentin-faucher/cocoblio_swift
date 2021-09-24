@@ -170,9 +170,12 @@ extension Renderer: MTKViewDelegate {
 	}
 	
 	func draw(in view: MTKView) {
-		guard let metalView = view as? CoqMetalView, let root = metalView.root else {
+		guard let metalView = view as? CoqMetalView else {
 			printerror("Pas une MetalView."); return
 		}
+        guard let root = metalView.root else {
+            printwarning("No root do display."); return
+        }
 		guard !view.isPaused else { return }
 		#if !os(OSX)
 		if metalView.isTransitioning {
@@ -194,9 +197,6 @@ extension Renderer: MTKViewDelegate {
         
         // 1. Check le chrono/sleep.
         GlobalChrono.update()
-        if GlobalChrono.shouldSleep, metalView.canPauseWhenResignActive {
-            view.isPaused = true
-        }
         
         // 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
         PerFrameUniforms.pfu.time = GlobalChrono.elapsedSec
@@ -233,6 +233,11 @@ extension Renderer: MTKViewDelegate {
             commandBuffer.present(drawable)
         }
 		commandBuffer.commit()
+        
+        // 7. Mettre en pause ? Ne plus caller draw (cette function)
+        if GlobalChrono.shouldSleep, metalView.canPauseWhenResignActive {
+            view.isPaused = true
+        }
 	}
 	
 }
@@ -287,6 +292,7 @@ private extension Node {
         // 0. Cas Racine
         if containsAFlag(Flag1.isRoot) {
             (self as! RootNode).setModelMatrix()
+            return nil
         }
         guard let theParent = parent else {
             printerror("Root n'est pas une RootNode.")

@@ -8,7 +8,7 @@
 
 import Foundation
 
-fileprivate let sleepTime: Int64 = 16000
+fileprivate let sleepTime: Int64 = 10000
 
 struct GlobalChrono {
     // Getters

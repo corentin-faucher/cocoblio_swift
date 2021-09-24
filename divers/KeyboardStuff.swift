@@ -36,6 +36,7 @@ enum SpChar {
     static let space: Character = " "
     static let nobreakSpace: Character = " "
     static let ideographicSpace: Character = "　"
+    static let thinSpace: Character = "\u{2009}"
 }
 
 /** MyKeyCode... */
