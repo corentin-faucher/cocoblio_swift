@@ -157,7 +157,7 @@ class AppRootBase : RootNode {
 	final func changeActiveScreen(newScreen: ScreenBase?) {
 		// 0. Cas réouverture
 		if activeScreen === newScreen {
-			newScreen?.openBranch()
+			newScreen?.openAndShowBranch()
 			return
 		}
 		// 1. Fermer l'écran actif (déconnecter si evanescent)
@@ -183,7 +183,7 @@ class AppRootBase : RootNode {
 		}
 		// 3. Ouverture du nouvel écran.
 		activeScreen = theNewScreen
-		theNewScreen.openBranch()
+		theNewScreen.openAndShowBranch()
 		changeScreenAction?.self()
 	}
 }

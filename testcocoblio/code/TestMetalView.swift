@@ -28,6 +28,21 @@ class MetalView: MTKView, CoqMetalView {
             }
         }
     }
+    var isSuspended: Bool = true {
+        didSet {
+            isPaused = isSuspended
+        }
+    }
+    override var isPaused: Bool {
+        didSet {
+            if isSuspended, !isPaused { // Ne peut sortir de pause si l'activité est suspendu...
+                printwarning("unpause while suspended...")
+                isPaused = true
+                return
+            }
+            GlobalChrono.isPaused = isPaused
+        }
+    }
     
     
     required init(coder: NSCoder) {
@@ -35,15 +50,19 @@ class MetalView: MTKView, CoqMetalView {
         printdebug("Init MetalView")
         device = MTLCreateSystemDefaultDevice()
         renderer = Renderer(metalView: self, withDepth: false)
-        renderer.initClearColor(rgb: [0.2, 0.2, 0.8])
+        renderer.initClearColor(rgb: Color.blue_azure)
         delegate = renderer
         
         root = AppRootBase(view: self)
+        Texture.pngNameToTiling.putIfAbsent(key: "tiles_sol", value: (8, 9))
         TiledSurface(root, pngTex: Texture.defaultPng, 0, 0, 1, flags: Flag1.show)
+        
+        Platforme(root, tex: Texture.getPng("tiles_sol"), n: 100, 0, 0, 5).also {
+            $0.openAndShowBranch()
+        }
     }
     
-    
-    func setBackground(color: Vector3, isDark: Bool) {
+    func setBackground(color: Vector4, isDark: Bool) {
         renderer.updateClearColor(rgb: color)
     }
     

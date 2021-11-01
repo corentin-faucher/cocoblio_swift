@@ -115,7 +115,7 @@ class NumberNode : Node {
         alignTheChildren(alignOpt: 0, ratio: 1)
         // 7. Vérifier s'il faut afficher... (live update)
         if(containsAFlag(Flag1.show)) {
-            openBranch()
+            openAndShowBranch()
         }
     }
 }

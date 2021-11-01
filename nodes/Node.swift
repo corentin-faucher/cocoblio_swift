@@ -195,13 +195,12 @@ class Node : CopyableNode {
         } else { // Pas de petit frère -> probablement le cadet.
             parent?.lastChild = bigBro
         }
-
-        // 2. Déconnexion (superflu)
-		/*
+        
+        // 2. Déconnexion
+        // (superflu a priori, mais peux éviter des bogue de double déconnexion si oublie de weak par exemple...)
         parent = nil
         littleBro = nil
         bigBro = nil
-		*/
     }
     /** Deconnexion d'un descendant, i.e. Effacement direct.
      *  Retourne "true" s'il y a un descendant a effacer. */

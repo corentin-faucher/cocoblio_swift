@@ -62,6 +62,15 @@ enum FontManager {
         return fontInfoDic[fontname] ?? defaultInfo
     }
     
+    static func getSystemFontSize() -> CGFloat
+    {
+        #if os(OSX)
+        return NSFont.systemFontSize
+        #else
+        return UIFont.systemFontSize
+        #endif
+    }
+    
     #if os(OSX)
     static func getFont(name: String, size: CGFloat = current.pointSize) -> NSFont? {
         return NSFont(name: name, size: size)

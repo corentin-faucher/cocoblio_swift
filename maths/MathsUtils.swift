@@ -16,7 +16,11 @@ typealias Vector2 = SIMD2<Float>
 typealias Vector3 = SIMD3<Float>
 typealias Vector4 = SIMD4<Float>
 
-
+extension Vector4 {
+    var xyz: Vector3 {
+        return Vector3(x, y, z)
+    }
+}
 
 extension float4x4 {
     mutating func scale(with scale: Vector3) {

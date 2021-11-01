@@ -8,6 +8,11 @@
 
 import Foundation
 
+protocol Overable {
+    func startOvering()
+    func stopOvering()
+}
+
 /** Classe de base pour les boutons. Un bouton est un noeud sélectionnable
  * (avec les flags selectable/selectableRoot) ayant la méthode "action()" qui doit être overridé. */
 class Button : Node {
@@ -33,36 +38,30 @@ class Button : Node {
     func action() {
         printerror("To be overridden.")
     }
-    func selecting() {
-        // (to be overridden if needed)
-    }
-    func unselecting() {
-        // (to be overridden if needed)
-    }
 }
 
-//class ButtonWithPop : Button {
-//    private weak var timer: Timer?
-//    
-//    required init(other: Node) {
-//        super.init(other: other)
-//    }
-//    override func action() {
-//        timer?.invalidate()
-//    }
-//    override func selecting() {
-//        timer?.invalidate()
-//        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false, block: { [weak self] _ in
-//            self?.setPopUp()
-//        })
-//    }
-//    override func unselecting() {
-//        timer?.invalidate()
-//    }
-//    func setPopUp() {
-//        printerror("To be overridden.")
-//    }
-//}
+/*
+class ButtonOverable: Button, Overable {
+    private weak var timer: Timer?
+    required init(other: Node) {
+        super.init(other: other)
+    }
+    override func action() {
+        timer?.invalidate()
+    }
+    func startOvering() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false, block: { [weak self] _ in
+            self?.setPopUp()
+        })
+    }
+    func stopOvering() {
+        timer?.invalidate()
+    }
+    func setPopUp() {
+        printerror("To be overridden.")
+    }
+}*/
 
 /** Pour les noeuds "déplaçable".
 * 1. On prend le noeud : "grab",
@@ -78,10 +77,10 @@ protocol Draggable : Node {
 }
 
 class SecureButton : Node, Draggable {
-    private var disk: PopDisk? = nil
+    private weak var pop_disk: PopDisk? = nil
     private var isHolding: Bool = false
     private var countdown: CountDown
-    private var timer: Timer? = nil
+    private var disk_timer: Timer? = nil
     private let popTex: Texture
     private let popI: Int
     private let failPopStringTex: Texture
@@ -115,14 +114,17 @@ class SecureButton : Node, Draggable {
     func grab(relPosInit posInit: Vector2) {
         countdown.start()
         let h = height.realPos
-        if let disk = disk {
+        if let disk = pop_disk {
+            printdebug("disconnect disk1")
             disk.disconnect()
         }
-        disk = PopDisk(self, pngTex: popTex, deltaT: countdown.ringTimeSec, -h/2, 0, h, lambda: 10, i: popI)
-        timer = Timer.scheduledTimer(withTimeInterval: Double(countdown.ringTimeSec), repeats: false) { [weak self] _ in
+        let disk = PopDisk(self, pngTex: popTex, deltaT: countdown.ringTimeSec, -h/2, 0, h, lambda: 10, i: popI)
+        pop_disk = disk
+        disk_timer = Timer.scheduledTimer(withTimeInterval: Double(countdown.ringTimeSec), repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            self.disk?.disconnect()
-            self.timer = nil
+            self.pop_disk?.disconnect()
+            self.pop_disk = nil
+            self.disk_timer = nil
             self.action()
         }
     }
@@ -132,10 +134,12 @@ class SecureButton : Node, Draggable {
     }
     
     func letGo() {
-        guard let timer = timer else { return }
-        disk?.discard() // discard va aussi disconnect le noeud.
-        disk = nil
+        guard let timer = disk_timer else { return }
+        pop_disk?.discard() // discard va aussi disconnect le noeud.
         timer.invalidate()
+        pop_disk = nil
+        disk_timer = nil
+        
         let h = height.realPos
         PopMessage(over: self, inScreen: true,
                    strTex: failPopStringTex, frameTex: nil,
@@ -216,9 +220,9 @@ class SwitchButton : Node, Draggable {
     
     private func setBackColor() {
         if(isOn) {
-            back.piu.color = [0.2, 1, 0.5, 1]
+            back.piu.color = Color.green_electric
         } else {
-            back.piu.color = [1, 0.3, 0.1, 1]
+            back.piu.color = Color.red_vermilion
         }
     }
 }
@@ -232,17 +236,15 @@ class DummySwitchButton : Button {
         scaleX.set(height)
         scaleY.set(height)
         
-        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = grayColor
-        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = grayColor2
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = Color.gray2
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = Color.gray3
     }
     required init(other: Node) {
         super.init(other: other)
-        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = grayColor
-        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = grayColor2
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = Color.gray2
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = Color.gray3
     }
 }
-fileprivate let grayColor: Vector4 = [0.75, 0.75, 0.75, 0.9]
-fileprivate let grayColor2: Vector4 = [0.90, 0.90, 0.90, 0.70]
 
 class SliderButton : Node, Draggable {
 	// value entre 0 et 1.

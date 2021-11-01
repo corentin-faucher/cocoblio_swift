@@ -34,40 +34,6 @@ extension UnsignedInteger {
 	}
 }
 
-/*-- Charactere/unicode --*/
-extension Character {
-	func toUInt32() -> UInt32 {
-		guard let us = self.unicodeScalars.first else {printerror("Cannot convert char \(self) to UInt32."); return 0}
-		return us.value
-	}
-	func isAlphaNumeric() -> Bool {
-		return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
-	}
-}
-extension UInt32 {
-	func toCharacter() -> Character {
-		guard let us = Unicode.Scalar(self) else {printerror("Cannot convert UInt32 \(self) to char"); return "?"}
-		return Character(us)
-	}
-}
-extension String {
-	func substring(lowerIndex: Int, exHighIndex: Int) -> String? {
-		guard lowerIndex < count, lowerIndex < exHighIndex else {
-			return nil
-		}
-		let start = index(startIndex, offsetBy: lowerIndex)
-		let end = index(start, offsetBy: min(exHighIndex - lowerIndex,
-											 count - lowerIndex))
-		return String(self[start..<end])
-	}
-	func substring(atIndex: Int) -> String? {
-		return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)
-	}
-	func char(atIndex: Int) -> Character? {
-		return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)?.first
-	}
-}
-
 /*-- KeyChain --*/
 class KeyChain {
 	static func save(key: String, data: Data) -> OSStatus {
@@ -148,6 +114,13 @@ extension Array where Element : Strippable {
 	mutating func strip() {
 		self = self.filter { nil != $0.value }
 	}
+    func forEachNonNil(_ body: (Element.Value)->Void) {
+        forEach { el in
+            if let value = el.value {
+                body(value)
+            }
+        }
+    }
 }
 
 

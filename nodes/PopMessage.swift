@@ -79,7 +79,7 @@ class PopOver : Node {
         Timer.scheduledTimer(withTimeInterval: appearTime, repeats: false) { [weak self] (_) in
             guard let self = self, !self.abort else { return }
             self.addFlags(Flag1.show)
-            self.openBranch()
+            self.openAndShowBranch()
             // Dépassement ? -> Ajustement
             let dim = self.getAbsPosAndDelta()
             let x_over_left = dim.pos.x - dim.deltas.x + 0.5*PopOver.screen.width.realPos
@@ -142,7 +142,6 @@ final class PopMessage : PopOver {
             }
             frame = frameTex
         }
-        printdebug("pop \(strTex.name) at \(x), \(y), fade \(fadePos.x), \(fadePos.y).")
         super.init(x, y, width: width, height: height,
                    fadePos: fadePos, fadeScale: fadeScale,
                    appearTime: appearTime, disappearTime: disappearTime)

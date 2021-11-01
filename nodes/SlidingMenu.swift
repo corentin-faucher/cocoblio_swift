@@ -244,7 +244,7 @@ class SlidingMenu : Node, Scrollable { // Openable
             if (toShow && sq.pos.containsAFlag(Flag1.hidden)) {
                 sq.pos.removeFlags(Flag1.hidden)
                 if(openNode) {
-                    sq.pos.openBranch()
+                    sq.pos.openAndShowBranch()
                 }
             }
             if (!toShow && !sq.pos.containsAFlag(Flag1.hidden)) {

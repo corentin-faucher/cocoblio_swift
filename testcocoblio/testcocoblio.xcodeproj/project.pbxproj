@@ -11,6 +11,7 @@
 		83074AD023EB048800D35712 /* TestMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83074ACD23EB048800D35712 /* TestMetalView.swift */; };
 		8342A2042571D39200ED9776 /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342A2032571D39200ED9776 /* Sound.swift */; };
 		8342A2072571D3E800ED9776 /* BuildConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342A2062571D3E800ED9776 /* BuildConfig.swift */; };
+		83538402271DAE0A0028763B /* Particule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83538401271DAE0A0028763B /* Particule.swift */; };
 		835938A323E1D63D0085CD16 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 835938A223E1D63D0085CD16 /* Assets.xcassets */; };
 		835938A623E1D63D0085CD16 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 835938A423E1D63D0085CD16 /* MainMenu.xib */; };
 		8360C36D26E1185B00D89A0E /* Mesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C35226E1185B00D89A0E /* Mesh.swift */; };
@@ -46,6 +47,7 @@
 		8360C39326E118AF00D89A0E /* ArrayAndData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38C26E118AF00D89A0E /* ArrayAndData.swift */; };
 		8360C39426E118AF00D89A0E /* AppDelegateMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */; };
 		8360C39B26E1403100D89A0E /* iCloudDriveManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */; };
+		839FAD25271C921500B6B549 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839FAD24271C921500B6B549 /* Color.swift */; };
 		83F8304F23E8E58E00A03FD1 /* pngs in Resources */ = {isa = PBXBuildFile; fileRef = 83F8304E23E8E58E00A03FD1 /* pngs */; };
 		83F8305123E8E59900A03FD1 /* wavs in Resources */ = {isa = PBXBuildFile; fileRef = 83F8305023E8E59800A03FD1 /* wavs */; };
 /* End PBXBuildFile section */
@@ -55,6 +57,7 @@
 		83074ACD23EB048800D35712 /* TestMetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMetalView.swift; sourceTree = "<group>"; };
 		8342A2032571D39200ED9776 /* Sound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sound.swift; sourceTree = "<group>"; };
 		8342A2062571D3E800ED9776 /* BuildConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildConfig.swift; sourceTree = "<group>"; };
+		83538401271DAE0A0028763B /* Particule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Particule.swift; sourceTree = "<group>"; };
 		8359389D23E1D63C0085CD16 /* testcocoblio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = testcocoblio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		835938A223E1D63D0085CD16 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		835938A523E1D63D0085CD16 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -93,6 +96,7 @@
 		8360C38C26E118AF00D89A0E /* ArrayAndData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArrayAndData.swift; sourceTree = "<group>"; };
 		8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegateMacOS.swift; sourceTree = "<group>"; };
 		8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iCloudDriveManager.swift; sourceTree = "<group>"; };
+		839FAD24271C921500B6B549 /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
 		83F8304E23E8E58E00A03FD1 /* pngs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = pngs; sourceTree = "<group>"; };
 		83F8305023E8E59800A03FD1 /* wavs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = wavs; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,6 +119,7 @@
 				83074ACD23EB048800D35712 /* TestMetalView.swift */,
 				8342A2032571D39200ED9776 /* Sound.swift */,
 				8342A2062571D3E800ED9776 /* BuildConfig.swift */,
+				83538401271DAE0A0028763B /* Particule.swift */,
 			);
 			path = code;
 			sourceTree = "<group>";
@@ -212,6 +217,7 @@
 		8360C38626E118AF00D89A0E /* divers */ = {
 			isa = PBXGroup;
 			children = (
+				839FAD24271C921500B6B549 /* Color.swift */,
 				8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */,
 				8360C38726E118AF00D89A0E /* Language.swift */,
 				8360C38826E118AF00D89A0E /* FileManagerHelpers.swift */,
@@ -318,6 +324,7 @@
 				8360C39326E118AF00D89A0E /* ArrayAndData.swift in Sources */,
 				8360C37726E1185B00D89A0E /* SlidingMenu.swift in Sources */,
 				8360C38226E1185B00D89A0E /* PopMessage.swift in Sources */,
+				839FAD25271C921500B6B549 /* Color.swift in Sources */,
 				8360C38526E1185B00D89A0E /* Node.swift in Sources */,
 				83074ACF23EB048800D35712 /* Shaders.metal in Sources */,
 				8360C39426E118AF00D89A0E /* AppDelegateMacOS.swift in Sources */,
@@ -336,6 +343,7 @@
 				8360C37A26E1185B00D89A0E /* Flag1.swift in Sources */,
 				8360C38E26E118AF00D89A0E /* Language.swift in Sources */,
 				8360C39226E118AF00D89A0E /* KeyboardStuff.swift in Sources */,
+				83538402271DAE0A0028763B /* Particule.swift in Sources */,
 				8360C37226E1185B00D89A0E /* SmoothDimension.swift in Sources */,
 				8360C37F26E1185B00D89A0E /* TextFieldWrapper.swift in Sources */,
 				8360C37926E1185B00D89A0E /* ScreenBase.swift in Sources */,

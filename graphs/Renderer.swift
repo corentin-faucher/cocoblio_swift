@@ -109,8 +109,8 @@ class Renderer : NSObject {
 		
 		/*-- Sampler state pour les textures --*/
         let samplerDescr = MTLSamplerDescriptor()
-        samplerDescr.magFilter = .linear
-        samplerDescr.minFilter = .linear
+        samplerDescr.magFilter = .nearest
+        samplerDescr.minFilter = .nearest
         samplerState = device.makeSamplerState(descriptor: samplerDescr)
 		
 		/*-- Depth (si besoin) --*/
@@ -131,10 +131,10 @@ class Renderer : NSObject {
         
         super.init()
     }
-    func initClearColor(rgb: Vector3) {
+    func initClearColor(rgb: Vector4) {
         smR.set(rgb.x); smG.set(rgb.y); smB.set(rgb.z)
     }
-    func updateClearColor(rgb: Vector3) {
+    func updateClearColor(rgb: Vector4) {
         smR.pos = rgb.x; smG.pos = rgb.y; smB.pos = rgb.z
     }
 	
@@ -311,9 +311,9 @@ private extension Node {
         }
         // Facteur d'"affichage"
         let alpha = surface.trShow.setAndGet(isOn: containsAFlag(Flag1.show))
-        piu.color[3] = alpha
         // Rien à afficher...
         guard alpha > 0 else { return nil }
+        piu.show = alpha        
         
         piu.model.setAndTranslate(ref: theParent.piu.model, with: [x.pos, y.pos, z.pos])
         if (containsAFlag(Flag1.poping)) {

@@ -89,7 +89,7 @@ class StringSurface: Surface //, Openable
 		if ceiledWidth != nil {
 			addFlags(Flag1.stringSurfaceWithCeiledWidth)
 		}
-        piu.color = StringSurface.blackTextColor4 // (Text noir par défaut.)
+        piu.color = Color.black // (Text noir par défaut.)
 	}
 	@discardableResult
     convenience init(_ refNode: Node?, cstString: String, fontname: String? = nil,
@@ -139,11 +139,6 @@ class StringSurface: Surface //, Openable
         // 3. Ajuster la largeur comme pour les autres surface...
         super.setWidth(fix: fix)
     }
-    
-    static let blackTextColor3: Vector3 = [0, 0, 0]
-    static let whiteTextColor3: Vector3 = [0.9, 0.9, 0.8]
-    static let blackTextColor4: Vector4 = [0, 0, 0, 1]
-    static let whiteTextColor4: Vector4 = [0.9, 0.9, 0.8, 1]
 }
 
 /** Surface avec tiles (e.g. ensemble de 4x4 icones dans un png.) */
@@ -207,7 +202,7 @@ final class PopDisk : TiledSurface {
         self.y.fadeInFromDef(delta: height)
         width.fadeIn(delta: -height * 0.3)
         self.height.fadeIn(delta: -height * 0.3)
-        openBranch()
+        openAndShowBranch()
         
         timer1 = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] (_) in
             if let self = self {

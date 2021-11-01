@@ -14,6 +14,7 @@ protocol CoqMetalView : MTKView {
     var isTransitioning: Bool { get set }
     var didTransition: Bool { get set }
     var isDarkMode: Bool { get }
+    var isSuspended: Bool { get set }
     /* Juste pour macOS (pause automatique quand on change d'application) */
     var canPauseWhenResignActive: Bool { get set }
     
@@ -22,7 +23,7 @@ protocol CoqMetalView : MTKView {
     /** Le frame utilisable un rectangle dans fullFrame, i.e. les dimensions "utiles", sans les bords. */
     var usableFrame: CGRect { get set }
     
-    func setBackground(color: Vector3, isDark: Bool)
+    func setBackground(color: Vector4, isDark: Bool)
     
     // Pour la détection du scrolling dans iOS...
     func addScrollingViewIfNeeded(with slidingMenu: SlidingMenu)

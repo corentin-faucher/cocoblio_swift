@@ -57,7 +57,7 @@ extension URL {
 	S'il s'agit d'un fichier le fichier est effacé.
 	Ensuite on crée le directory s'il est manquant.
 	Retourne true si OK, false si échec. */
-	func checkCreateAsDirectory() -> Bool {
+	func checkAndCreateAsDirectory() -> Bool {
 		let fileManager = FileManager.default
 		let existence = fileManager.existence(at: self)
 		// 1. Case OK (already exists)

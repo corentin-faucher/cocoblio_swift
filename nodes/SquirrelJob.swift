@@ -10,7 +10,7 @@ import simd
 
 /** Ajouter des flags à une branche (noeud et descendents s'il y en a). */
 extension Node {
-    func addBranchFlags(_ flags: Int) {
+    func forEachAddFlags(_ flags: Int) {
         addFlags(flags)
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
@@ -27,7 +27,7 @@ extension Node {
     }
     
     /** Retirer des flags à toute la branche (noeud et descendents s'il y en a). */
-    func removeBranchFlags(_ flags: Int) {
+    func forEachRemoveFlags(_ flags: Int) {
         removeFlags(flags)
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
@@ -43,7 +43,7 @@ extension Node {
         }
     }
     
-    func doToBranch(_ block: (Node)->Void) {
+    func forEachNodeInBranch(_ block: (Node)->Void) {
         block(self)
         guard let firstChild = firstChild else {return}
         let sq = Squirrel(at: firstChild)
@@ -58,8 +58,28 @@ extension Node {
             }
         }
     }
+    func forEachTypedNodeInBranch<T: Node>(_ block: (T)->Void) {
+        if let typed = self as? T {
+            block(typed)
+        }
+        guard let firstChild = firstChild else {return}
+        let sq = Squirrel(at: firstChild)
+        while true {
+            if let typed = sq.pos as? T {
+                block(typed)
+            }            
+            if sq.goDown() {continue}
+            while !sq.goRight() {
+                if !sq.goUp() {
+                    printerror("Pas de branch.")
+                    return
+                } else if sq.pos === self {return}
+            }
+        }
+    }
     
-    /** Retirer des flags à la loop de frère où se situe le noeud présent. */
+    /** Retirer des flags à la loop de frère où se situe le noeud présent.  Inutile ? */
+    /*
     func removeBroLoopFlags(_ flags: Int) {
         removeFlags(flags)
         var sq = Squirrel(at: self)
@@ -71,8 +91,9 @@ extension Node {
             sq.pos.removeFlags(flags)
         }
     }
-    
-    /** Ajouter/retirer des flags à une branche (noeud et descendents s'il y en a). */
+    */
+    /** Ajouter/retirer des flags à une branche (noeud et descendents s'il y en a).   Inutile ? */
+    /*
     func addRemoveBranchFlags(_ flagsAdded: Int, _ flagsRemoved: Int) {
         addRemoveFlags(flagsAdded, flagsRemoved)
         guard let firstChild = firstChild else {return}
@@ -88,7 +109,8 @@ extension Node {
             }
         }
     }
-    
+     */
+ 
     /** Ajouter un flag aux "parents" (pas au noeud présent). */
     func addRootFlag(_ flag: Int) {
         if parent == nil {
@@ -112,7 +134,7 @@ extension Node {
      * 3. visite si est une branche avec "show".
      * (show peut être ajouté manuellement avant pour afficher une branche cachée)
      * (show peut avoir été ajouté exterieurement) */
-    final func openBranch() {
+    final func openAndShowBranch() {
         self.open()
         if !containsAFlag(Flag1.hidden) {
             addFlags(Flag1.show)
@@ -137,7 +159,7 @@ extension Node {
         }
     }
     
-    /// Enlever "show" aux noeud de la branche (sauf les alwaysShow) et appliquer la "closure".
+    /// Enlever "show" aux noeud de la branche (sauf les exposed) et appliquer la close().
     func closeBranch() {
         if !containsAFlag(Flag1.exposed) {
             removeFlags(Flag1.show)
