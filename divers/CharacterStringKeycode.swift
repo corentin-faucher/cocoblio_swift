@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreGraphics
 #if os(OSX)
 import AppKit
 import Carbon
@@ -30,6 +31,7 @@ extension UInt32 {
     }
 }
 
+/*
 extension NSMutableAttributedString {
     func resizeFont(to size: CGFloat)
     {
@@ -37,6 +39,7 @@ extension NSMutableAttributedString {
         printdebug("Resizing AttrStr syst, scaling \(scaling)")
         
         beginEditing()
+        #if os(OSX)
         enumerateAttribute(.font, in: NSRange(location: 0, length: length)) { (value, range, stop) in
             if let font = value as? NSFont {
                 let descr = font.fontDescriptor.withFamily(font.familyName!).withSymbolicTraits(font.fontDescriptor.symbolicTraits)
@@ -47,9 +50,13 @@ extension NSMutableAttributedString {
                 }                
             }
         }
+        #else
+        ...
+        #endif
         endEditing()
     }
 }
+*/
 
 extension String {
     func fromHtmlToAttributedString(size: CGFloat) -> NSAttributedString?
@@ -210,6 +217,8 @@ enum Keycode {
     static let ISO_section: UInt16 = 0x64
     static let JIS_Yen: UInt16 = 0x89
     static let JIS_Underscore: UInt16 = 0x87
+    static let JIS_kana: UInt16 = 0x90
+    static let JIS_Eisu: UInt16 = 0x91 // 英数
     #endif
     // Dummy "empty" (touche "vide" ne faisant rien)
     static let empty: UInt16 = 0xFF
@@ -229,7 +238,8 @@ enum Modifier {
     static let option: UInt =   0x080000
     static let control: UInt =  0x040000
     #endif
-    static let shiftOrOption = shift | option
+    static let optionShift = shift | option
+    static let commandShift = command | shift
 }
 
 let keypadKeycodeToChar: [UInt16:Character] = [

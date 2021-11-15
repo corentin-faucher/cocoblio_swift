@@ -8,11 +8,6 @@
 
 import Foundation
 
-protocol Overable {
-    func startOvering()
-    func stopOvering()
-}
-
 /** Classe de base pour les boutons. Un bouton est un noeud sélectionnable
  * (avec les flags selectable/selectableRoot) ayant la méthode "action()" qui doit être overridé. */
 class Button : Node {
@@ -40,28 +35,114 @@ class Button : Node {
     }
 }
 
-/*
-class ButtonOverable: Button, Overable {
-    private weak var timer: Timer?
-    required init(other: Node) {
-        super.init(other: other)
-    }
-    override func action() {
-        timer?.invalidate()
-    }
+// Protocol general de passer au-dessus d'un noeud
+protocol Overable : Node {
+    func startOvering()
+    func stopOvering()
+    /// Crée un popover
+    func showPopMessage()
+    /// Met à jour la string à afficher dans le popover. En mode static, crée le noeud popover.
+    func setPopString(_ newStrTex: Texture?)
+}
+
+// Overable avec pop-over
+// implémentation par défaut de Overable : Un simple FramedString qui apparaît au dessus.
+fileprivate protocol OverablePopOver : Overable {
+    /// La texture du texte popover.
+    var popStringTex: Texture? { get set }
+    /// La texture du frame du texte popover.
+    var popFrameTex: Texture { get }
+    /// Le timer pour afficher le popover.
+    var popTimerWeak: Timer? { get set }
+    /// Le noeud du popover.
+    var popMessageWeak: PopMessage? { get set }
+    /// Le noeud du popover version static / iOS.
+    var framedStringWeak: FramedString? { get set }
+    /// Reste afficher dans iOS.
+    var iosStatic: Bool { get }
+    /// Est en fait dans le front-screen.
+    var popInScreen: Bool { get }
+}
+
+extension OverablePopOver {
     func startOvering() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false, block: { [weak self] _ in
-            self?.setPopUp()
-        })
+        // (pas encore de popMessage)
+        guard popMessageWeak == nil else { return }
+        popTimerWeak?.invalidate()
+        popTimerWeak = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: false)
+        { [weak self] _ in
+            guard let self = self else { return }
+            self.showPopMessage()
+        }
     }
     func stopOvering() {
-        timer?.invalidate()
+        popTimerWeak?.invalidate()
     }
-    func setPopUp() {
-        printerror("To be overridden.")
+    func showPopMessage()
+    {
+        #if os(iOS)
+        // Seulement pour iOS : rien à faire en mode "static" (déjà montré)
+        // Danc macOS, il faut tout de même faire apparaître le popover même si iosStatic == true.
+        if iosStatic {
+            return
+        }
+        #endif
+        guard let popStringTex = popStringTex else {
+            return
+        }
+        let height = height.realPos
+        let pop = PopMessage(over: self, inScreen: popInScreen,
+                   strTex: popStringTex, frameTex: popFrameTex,
+                             0, 0.5*height, width: 5*height, height: 0.5*height,
+                  fadePos: Vector2(0, -0.3*height), fadeScale: Vector2(-0.15, -0.15),
+                  appearTime: 0.1, disappearTime: 2.5)
+        self.popMessageWeak = pop
     }
-}*/
+    func setPopString(_ newStrTex: Texture?)
+    {
+        popStringTex = newStrTex
+        #if os(iOS)
+        if iosStatic, let newStrTex = newStrTex {
+            if let framedString = framedStringWeak {
+                framedString.stringSurf.updateStringTexture(newStrTex)
+            } else {
+                let height = height.realPos
+                framedStringWeak = FramedString(self, strTex: newStrTex, frameTex: popFrameTex,
+                                                0, 0.5*height, width: 5*height, height: 0.5*height)
+            }
+        } else {
+            framedStringWeak?.disconnect()
+        }
+        #endif
+    }
+}
+
+class ButtonOverable : Button, OverablePopOver {
+    fileprivate var popStringTex: Texture?
+    fileprivate let popFrameTex: Texture
+    fileprivate weak var popTimerWeak: Timer?
+    fileprivate weak var popMessageWeak: PopMessage?
+    fileprivate weak var framedStringWeak: FramedString?
+    fileprivate let iosStatic: Bool
+    fileprivate let popInScreen: Bool
+    
+    init(_ refNode: Node?,
+         iosStatic: Bool, popInScreen: Bool, popFrameTex: Texture,
+         _ x: Float, _ y: Float, _ width: Float, _ height: Float,
+         lambda: Float, flags: Int)
+    {
+        self.iosStatic = iosStatic
+        self.popInScreen = popInScreen
+        self.popFrameTex = popFrameTex
+        super.init(refNode, x, y, width, height, lambda: lambda, flags: flags)
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+    override func action() {
+        popTimerWeak?.invalidate()
+    }
+}
 
 /** Pour les noeuds "déplaçable".
 * 1. On prend le noeud : "grab",
@@ -115,7 +196,6 @@ class SecureButton : Node, Draggable {
         countdown.start()
         let h = height.realPos
         if let disk = pop_disk {
-            printdebug("disconnect disk1")
             disk.disconnect()
         }
         let disk = PopDisk(self, pngTex: popTex, deltaT: countdown.ringTimeSec, -h/2, 0, h, lambda: 10, i: popI)
@@ -146,6 +226,40 @@ class SecureButton : Node, Draggable {
                    0, 0.5*h, width: 10*h, height: failPopRatio*h,
                    fadePos: Vector2(0, -0.5*h), fadeScale: Vector2(-0.25, -0.25),
                    appearTime: 0.1, disappearTime: 2.5)
+    }
+}
+
+class SecureButtonWithPopover : SecureButton, OverablePopOver {
+    var popStringTex: Texture?
+    let popFrameTex: Texture
+    weak var popTimerWeak: Timer?
+    weak var popMessageWeak: PopMessage?
+    weak var framedStringWeak: FramedString?
+    let iosStatic: Bool
+    let popInScreen: Bool
+    
+    init(_ ref: Node?,
+         iosStatic: Bool, popInScreen: Bool, popFrameTex: Texture,
+         holdTimeInSec: Float, popTex: Texture, popI: Int,
+         failPopStringTexture: Texture,
+         failPopFrameTexture: Texture,
+         failPopRatio: Float = 0.65,
+         _ x: Float, _ y: Float, _ height: Float,
+         lambda: Float = 0, flags: Int = 0
+    ) {
+        self.popFrameTex = popFrameTex
+        self.iosStatic = iosStatic
+        self.popInScreen = popInScreen
+        super.init(ref, holdTimeInSec: holdTimeInSec, popTex: popTex, popI: popI,
+                   failPopStringTexture: failPopStringTexture, failPopFrameTexture: failPopFrameTexture,
+                   failPopRatio: failPopRatio,
+                   x, y, height, lambda: lambda, flags: flags)
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+    override func action() {
+        popTimerWeak?.invalidate()
     }
 }
 

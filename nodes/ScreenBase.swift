@@ -25,6 +25,7 @@ class ScreenBase : Node
     var compactAlign: Bool = false
     var landscapePortraitThreshold: Float = 1
     var icloudManager: ICloudDriveManager? = nil
+    
     /** Les écrans sont toujours ajoutés juste après l'ainé.
     * add 1 : 0->1,  add 2 : 0->{1,2},  add 3 : 0->{1,3,2},  add 4 : 0->{1,4,3,2}, ...
     * i.e. les deux premiers écrans sont le back et le front respectivement,
@@ -41,6 +42,14 @@ class ScreenBase : Node
 		let theOther = other as! ScreenBase
 		super.init(other: theOther)
 	}
+    
+    func getScreenRatio() -> Float {
+        guard let parent = parent else {
+            printerror("No parent.")
+            return 1
+        }
+        return parent.width.realPos / parent.height.realPos
+    }
 	
     override func open() {
 		alignScreenElements(isOpening: true)
@@ -58,19 +67,19 @@ class ScreenBase : Node
 	func alignScreenElements(isOpening: Bool) {
 		guard let theParent = parent else {printerror("Pas de parent."); return}
 		if !containsAFlag(Flag1.dontAlignScreenElements) {
-			let ceiledScreenRatio = theParent.width.realPos / theParent.height.realPos
+            let screenRatio = getScreenRatio()
             var alignOpt = AlignOpt.setSecondaryToDefPos
             if !compactAlign {
                 alignOpt |= AlignOpt.respectRatio
             }
-            if (ceiledScreenRatio < landscapePortraitThreshold) {
+            if screenRatio < landscapePortraitThreshold {
 				alignOpt |= AlignOpt.vertically
 			}
 			if (isOpening) {
 				alignOpt |= AlignOpt.fixPos
 			}
 			
-			self.alignTheChildren(alignOpt: alignOpt, ratio: ceiledScreenRatio)
+			self.alignTheChildren(alignOpt: alignOpt, ratio: screenRatio)
 			
 			let scale = min(theParent.width.realPos / width.realPos,
 							theParent.height.realPos / height.realPos)

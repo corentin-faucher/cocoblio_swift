@@ -89,7 +89,6 @@ class TextFieldWrapper : Node {
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, flags: Int = 0, delegate: NSTextFieldDelegate? = nil)
     {
         self.placeHolder = placeHolder
-        printdebug("Placeholder \(placeHolder)")
         self.root = root
         super.init(refNode, x, y, width, height, flags: flags)
         textField = MyTextField()

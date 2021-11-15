@@ -24,7 +24,8 @@ protocol CoqMetalView : MTKView {
     var usableFrame: CGRect { get set }
     
     func setBackground(color: Vector4, isDark: Bool)
-    
+    /// Réaction de l'écran actif pour une touche du clavier (peut provenir de différents type d'events)
+    func keyAction(key: KeyboardKey)
     // Pour la détection du scrolling dans iOS...
     func addScrollingViewIfNeeded(with slidingMenu: SlidingMenu)
     func removeScrollingView()
@@ -33,6 +34,26 @@ protocol CoqMetalView : MTKView {
 //    #else
 //    var asAppleView: UIView { get }
 //    #endif
+}
+
+extension CoqMetalView {
+    func keyAction(key: KeyboardKey) {
+        // Enter et escape ont la priorité sur "keyResponder"
+        switch key.keycode {
+            case Keycode.escape: if let escapable = root.activeScreen as? Escapable {
+                escapable.escapeAction()
+                return
+            }
+            case Keycode.return_, Keycode.keypadEnter: if let enterable = root.activeScreen as? Enterable {
+                enterable.enterAction()
+                return
+            }
+            default: break
+        }
+        if let keyResponder = root.activeScreen as? KeyResponder {
+            keyResponder.keyDown(key: key)
+        }
+    }
 }
 
 /*

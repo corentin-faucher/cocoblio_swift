@@ -11,13 +11,13 @@ import Foundation
 #if os(OSX)
 import AppKit
 
-class MyTextView : NSTextView {
+class MyTextView : NSTextView, NSTextViewDelegate {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == NSEvent.EventType.keyDown,
-           (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == commandKey,
-           let char = event.characters
-        {
-            switch char {
+        if event.type == NSEvent.EventType.keyDown {
+            if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == Modifier.command,
+               let char = event.characters
+            {
+                switch char {
                 case "c":
                     if NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: self) {
                         return true
@@ -34,15 +34,40 @@ class MyTextView : NSTextView {
                     if NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: self) {
                         return true
                     }
+                case "z":
+                    if NSApp.sendAction(#selector(self.undo), to: nil, from: self) {
+                        return true
+                    }
                 default: break
+                }
+            } else if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue)
+                        == Modifier.commandShift {
+                if event.characters == "z", NSApp.sendAction(#selector(self.redo), to: nil, from: self) {
+                    return true
+                }
             }
-            
         }
         return super.performKeyEquivalent(with: event)
     }
-    private let commandKey = NSEvent.ModifierFlags.command.rawValue
+    
+    @objc func undo() {
+        self.undoManager?.undo()
+    }
+    @objc func redo() {
+        self.undoManager?.redo()
+    }
+    func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
+        undoManager?.beginUndoGrouping()
+        return true
+    }
+    func textView(_ textView: NSTextView, shouldChangeTextInRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
+        undoManager?.beginUndoGrouping()
+        return true
+    }
+    override func didChangeText() {
+        undoManager?.endUndoGrouping()
+    }
 }
-
 
 fileprivate extension NSView {
     func setCorners() {
@@ -86,6 +111,8 @@ class TextViewWrapper : Node {
     private let refHtml: String?
     private let imageName: String?
     var imageRatio: CGFloat = 0.5
+    var imageRight: Bool = false
+    var textRatio: CGFloat
     #if os(OSX)
     private let scrollView: NSScrollView?
     private weak var imageView: NSImageView?
@@ -93,7 +120,6 @@ class TextViewWrapper : Node {
     private weak var imageView: UIImageView?
     #endif
     private unowned let root: AppRootBase
-    private var textRatio: CGFloat
     
     var string: String {
         set {
@@ -122,7 +148,9 @@ class TextViewWrapper : Node {
             textView = MyTextView()
             textView.setCorners()
         }
+        textView.allowsUndo = true
         textView.textContainerInset = NSSize(width: 10, height: 10)
+        textView.delegate = textView
         if Language.currentIsRightToLeft {
             textView.alignment = .right
         } else {
@@ -136,79 +164,66 @@ class TextViewWrapper : Node {
             textView.textAlignment = .left
         }
         #endif
-        
-        self.fontname = font
-        self.textRatio = textHeightRatio
-        self.root = root
-        self.refHtml = asHtml ? string : nil
-        self.imageName = imageName
-        super.init(refNode, x, y, width, height)
         if let string = string {
             textView.string = string // Référence pour resizing...
         }
         textView.isEditable = editable
-        
         textView.isSelectable = true
+        // Html ?
+        if asHtml, let file_name = string {
+            refHtml = String(localizedHtml: file_name)
+        } else {
+            refHtml = nil
+        }
+        self.fontname = font
+        self.textRatio = textHeightRatio
+        self.root = root
+        self.imageName = imageName
+        super.init(refNode, x, y, width, height)        
         // Cas particulier, il faut être visité lors d'un reshape (dépend de taille absolue).
         addRootFlag(Flag1.reshapableRoot)
-        
-//        if let string = string, let link = linkSubString, !editable {
-//            let attrStr = NSMutableAttributedString(string: string)
-//            let nsstring = NSString(string: string)
-//            let range = nsstring.range(of: link)
-//            guard range.location != NSNotFound else {
-//                printwarning("link \(link) not in textview string.")
-//                return
-//            }
-//            let url = URL(string: link)!
-//
-//            attrStr.setAttributes([.link: url], range: range)
-//
-//            textView.textStorage?.setAttributedString(attrStr)
-//            textView.linkTextAttributes = [
-//                .foregroundColor: NSColor.blue,
-//                .underlineStyle: NSUnderlineStyle.single.rawValue
-//            ]
-//        }
     }
     required init(other: Node) {
         fatalError("init(other:) has not been implemented")
     }
     
-    /// Ne fait que changer la variable textRation, faire une "reshape" pour mettre à jour le textview.
-    func changeTextRatio(_ newTextRatio: CGFloat) {
-        textRatio = newTextRatio
-    }
-    
     private func updateText(frame: CGRect) {
         let systSize = FontManager.getSystemFontSize()
-        let textSize = min(max(frame.height * textRatio, systSize), 2.5*systSize)
-        let imageWidth = frame.width * imageRatio
+        let textSize = min(max(min(frame.height * textRatio, frame.width * textRatio), systSize), 2.5*systSize)
         // 0. Placer l'image...
         if let imageName = imageName
         {
+            #if os(OSX)
             // Cas déjà une image de créée
-            if let imageView = imageView, let image = imageView.image {
-                let size = NSSize(width: imageWidth, height: image.size.height * imageWidth / image.size.width)
-                let rect = NSRect(origin: CGPoint(x: 10, y: 10), size: size)
-                imageView.frame = rect
-                image.size = size
-                let imagePath = NSBezierPath(rect: rect)
-                textView.textContainer?.exclusionPaths = [imagePath]
+            if imageView != nil {
+                updateImageView(frame: frame)
             }
             // Cas image non init
             else if let url = Bundle.main.url(forResource: imageName, withExtension: "png", subdirectory: "pngs"),
                let image = NSImage(contentsOf: url)
             {
-                image.size = NSSize(width: imageWidth, height: image.size.height * imageWidth / image.size.width)
-                let rect = NSRect(origin: CGPoint(x: 10, y: 10), size: image.size)
-                let imagePath = NSBezierPath(rect: rect)
-                textView.textContainer?.exclusionPaths = [imagePath]
-                let newImageView = NSImageView(frame: rect)
+                let newImageView = NSImageView()
                 newImageView.image = image
                 textView.addSubview(newImageView)
                 self.imageView = newImageView
+                updateImageView(frame: frame)
             }
+            #else
+            // Cas déjà une image de créée
+            if imageView != nil {
+                updateImageView(frame: frame)
+            }
+            // Cas image non init
+            else if let url = Bundle.main.url(forResource: imageName, withExtension: "png", subdirectory: "pngs"),
+                    let image = UIImage(contentsOfFile: url.path)
+            {
+                let newImageView = UIImageView()
+                newImageView.image = image
+                textView.addSubview(newImageView)
+                self.imageView = newImageView
+                updateImageView(frame: frame)
+            }
+            #endif
         }
         // 1. Cas string ordinaire (pas html), juste mettre à jour le font.
         guard let textAttrStr = refHtml?.fromHtmlToAttributedString(size: textSize) else {
@@ -220,14 +235,52 @@ class TextViewWrapper : Node {
             }
             return
         }
+        #if os(OSX)
         textView.textStorage?.setAttributedString(textAttrStr)
+        textView.textColor = .textColor
+        #else
+        textView.textStorage.setAttributedString(textAttrStr)
+        textView.textColor = nil
+        #endif
+    }
+    
+    private func updateImageView(frame: CGRect)
+    {
+        guard let imageView = imageView, let image = imageView.image else {
+            printerror("No image or imageView...")
+            return
+        }
+        let imageWidth = frame.width * imageRatio
+        let imageHeight = image.size.height * imageWidth / image.size.width
+        #if os(OSX)
+        let pathRect = NSRect(x: imageRight ? frame.width - 50 - imageWidth : 10,
+                              y: 10,
+                              width: imageRight ? imageWidth + 40 : imageWidth + 10,
+                              height: imageHeight + 10)
+        let imageRect = NSRect(x: imageRight ? frame.width - 20 - imageWidth : 20,
+                               y: 20, width: imageWidth, height: imageHeight)
+        let imagePath = NSBezierPath(rect: pathRect)
+        textView.textContainer?.exclusionPaths = [imagePath]
+        imageView.frame = imageRect
+        image.size = NSSize(width: imageWidth, height: imageHeight)
+        #else
+        let pathRect = CGRect(x: imageRight ? frame.width - 50 - imageWidth : 10,
+                              y: 10,
+                              width: imageRight ? imageWidth + 40 : imageWidth + 10,
+                              height: imageHeight + 10)
+        let imageRect = CGRect(x: imageRight ? frame.width - 20 - imageWidth : 20,
+                               y: 20, width: imageWidth, height: imageHeight)
+        let imagePath = UIBezierPath(rect: pathRect)
+        textView.textContainer.exclusionPaths = [imagePath]
+        imageView.frame = imageRect
+//        image.size = CGSize(width: imageWidth, height: imageHeight)
+        #endif
     }
     
     override func open() {
         super.open()
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        updateText(frame: frame)
         #if os(OSX)
         if let scrollView = scrollView {
             root.metalView.addSubview(scrollView)
@@ -240,6 +293,7 @@ class TextViewWrapper : Node {
         root.metalView.addSubview(textView)
         textView.frame = frame
         #endif
+        updateText(frame: frame)
     }
     override func close() {
         super.close()
@@ -257,7 +311,6 @@ class TextViewWrapper : Node {
     override func reshape() {
         let (pos, delta) = getAbsPosAndDelta()
         let frame = root.getFrameFrom(pos, deltas: delta)
-        updateText(frame: frame)
         #if os(OSX)
         if let scrollView = scrollView {
             scrollView.frame = frame
@@ -267,6 +320,7 @@ class TextViewWrapper : Node {
         #else
         textView.frame = frame
         #endif
+        updateText(frame: frame)
     }
 }
 

@@ -114,7 +114,7 @@ enum Language : LanguageInfo, CaseIterable {
             if current.rawValue.bcp_47.contains(bcp_tmp) {
                 currentBCP_47 = bcp_tmp
             } else {
-                printwarning("No bcp-47 for locale \(Locale.current.identifier): no \(bcp_tmp) in \(current.rawValue.bcp_47).")
+//                printwarning("No bcp-47 for locale \(Locale.current.identifier): no \(bcp_tmp) in \(current.rawValue.bcp_47).")
                 currentBCP_47 = current.rawValue.bcp_47[0]
             }
 			
@@ -159,6 +159,11 @@ enum Language : LanguageInfo, CaseIterable {
 				langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
 			}
 			if let language = Language(iso: langISO) {
+                #warning("3.10 : vietnamien à ajouter. Pour l'instant, on l'évite.")
+                if language == .vietnamese {
+                    printwarning("Vietnamese not allowed.")
+                    return defaultLanguage
+                }                
 				return language
 			}
 		}
@@ -193,6 +198,30 @@ enum Language : LanguageInfo, CaseIterable {
 
 /** Extension pour les surfaces de string localisées. */
 extension String {
+    init?(localizedHtml file_name: String)
+    {
+        // 1. Essaie avec langue courant
+        if let url = Language.currentBundle.url(forResource: file_name, withExtension: "html") {
+            do {
+                try self.init(contentsOf: url)
+                return
+            } catch {
+                printerror("Could not open html at \(url)")
+            }
+        }
+        // 2. Réessaie avec langue par defaut
+        guard let url = Language.englishBundle.url(forResource: file_name, withExtension: "html") else {
+            printerror("No default html for \(file_name)")
+            return nil
+        }
+        do {
+            try self.init(contentsOf: url)
+        } catch {
+            printerror("Could not open html at \(url)")
+            return nil
+        }
+    }    
+    
     var localized: String {
         let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
         if locStr != "⁉️" {

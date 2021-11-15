@@ -33,6 +33,7 @@ protocol SmoothDimension {
     mutating func fadeOut(delta: Float?)
 }
 
+/// Default implementation des convenience de set
 extension SmoothDimension {
     mutating func setRelToDef(shift: Float, fix: Bool) {
         set(defPos + shift, fix, false)
