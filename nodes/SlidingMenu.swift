@@ -34,6 +34,7 @@ class SlidingMenu : Node, Scrollable { // Openable
     private var menuGrabPosY: Float? = nil
     private var menu: Node!         // Le menu qui "glisse" sur le noeud racine.
 	private var scrollBar: SlidingMenuScrollBar!
+    private var back: Frame!
     private var vitY = SmoothPos(0, 4) // La vitesse lors du "fling"
 	private var vitYm1: Float = 0   // vitesse au temps précédent
     private var deltaT = Chrono()   // Pour la distance parcourue
@@ -56,6 +57,8 @@ class SlidingMenu : Node, Scrollable { // Openable
         makeSelectable()
         
 		let scrollBarWidth = max(width, height) * 0.025
+        back = Frame(self, framing: .inside, delta: scrollBarWidth, texture: Texture.getPng("sliding_menu_back"), flags: 0)
+        back.update(width: width, height: height, fix: true)
         menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20, flags: Flag1.selectableRoot)
         menu.tryToAddFrame()
 		scrollBar = SlidingMenuScrollBar(parent: self, width: scrollBarWidth)
@@ -160,7 +163,11 @@ class SlidingMenu : Node, Scrollable { // Openable
         deltaT.stop()
         
         // 1. Ajustement de la scroll bar
-        scrollBar.setNubHeightWithRelHeight(Float(nDisplayed) / max(1, Float(nItems)))
+        if scrollBar.setNubHeightWithRelHeight(Float(nDisplayed) / max(1, Float(nItems))) {
+            back.removeFlags(Flag1.hidden)
+        } else {
+            back.addFlags(Flag1.hidden)
+        }
         
         // 3. Normaliser les hauteurs pour avoir itemHeight
         let sq = Squirrel(at: menu)
@@ -304,11 +311,12 @@ fileprivate class SlidingMenuScrollBar : Node {
 		fatalError("init(other:) has not been implemented")
 	}
 	
-	func setNubHeightWithRelHeight(_ newRelHeight: Float) {
+    // Retourne false si hidden, true si affichy
+	func setNubHeightWithRelHeight(_ newRelHeight: Float) -> Bool {
 		guard newRelHeight < 1, newRelHeight > 0 else {
 			addFlags(Flag1.hidden)
 			closeBranch()
-			return
+			return false
 		}
 		removeFlags(Flag1.hidden)
 		let w = width.realPos
@@ -319,6 +327,7 @@ fileprivate class SlidingMenuScrollBar : Node {
 		nubTop.y.set((heightMid + w)/2)
 		nubBot.y.set(-(heightMid + w)/2)
 		nubMid.height.set(heightMid)
+        return true
 	}
 	
 	func setNubRelY(_ newRelY: Float) {

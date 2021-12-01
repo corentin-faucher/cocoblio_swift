@@ -159,7 +159,7 @@ enum Language : LanguageInfo, CaseIterable {
 				langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
 			}
 			if let language = Language(iso: langISO) {
-                #warning("3.10 : vietnamien à ajouter. Pour l'instant, on l'évite.")
+                #warning("3.11 : vietnamien à ajouter. Pour l'instant, on l'évite.")
                 if language == .vietnamese {
                     printwarning("Vietnamese not allowed.")
                     return defaultLanguage

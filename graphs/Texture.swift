@@ -208,6 +208,7 @@ class Texture {
         "test_frame" : (m: 1, n: 1),
         "scroll_bar_back" : (m: 1, n: 3),
         "scroll_bar_front" : (m: 1, n: 3),
+        "sliding_menu_back" : (m: 1, n: 1),
         "switch_back" : (m: 1, n: 1),
         "switch_front" : (m: 1, n: 1),
         "the_cat" : (m: 1, n: 1),

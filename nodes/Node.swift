@@ -163,6 +163,33 @@ class Node : CopyableNode {
             }
         }
     }
+    /** Création d'un node child/bro. version plus complète. Avec z. (z est superflu dans 99% des cas) */
+    init(_ refNode: Node?,
+         _ x: Float, _ y: Float, _ z: Float, width: Float, height: Float,
+         lambda: Float, flags: Int,
+         asParent: Bool = true, asElderBigbro: Bool = false)
+    {
+        id = Node.nodeCounter
+        Node.nodeCounter &+= 1
+        // 1. Données de base
+        self.flags = flags
+        self.x = SmoothPos(x, lambda)
+        self.y = SmoothPos(y, lambda)
+        self.z = SmoothPos(z, lambda)
+        self.width = SmoothPos(width, lambda)
+        self.height = SmoothPos(height, lambda)
+        scaleX = SmoothPos(1, lambda)
+        scaleY = SmoothPos(1, lambda)
+        piu = Renderer.PerInstanceUniforms()
+        // 2. Ajustement des références
+        if let theRef = refNode {
+            if (asParent) {
+                connectToParent(theRef, asElder: asElderBigbro)
+            } else {
+                connectToBro(theRef, asBigbro: asElderBigbro)
+            }
+        }
+    }
     /** Constructeur de copie. */
     required init(other: Node) {
         // 1. Données de base (SmPos et PerInst. sont des struct)

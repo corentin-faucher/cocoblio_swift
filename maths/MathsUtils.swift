@@ -201,6 +201,12 @@ extension Float {
     }
 }
 
+extension Int {
+    func containsFlag(_ flag: Int) -> Bool {
+        return (self & flag) != 0
+    }
+}
+
 extension UInt32 {
     func getHighestDecimal() -> Int {
         let highestDecimal = UInt32.pow2numberOfDigit[(self != 0) ? 31 - self.leadingZeroBitCount : 0]

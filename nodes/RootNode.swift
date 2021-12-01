@@ -200,8 +200,7 @@ class Camera: Node {
         x_center = SmoothPos(0, lambda)
         y_center = SmoothPos(0, lambda)
         z_center = SmoothPos(0, lambda)
-        super.init(nil, x, y, 1, 1, lambda: lambda)
-        self.z.set(z)
+        super.init(nil, x, y, z, width: 1, height: 1, lambda: lambda, flags: 0)
     }
     required init(other: Node) {
         fatalError("init(other:) has not been implemented")
