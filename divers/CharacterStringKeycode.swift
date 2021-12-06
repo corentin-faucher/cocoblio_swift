@@ -63,8 +63,19 @@ extension String {
     {
         let strWithFont = String(format:
         """
-        <span style=\"font-family: '-apple-system', 'HelveticaNeue'; font-size: \(size); text-align: justify\">
-        %@</span>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="author" content="Corentin Faucher">
+            <!-- <title>Titre</title> -->
+            <!-- <style> p {    line-height: 1.5; }</style> -->
+        </head>
+        <body style="font-family: '-apple-system', 'HelveticaNeue'; font-size: \(size)pt;
+            text-align: justify; line-height:1.7">
+            %@
+        </body>
+        </html>
         """, self)
         guard let data = strWithFont.data(using: .utf8) else {
             printerror("Cannot convert string to data.")

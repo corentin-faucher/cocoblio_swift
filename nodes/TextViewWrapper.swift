@@ -78,6 +78,14 @@ fileprivate extension NSView {
 #else
 import UIKit
 
+extension UIColor {
+    static var myTextColor: UIColor {
+        return UIColor { (traits) -> UIColor in
+            return traits.userInterfaceStyle == .dark ? .lightText : .darkText
+        }
+    }
+}
+
 class MyTextView : UITextView {
     init() {
         super.init(frame: CGRect(), textContainer: nil)
@@ -149,7 +157,7 @@ class TextViewWrapper : Node {
             textView.setCorners()
         }
         textView.allowsUndo = true
-        textView.textContainerInset = NSSize(width: 10, height: 10)
+        textView.textContainerInset = NSSize(width: 20, height: 20)
         textView.delegate = textView
         if Language.currentIsRightToLeft {
             textView.alignment = .right
@@ -158,6 +166,11 @@ class TextViewWrapper : Node {
         }
         #else
         textView = MyTextView()
+        if BuildConfig.phone {
+            textView.textContainerInset = UIEdgeInsets(top: 20, left: 7, bottom: 20, right: 7)
+        } else {
+            textView.textContainerInset = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+        }
         if Language.currentIsRightToLeft {
             textView.textAlignment = .right
         } else {
@@ -240,7 +253,7 @@ class TextViewWrapper : Node {
         textView.textColor = .textColor
         #else
         textView.textStorage.setAttributedString(textAttrStr)
-        textView.textColor = nil
+        textView.textColor = .myTextColor
         #endif
     }
     
