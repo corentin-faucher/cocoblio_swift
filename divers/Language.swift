@@ -103,7 +103,9 @@ enum Language : LanguageInfo, CaseIterable {
 	
 	/*-- Static --*/
     static let defaultLanguage = english
-	/// Langue actuel et son setter.
+    /** Action supplémentaire lors du chagement de langue. */
+    static var changeLanguageAction: (()->Void)? = nil
+    /// Langue actuel et son setter.
 	static var current: Language = getSystemLanguage() {
 		didSet {
 			guard current != oldValue else {return}
@@ -125,6 +127,7 @@ enum Language : LanguageInfo, CaseIterable {
 			currentBundle = bundle
 			// ** Après avoir setter le bundle de la langue courante... **
 			Texture.updateAllLocStrings()
+            changeLanguageAction?()
 		}
 	}
 	/*-- Getter "helpers" pour current language --*/
@@ -223,7 +226,9 @@ extension String {
     }    
     
     var localized: String {
-        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
+        // ("Localizable" est la "table" utilisée par défaut...)
+        let locStr = Language.currentBundle.localizedString(forKey: self, value: "⁉️", table: nil)
+//        let locStr = NSLocalizedString(self, tableName: nil, bundle: Language.currentBundle, value: "⁉️", comment: "")
         if locStr != "⁉️" {
             return locStr
 		}

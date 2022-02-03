@@ -61,6 +61,7 @@ extension NSMutableAttributedString {
 extension String {
     func fromHtmlToAttributedString(size: CGFloat) -> NSAttributedString?
     {
+        let size_pt = size * 0.75
         let strWithFont = String(format:
         """
         <!DOCTYPE html>
@@ -71,7 +72,7 @@ extension String {
             <!-- <title>Titre</title> -->
             <!-- <style> p {    line-height: 1.5; }</style> -->
         </head>
-        <body style="font-family: '-apple-system', 'HelveticaNeue'; font-size: \(size)pt;
+        <body style="font-family: '-apple-system', 'HelveticaNeue'; font-size: \(size_pt)pt;
             text-align: justify; line-height:1.7">
             %@
         </body>
