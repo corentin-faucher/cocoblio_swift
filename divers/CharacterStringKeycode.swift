@@ -111,6 +111,10 @@ extension String {
     func char(atIndex: Int) -> Character? {
         return substring(lowerIndex: atIndex, exHighIndex: atIndex+1)?.first
     }
+    func firstLetterCapitalized() -> String {
+        guard let first = self.first else { return self }
+        return String(first).capitalized + self.dropFirst()
+    }
 }
 
 protocol KeyboardKey {
