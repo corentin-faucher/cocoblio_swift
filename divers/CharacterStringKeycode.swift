@@ -115,6 +115,9 @@ extension String {
         guard let first = self.first else { return self }
         return String(first).capitalized + self.dropFirst()
     }
+    func isLessThan(_ other: String) -> Bool {
+        return self.localizedStandardCompare(other) == .orderedAscending
+    }
 }
 
 protocol KeyboardKey {
