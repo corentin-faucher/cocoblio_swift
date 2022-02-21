@@ -50,14 +50,17 @@ class MetalView: MTKView, CoqMetalView {
         printdebug("Init MetalView")
         device = MTLCreateSystemDefaultDevice()
         renderer = Renderer(metalView: self, withDepth: false)
-        renderer.initClearColor(rgb: Color.blue_azure)
+        renderer.initClearColor(rgb: Color.gray)
         delegate = renderer
         
         root = AppRootBase(view: self)
         Texture.pngNameToTiling.putIfAbsent(key: "tiles_sol", value: (8, 9))
-        TiledSurface(root, pngTex: Texture.defaultPng, 0, 0, 1, flags: Flag1.show)
+        let tile = Texture.getPng("tiles_sol")
+        TiledSurface(root, pngTex: Texture.testFrame, 0, 0, 1, flags: Flag1.show)
+//        TiledSurface(root, pngTex: tile, 0, 0, 1, i: 4, flags: Flag1.show)
         
-        Platforme(root, tex: Texture.getPng("tiles_sol"), n: 100, 0, 0, 5).also {
+        
+        Platforme(root, tex: tile, n: 20, 0, 0, 2).also {
             $0.openAndShowBranch()
         }
     }

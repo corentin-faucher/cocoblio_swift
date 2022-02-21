@@ -161,14 +161,7 @@ class AppRootBase : RootNode {
 			return
 		}
 		// 1. Fermer l'écran actif (déconnecter si evanescent)
-		if let lastScreen = activeScreen {
-			lastScreen.closeBranch()
-			if !lastScreen.containsAFlag(Flag1.persistentScreen) {
-				Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
-					lastScreen.disconnect()
-				}
-			}
-		}
+		closeActiveScreen()
 		// 2. Si null -> fermeture de l'app.
 		guard let theNewScreen = newScreen else {
 			#if os(OSX)
@@ -182,10 +175,38 @@ class AppRootBase : RootNode {
 			return
 		}
 		// 3. Ouverture du nouvel écran.
-		activeScreen = theNewScreen
-		theNewScreen.openAndShowBranch()
-		changeScreenAction?.self()
+        setActiveScreen(theNewScreen)
 	}
+    
+    final func changeActiveScreenBG(_ screenType: ScreenBase.Type) {
+        // 1. Fermer l'écran actif (déconnecter si evanescent)
+        closeActiveScreen()
+        // 3. Ouverture du nouvel écran.
+        DispatchQueue.global(qos: .background).async { [self] in
+            let newScreen = screenType.init(self)
+            DispatchQueue.main.async { [self] in
+                setActiveScreen(newScreen)
+            }
+        }
+    }
+    
+    final func closeActiveScreen() {
+        if let lastScreen = activeScreen {
+            lastScreen.closeBranch()
+            if !lastScreen.containsAFlag(Flag1.persistentScreen) {
+                Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
+                    lastScreen.disconnect()
+                }
+            }
+        }
+        activeScreen = nil
+    }
+    /// À utiliser après closeActiveScreen.
+    final func setActiveScreen(_ newScreen: ScreenBase) {
+        activeScreen = newScreen
+        newScreen.openAndShowBranch()
+        changeScreenAction?.self()
+    }
 }
 
 /** Une caméra pourrait faire partir de l'arborescence... Mais pour le moment c'est un noeud "à part"...*/

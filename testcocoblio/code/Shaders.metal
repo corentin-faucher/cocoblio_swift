@@ -51,8 +51,8 @@ vertex VertexOut vertex_function(const device VertexIn       *vertices [[buffer(
     VertexIn in = vertices[vid];
     VertexOut out;
     out.color = piu.color;
-//    out.uv = in.uv;
-    out.uv = (in.uv * (ptu.sizes - ptu.dims) + piu.tile_ij * ptu.sizes) / (ptu.dims * (ptu.sizes - 1));
+    out.uv = (in.uv + piu.tile_ij) / ptu.dims; // - float2(1,1) / ptu.sizes;
+  //  out.uv = (in.uv * (ptu.sizes - ptu.dims) + piu.tile_ij * ptu.sizes) / (ptu.dims * (ptu.sizes - 1));
     out.position =
      pfu.projection *
     piu.model *

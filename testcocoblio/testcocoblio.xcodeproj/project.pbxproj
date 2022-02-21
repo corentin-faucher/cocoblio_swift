@@ -9,12 +9,13 @@
 /* Begin PBXBuildFile section */
 		83074ACF23EB048800D35712 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 83074ACC23EB048800D35712 /* Shaders.metal */; };
 		83074AD023EB048800D35712 /* TestMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83074ACD23EB048800D35712 /* TestMetalView.swift */; };
+		831B472B27BFF9FA00069DA7 /* CharacterStringKeycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831B472A27BFF9FA00069DA7 /* CharacterStringKeycode.swift */; };
+		831B472D27C008CE00069DA7 /* Mesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831B472C27C008CE00069DA7 /* Mesh.swift */; };
 		8342A2042571D39200ED9776 /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342A2032571D39200ED9776 /* Sound.swift */; };
 		8342A2072571D3E800ED9776 /* BuildConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342A2062571D3E800ED9776 /* BuildConfig.swift */; };
 		83538402271DAE0A0028763B /* Particule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83538401271DAE0A0028763B /* Particule.swift */; };
 		835938A323E1D63D0085CD16 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 835938A223E1D63D0085CD16 /* Assets.xcassets */; };
 		835938A623E1D63D0085CD16 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 835938A423E1D63D0085CD16 /* MainMenu.xib */; };
-		8360C36D26E1185B00D89A0E /* Mesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C35226E1185B00D89A0E /* Mesh.swift */; };
 		8360C36E26E1185B00D89A0E /* MyFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C35326E1185B00D89A0E /* MyFonts.swift */; };
 		8360C36F26E1185B00D89A0E /* CoqMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C35426E1185B00D89A0E /* CoqMetalView.swift */; };
 		8360C37026E1185B00D89A0E /* Texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C35526E1185B00D89A0E /* Texture.swift */; };
@@ -43,7 +44,6 @@
 		8360C38F26E118AF00D89A0E /* FileManagerHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38826E118AF00D89A0E /* FileManagerHelpers.swift */; };
 		8360C39026E118AF00D89A0E /* swiftHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38926E118AF00D89A0E /* swiftHelpers.swift */; };
 		8360C39126E118AF00D89A0E /* Chronometers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38A26E118AF00D89A0E /* Chronometers.swift */; };
-		8360C39226E118AF00D89A0E /* KeyboardStuff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38B26E118AF00D89A0E /* KeyboardStuff.swift */; };
 		8360C39326E118AF00D89A0E /* ArrayAndData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38C26E118AF00D89A0E /* ArrayAndData.swift */; };
 		8360C39426E118AF00D89A0E /* AppDelegateMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */; };
 		8360C39B26E1403100D89A0E /* iCloudDriveManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */; };
@@ -55,6 +55,8 @@
 /* Begin PBXFileReference section */
 		83074ACC23EB048800D35712 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		83074ACD23EB048800D35712 /* TestMetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMetalView.swift; sourceTree = "<group>"; };
+		831B472A27BFF9FA00069DA7 /* CharacterStringKeycode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterStringKeycode.swift; sourceTree = "<group>"; };
+		831B472C27C008CE00069DA7 /* Mesh.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mesh.swift; sourceTree = "<group>"; };
 		8342A2032571D39200ED9776 /* Sound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sound.swift; sourceTree = "<group>"; };
 		8342A2062571D3E800ED9776 /* BuildConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildConfig.swift; sourceTree = "<group>"; };
 		83538401271DAE0A0028763B /* Particule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Particule.swift; sourceTree = "<group>"; };
@@ -63,7 +65,6 @@
 		835938A523E1D63D0085CD16 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		835938A723E1D63D0085CD16 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		835938A823E1D63D0085CD16 /* testcocoblio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = testcocoblio.entitlements; sourceTree = "<group>"; };
-		8360C35226E1185B00D89A0E /* Mesh.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mesh.swift; sourceTree = "<group>"; };
 		8360C35326E1185B00D89A0E /* MyFonts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyFonts.swift; sourceTree = "<group>"; };
 		8360C35426E1185B00D89A0E /* CoqMetalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoqMetalView.swift; sourceTree = "<group>"; };
 		8360C35526E1185B00D89A0E /* Texture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Texture.swift; sourceTree = "<group>"; };
@@ -92,7 +93,6 @@
 		8360C38826E118AF00D89A0E /* FileManagerHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileManagerHelpers.swift; sourceTree = "<group>"; };
 		8360C38926E118AF00D89A0E /* swiftHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = swiftHelpers.swift; sourceTree = "<group>"; };
 		8360C38A26E118AF00D89A0E /* Chronometers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Chronometers.swift; sourceTree = "<group>"; };
-		8360C38B26E118AF00D89A0E /* KeyboardStuff.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardStuff.swift; sourceTree = "<group>"; };
 		8360C38C26E118AF00D89A0E /* ArrayAndData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArrayAndData.swift; sourceTree = "<group>"; };
 		8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegateMacOS.swift; sourceTree = "<group>"; };
 		8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iCloudDriveManager.swift; sourceTree = "<group>"; };
@@ -168,7 +168,7 @@
 		8360C35126E1185B00D89A0E /* graphs */ = {
 			isa = PBXGroup;
 			children = (
-				8360C35226E1185B00D89A0E /* Mesh.swift */,
+				831B472C27C008CE00069DA7 /* Mesh.swift */,
 				8360C35326E1185B00D89A0E /* MyFonts.swift */,
 				8360C35426E1185B00D89A0E /* CoqMetalView.swift */,
 				8360C35526E1185B00D89A0E /* Texture.swift */,
@@ -217,13 +217,13 @@
 		8360C38626E118AF00D89A0E /* divers */ = {
 			isa = PBXGroup;
 			children = (
+				831B472A27BFF9FA00069DA7 /* CharacterStringKeycode.swift */,
 				839FAD24271C921500B6B549 /* Color.swift */,
 				8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */,
 				8360C38726E118AF00D89A0E /* Language.swift */,
 				8360C38826E118AF00D89A0E /* FileManagerHelpers.swift */,
 				8360C38926E118AF00D89A0E /* swiftHelpers.swift */,
 				8360C38A26E118AF00D89A0E /* Chronometers.swift */,
-				8360C38B26E118AF00D89A0E /* KeyboardStuff.swift */,
 				8360C38C26E118AF00D89A0E /* ArrayAndData.swift */,
 				8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */,
 			);
@@ -340,9 +340,9 @@
 				8360C38F26E118AF00D89A0E /* FileManagerHelpers.swift in Sources */,
 				8360C38326E1185B00D89A0E /* Button.swift in Sources */,
 				8360C38126E1185B00D89A0E /* TextViewWrapper.swift in Sources */,
+				831B472D27C008CE00069DA7 /* Mesh.swift in Sources */,
 				8360C37A26E1185B00D89A0E /* Flag1.swift in Sources */,
 				8360C38E26E118AF00D89A0E /* Language.swift in Sources */,
-				8360C39226E118AF00D89A0E /* KeyboardStuff.swift in Sources */,
 				83538402271DAE0A0028763B /* Particule.swift in Sources */,
 				8360C37226E1185B00D89A0E /* SmoothDimension.swift in Sources */,
 				8360C37F26E1185B00D89A0E /* TextFieldWrapper.swift in Sources */,
@@ -350,8 +350,8 @@
 				8360C37326E1185B00D89A0E /* InterpolatedAngle.swift in Sources */,
 				8360C37526E1185B00D89A0E /* SmoothFlag.swift in Sources */,
 				8360C37D26E1185B00D89A0E /* Frame.swift in Sources */,
+				831B472B27BFF9FA00069DA7 /* CharacterStringKeycode.swift in Sources */,
 				8360C37826E1185B00D89A0E /* SquirrelJob.swift in Sources */,
-				8360C36D26E1185B00D89A0E /* Mesh.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
