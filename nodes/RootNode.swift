@@ -154,7 +154,7 @@ class AppRootBase : RootNode {
         // (pass)
 	}
 	
-	final func changeActiveScreen(newScreen: ScreenBase?) {
+    final func changeActiveScreenTo(_ newScreen: ScreenBase?) {
 		// 0. Cas réouverture
 		if activeScreen === newScreen {
 			newScreen?.openAndShowBranch()
@@ -178,19 +178,15 @@ class AppRootBase : RootNode {
         setActiveScreen(theNewScreen)
 	}
     
-    final func changeActiveScreenBG(_ screenType: ScreenBase.Type) {
+    final func changeActiveScreenToNewType(_ screenType: ScreenBase.Type) {
         // 1. Fermer l'écran actif (déconnecter si evanescent)
         closeActiveScreen()
         // 3. Ouverture du nouvel écran.
-        DispatchQueue.global(qos: .background).async { [self] in
-            let newScreen = screenType.init(self)
-            DispatchQueue.main.async { [self] in
-                setActiveScreen(newScreen)
-            }
-        }
+        let newScreen = screenType.init(self)
+        setActiveScreen(newScreen)
     }
     
-    final func closeActiveScreen() {
+    private final func closeActiveScreen() {
         if let lastScreen = activeScreen {
             lastScreen.closeBranch()
             if !lastScreen.containsAFlag(Flag1.persistentScreen) {
@@ -202,7 +198,7 @@ class AppRootBase : RootNode {
         activeScreen = nil
     }
     /// À utiliser après closeActiveScreen.
-    final func setActiveScreen(_ newScreen: ScreenBase) {
+    private final func setActiveScreen(_ newScreen: ScreenBase) {
         activeScreen = newScreen
         newScreen.openAndShowBranch()
         changeScreenAction?.self()

@@ -191,8 +191,6 @@ extension Renderer: MTKViewDelegate {
             }
         }
 		#endif
-        var timer = RealChrono()
-        timer.start()
         currentMesh = nil
         currentTexture = nil
         
@@ -204,8 +202,6 @@ extension Renderer: MTKViewDelegate {
         root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
         // 3. Action du game engine avant l'affichage.
         root.willDrawFrame()
-        
-        var str = "root prepa : \(timer.elapsedMS)"
         // 4. Mise à jour de la couleur de fond.
         view.clearColor = MTLClearColorMake(Double(smR.pos), Double(smG.pos), Double(smB.pos), 1)
 		
@@ -241,11 +237,6 @@ extension Renderer: MTKViewDelegate {
         if GlobalChrono.shouldSleep, metalView.canPauseWhenResignActive {
             view.isPaused = true
         }
-        str += ", draw : \(timer.elapsedMS)."
-        if timer.elapsedMS > 10 {
-//            printwarning(str)
-        }
-//        printdebug("global \(GlobalChrono.elapsedSec), real \(Float(RealTime.elapsedMS)/1000)")
 	}
 	
 }

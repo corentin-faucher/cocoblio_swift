@@ -208,6 +208,40 @@ struct RealChrono {
     private var time: Int64
 }
 
+/// Chrono pour debugging... (toujours actif)
+struct ChronoChecker {
+    init(_ name: String? = nil) {
+        time = RealTime.elapsedMS
+        count = 0
+        str = "🦤 \(name ?? "timer"): "
+    }
+    mutating func tic(_ message: String? = nil) {
+        count += 1
+        str += "\(message ?? String(count)) \(elapsedMS), "
+    }
+    mutating func print() {
+        str += "ended \(elapsedMS)."
+        Swift.print(str)
+    }
+    /// Le temps écoulé depuis "start()" en millisec.
+    var elapsedMS: Int64 {
+        return RealTime.elapsedMS - time
+    }
+    var elapsedMS32: Int32 {
+        return Int32(elapsedMS)
+    }
+    /// Le temps écoulé depuis "start()" en secondes.
+    var elapsedSec: Float {
+        return Float(elapsedMS) / 1000
+    }
+    
+    // Membres privés
+    /// isActive: startTime, notActive: elapsedTime
+    private var time: Int64
+    private var str: String
+    private var count: Int
+}
+
 
 struct CountDown {
     private(set) var isActive: Bool

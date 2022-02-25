@@ -78,7 +78,7 @@ class Texture {
     }
     
 	deinit {
-//		printdebug("Remove texture \(string)")
+//		printdebug("Remove texture \(name)")
 	}
 	
     private func drawAsString() {
@@ -133,68 +133,114 @@ class Texture {
         let extraWidth: CGFloat = 0.55 * fontinfo.size_x * font.xHeight
         let contextHeight: CGFloat = 2.00 * fontinfo.size_y * font.xHeight
         let contextWidth =  ceil(strSizes.width) + extraWidth
-        
-        scaleY = Float(1 / fontinfo.size_y)
+        // On met tout de suite à jour les dimensions
+        scaleY = Float(1 / fontinfo.size_y)  // (overlapping)
         scaleX = Float(strSizes.width / contextWidth)
+        setDims(Int(contextWidth), Int(contextHeight))
+        switch name.count {
+            case 0...1:
+                mtlTexture = Texture.tempStringTextures[safe: 0]?.mtlTexture
+            case 2...3:
+                mtlTexture = Texture.tempStringTextures[safe: 1]?.mtlTexture
+            case 4...8:
+                mtlTexture = Texture.tempStringTextures[safe: 2]?.mtlTexture
+            default:
+                mtlTexture = Texture.tempStringTextures[safe: 3]?.mtlTexture
+        }
         
-		// 6. Création d'un context CoreGraphics
-		let colorSpace = CGColorSpaceCreateDeviceRGB()
-		guard let context = CGContext(data: nil,
-									  width: Int(contextWidth), height: Int(contextHeight),
-									  bitsPerComponent: 8, bytesPerRow: 0,
-									  space: colorSpace,
-									  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-			else {
-				printerror("Ne peut charger le CGContext pour : \"\(name)\"."); return
-		}
-		// (lettres remplies avec le contour)
-		context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
-		
-		// 7. Dessiner la string dans le context
-		// (set context CoreGraphics dans context NSGraphics pour dessiner la NSString.)
-		#if os(OSX)
-		NSGraphicsContext.saveGraphicsState()
-		let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
-		NSGraphicsContext.current = nsgcontext
-		// Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
-        let ypos: CGFloat = 0.5 * contextHeight + (Texture.y_string_rel_shift - 0.5) * font.xHeight + font.descender
-        str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
-		NSGraphicsContext.restoreGraphicsState()
-		#else
-		UIGraphicsPushContext(context)
-		// Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
-		context.scaleBy(x: 1, y: -1)
-        let ypos: CGFloat = -strSizes.height - font.descender + (0.5 - Texture.y_string_rel_shift) * font.xHeight - 0.5 * contextHeight
-        str.draw(at: CGPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
-		UIGraphicsPopContext()
-		#endif
-		
-		// 8. Créer une image du context et en faire une texture.
-		let image = context.makeImage()
-		mtlTexture = try! Texture.textureLoader.newTexture(cgImage: image!, options: nil)
-		setDims()
+        // Création de la vrai texture dans la thread.
+        Texture.textureQueue.async { [self] in
+            // 6. Création d'un context CoreGraphics
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let context = CGContext(data: nil,
+                                          width: Int(contextWidth), height: Int(contextHeight),
+                                          bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: colorSpace,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+                else {
+                    printerror("Ne peut charger le CGContext pour : \"\(name)\".")
+                    return
+            }
+            // (lettres remplies avec le contour)
+            context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
+            
+            // 7. Dessiner la string dans le context
+            // (set context CoreGraphics dans context NSGraphics pour dessiner la NSString.)
+            #if os(OSX)
+            NSGraphicsContext.saveGraphicsState()
+            let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
+            NSGraphicsContext.current = nsgcontext
+            // Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
+            let ypos: CGFloat = 0.5 * contextHeight + (Texture.y_string_rel_shift - 0.5) * font.xHeight + font.descender
+            str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
+            NSGraphicsContext.restoreGraphicsState()
+            #else
+            UIGraphicsPushContext(context)
+            // Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
+            context.scaleBy(x: 1, y: -1)
+            let ypos: CGFloat = -strSizes.height - font.descender + (0.5 - Texture.y_string_rel_shift) * font.xHeight - 0.5 * contextHeight
+            str.draw(at: CGPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
+            UIGraphicsPopContext()
+            #endif
+            
+            // 8. Créer une image du context et en faire une texture.
+            let image = context.makeImage()
+            guard let newMtlTexture = try? Texture.textureLoader.newTexture(cgImage: image!, options: nil)
+            else {
+                printerror("cannot generate metal texture of \(name)")
+                return
+            }
+            DispatchQueue.main.async {
+                mtlTexture = newMtlTexture
+            }
+        }
 	}
 	private func drawAsPng() {
-		guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs") else {
-			printerror("Ne peut pas charger la surface \(name).")
-			drawAsString()
-			return
-		}
-		mtlTexture = try!
-			Texture.textureLoader.newTexture(URL: url,
-											 options: [MTKTextureLoader.Option.SRGB : false
-			])
-		setDims()
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs") else {
+            printerror("Ne peut pas charger la surface \(name).")
+            drawAsString()
+            return
+        }
+        // 1. Si pas de mini, dessiner tout de suite la texture au complet.
+        guard let mini = Texture.miniMtlTextureNamed[name] else {
+            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: url,
+                                             options:  [MTKTextureLoader.Option.SRGB : false])
+            else {
+                printerror("Cannot init mtltexture")
+                return
+            }
+            mtlTexture = newMtlTexture
+            setDims(newMtlTexture.width, newMtlTexture.height)
+            return
+        }
+        // 2. Si mini, mettre le mini et charger la vrai texture en arrière plan.
+        mtlTexture = mini
+        setDims(mini.width, mini.height)
+        Texture.textureQueue.async {
+            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: url,
+                                                                 options:  [MTKTextureLoader.Option.SRGB : false
+                                                                           ])
+            else {
+                printerror("Cannot init mtltexture")
+                return
+            }
+            DispatchQueue.main.async { [self] in
+                mtlTexture = newMtlTexture
+                setDims(newMtlTexture.width, newMtlTexture.height)
+            }
+        }
 	}
-	private func setDims() {
-		guard let mtlTex = mtlTexture else {printerror("MTLTexture non chargé."); return}
-		ptu.sizes = (Float(mtlTex.width), Float(mtlTex.height))
+    private func setDims(_ width: Int, _ height: Int) {
+		ptu.sizes = (Float(width), Float(height))
 		ratio = ptu.sizes.width / ptu.sizes.height * ptu.dim.n / ptu.dim.m
 	}
     
 	
 	/*-- Static fields --*/
     // Textures accessibles par défaut...
+    // ** Les variables globales/static en swift sont initialisées de façon "lazy".
+    // Donc, c'est correct ici. Il faut juste s'assurer que Texture.initWith est callé au début pour
+    // initialiser le MTKTextureLoader.
     static let y_string_rel_shift: CGFloat = -0.15
     static let justColor = Texture() // Cas pas besoin de texture. "justColor" est alors un "place holder" pour le tex d'une surface.
     static let defaultPng = Texture(name: "the_cat", type: .png, fontname: nil)
@@ -213,48 +259,108 @@ class Texture {
         "switch_front" : (m: 1, n: 1),
         "the_cat" : (m: 1, n: 1),
     ]
-	
-    // On garde une référence pour libérer l'espace et pour le resizing des strings.
-    private static var allStringTextures: [WeakElement<Texture>] = []
-    // On garde aussi les liste des constant et localized pour éviter les duplicats
-    private static var allConstantStringTextures: [String: WeakElement<Texture>] = [:]
-    private static var allLocalizedStringTextures: [String: WeakElement<Texture>] = [:]
-    // Pour les pngs la liste est pour le suspend/resume et éviter les duplicats.
-    private static var allPngTextures: [String: WeakElement<Texture>] = [:]
+    
+    
     
 	/*-- Static method --*/
+	/** Init du loader de png avec le gpu (device). */
+	static func initWith(device: MTLDevice, drawableSize: CGSize) {
+        FontManager.updateCurrentSize(with: drawableSize)
+		textureLoader = MTKTextureLoader(device: device)
+        tempStringTextures = [
+            Texture(name: "a", type: .constantString, fontname: nil),
+            Texture(name: "abc", type: .constantString, fontname: nil),
+            Texture(name: "lorem", type: .constantString, fontname: nil),
+            Texture(name: "Lorem ipsum", type: .constantString, fontname: nil),
+        ]
+        for (name, _) in pngNameToTiling {
+            tryToAddMiniTextureFor(name)
+        }
+		loaded = true
+	}
+    static private let textureQueue = DispatchQueue(label: "texture.queue")
+    private static var textureLoader: MTKTextureLoader!
+    static private(set) var loaded: Bool = false
+    /** La texture d'une string mutable n'est pas partagé.
+    * Pour une string non mutable (constant), on garde une weak reference pour éviter les duplicas. */
+    static func getConstantString(_ string: String, fontname: String? = nil) -> Texture {
+        if let we = allConstantStringTextures[string], let tex = we.value {
+            return tex
+        }
+        let newCstStr = Texture(name: string, type: .constantString, fontname: fontname)
+        allConstantStringTextures[string] = WeakElement(newCstStr)
+        allStringTextures.append(WeakElement(newCstStr))
+        temporyAddStrongRef(string, newCstStr)
+        return newCstStr
+    }
+    static func getNewMutableString(_ string: String = "", fontname: String? = nil) -> Texture {
+        let newMutStr = Texture(name: string, type: .mutableString, fontname: fontname)
+        allStringTextures.append(WeakElement(newMutStr))
+        return newMutStr
+    }
+    static func getLocalizedString(_ string: String, fontname: String? = nil) -> Texture {
+        if let we = allLocalizedStringTextures[string], let tex = we.value {
+            return tex
+        }
+        let newLocStr = Texture(name: string, type: .localizedString, fontname: fontname)
+        allLocalizedStringTextures[string] = WeakElement(newLocStr)
+        allStringTextures.append(WeakElement(newLocStr))
+        temporyAddStrongRef(string, newLocStr)
+        return newLocStr
+    }
+    static func getPng(_ pngName: String) -> Texture {
+        // 1. Cas déjà init.
+        if let we = allPngTextures[pngName], let tex = we.value {
+            return tex
+        }
+        let newPng = Texture(name: pngName, type: .png, fontname: nil)
+        allPngTextures[pngName] = WeakElement(newPng)
+        temporyAddStrongRef(pngName, newPng)
+        return newPng
+    }
+    static func tryToAddMiniTextureFor(_ name: String) {
+        guard miniMtlTextureNamed[name] == nil, let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs_mini")
+        else { return }
+        guard let miniTex = try? textureLoader.newTexture(URL: url,
+                                         options: [MTKTextureLoader.Option.SRGB : false])
+        else {
+            printerror("Cannot create texture \(name)")
+            return
+        }
+        miniMtlTextureNamed[name] = miniTex
+    }
     // Chargement et libération des textures (lors de pauses)
-	static func suspend() {
-		guard loaded else {printwarning("Textures already unloaded."); return}
-		loaded = false
-		allStringTextures.strip()
-		for weaktexture in allStringTextures {
-			if let texture = weaktexture.value {
-				texture.mtlTexture = nil
-			}
-		}
+    static func suspend() {
+        guard loaded else {printwarning("Textures already unloaded."); return}
+        loaded = false
+        allStringTextures.strip()
+        for weaktexture in allStringTextures {
+            if let texture = weaktexture.value {
+                texture.mtlTexture = nil
+            }
+        }
         allPngTextures.strip()
         for (_, weaktexture) in allPngTextures {
             if let texture = weaktexture.value {
                 texture.mtlTexture = nil
             }
         }
-	}
-	static func resume() {
-		guard !loaded else {printwarning("Textures already loaded."); return}
-		loaded = true
-		for weaktexture in allStringTextures {
-			if let texture = weaktexture.value {
-				texture.drawAsString()
-			}
-		}
+    }
+    static func resume() {
+        guard !loaded else {printwarning("Textures already loaded."); return}
+        loaded = true
+        for weaktexture in allStringTextures {
+            if let texture = weaktexture.value {
+                texture.drawAsString()
+            }
+        }
         for (_, weaktexture) in allPngTextures {
             if let texture = weaktexture.value {
                 texture.drawAsPng()
             }
         }
-	}
-    // Après changement ou redimension de font... 
+    }
+    // Après changement ou redimension de font...
     static func redrawAllStrings() {
         allStringTextures.strip()
         for weaktexture in allStringTextures {
@@ -273,51 +379,27 @@ class Texture {
         }
     }
     
-	/** La texture d'une string mutable n'est pas partagé.
-	* Pour une string non mutable (constant), on garde une weak reference pour éviter les duplicas. */
-    static func getConstantString(_ string: String, fontname: String? = nil) -> Texture {
-        if let we = allConstantStringTextures[string], let tex = we.value {
-            return tex
+    /*-- Private stuff...  --*/
+    private static func temporyAddStrongRef(_ name:String, _ tex: Texture) {
+        guard allTexturesStrong[name] == nil else { return }
+        allTexturesStrong[name] = tex
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+            allTexturesStrong.removeValue(forKey: name)
         }
-        let newCstStr = Texture(name: string, type: .constantString, fontname: fontname)
-        allConstantStringTextures[string] = WeakElement(newCstStr)
-        allStringTextures.append(WeakElement(newCstStr))
-        return newCstStr
     }
-    static func getNewMutableString(_ string: String = "", fontname: String? = nil) -> Texture {
-        let newMutStr = Texture(name: string, type: .mutableString, fontname: fontname)
-        allStringTextures.append(WeakElement(newMutStr))
-        return newMutStr
-    }
-    static func getLocalizedString(_ string: String, fontname: String? = nil) -> Texture {
-        if let we = allLocalizedStringTextures[string], let tex = we.value {
-            return tex
-        }
-        let newLocStr = Texture(name: string, type: .localizedString, fontname: fontname)
-        allLocalizedStringTextures[string] = WeakElement(newLocStr)
-        allStringTextures.append(WeakElement(newLocStr))
-        return newLocStr
-    }
-    
-    static func getPng(_ pngName: String) -> Texture {
-        // 1. Cas déjà init.
-        if let we = allPngTextures[pngName], let tex = we.value {
-            return tex
-        }
-        let newPng = Texture(name: pngName, type: .png, fontname: nil)
-        allPngTextures[pngName] = WeakElement(newPng)
-        return newPng
-    }
-    
-	/** Init du loader de png avec le gpu (device). */
-	static func initWith(device: MTLDevice, drawableSize: CGSize) {
-        FontManager.updateCurrentSize(with: drawableSize)
-		textureLoader = MTKTextureLoader(device: device)
-		loaded = true
-	}
-    
-    /** Texture loader de Metal. Doit être initialisé par le renderer avec la device (gpu). */
-    private static var textureLoader: MTKTextureLoader!
-	static private(set) var loaded: Bool = false
+    // Les str temporaire en attendant que la vrai string soit créée.
+    private static var tempStringTextures: [Texture] = []
+    // Les "minis" en attendant que la vrai texture soit chargé.
+    private static var miniMtlTextureNamed: [String: MTLTexture] = [:]
+    // Liste strong de toutes les textures. Pour éviter les efface/création à répétition.
+    // pas sûr que c'est une bonne solution...
+    private static var allTexturesStrong: [String: Texture] = [:]
+    // On garde une référence pour libérer l'espace et pour le resizing des strings.
+    private static var allStringTextures: [WeakElement<Texture>] = []
+    // On garde aussi les liste des constant et localized pour éviter les duplicats
+    private static var allConstantStringTextures: [String: WeakElement<Texture>] = [:]
+    private static var allLocalizedStringTextures: [String: WeakElement<Texture>] = [:]
+    // Pour les pngs la liste est pour le suspend/resume et éviter les duplicats.
+    private static var allPngTextures: [String: WeakElement<Texture>] = [:]
 }
 
