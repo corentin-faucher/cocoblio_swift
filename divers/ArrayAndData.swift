@@ -86,7 +86,8 @@ extension Array {
 	}
 
 	
-	/** Divide an array into "chunck". Doesn't keep the remaining. */
+	/** Brise un array en "sous-arrays" (morceaux). On perd le restant de la division.
+    /-- Retourne un array de petits arrays. */
 	func chunked(by chunkSize: Int, showWarning: Bool = true) -> [[Element]] {
 		if showWarning, self.count % chunkSize != 0 {
 			printwarning("array.count not divisible by \(chunkSize).")

@@ -78,6 +78,14 @@ extension Optional {
 				return value
 		}
 	}
+    func toString(_ defaultValue: String = "∅") -> String {
+        switch self {
+            case .none:
+                return defaultValue
+            case .some(let value):
+                return "\(value)"
+        }
+    }
 }
 
 /*-- Array/Dictionnary of weak element (evanescent element) --*/

@@ -22,6 +22,9 @@ extension Character {
     func isAlphaNumeric() -> Bool {
         return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
     }
+//    func isLetter() -> Bool {
+//        return String(self).rangeOfCharacter(from: CharacterSet.letters)
+//    }
 }
 
 extension UInt32 {
