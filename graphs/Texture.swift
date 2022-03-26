@@ -348,7 +348,6 @@ class Texture {
     }
     static func resume() {
         guard !loaded else {printwarning("Textures already loaded."); return}
-        var tim = ChronoChecker("resume Textures")
         loaded = true
         for weaktexture in allStringTextures {
             if let texture = weaktexture.value {
@@ -360,7 +359,6 @@ class Texture {
                 texture.drawAsPng()
             }
         }
-        tim.print()
     }
     // Après changement ou redimension de font...
     static func redrawAllStrings() {

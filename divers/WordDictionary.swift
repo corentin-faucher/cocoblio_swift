@@ -15,12 +15,11 @@ enum WordDictionaryScanMethod {
 }
 
 protocol WordDictionaryDelegate : AnyObject {
-    func displayScan(wordsFound: [String], withRoman: Bool)
+    func displayScan(wordsFound: [String])
 }
 
 class WordDictionary {
-    var showRoman: Bool = true
-    var scanMethod: WordDictionaryScanMethod = .standard
+    var scanMethod: WordDictionaryScanMethod
     weak var delegate: WordDictionaryDelegate? = nil
     
     private var words: Set<String> = []
@@ -46,28 +45,42 @@ class WordDictionary {
     
     private init?(language: Language) {
         // Init de l'url du dict.
-        let baseUrl: URL?
-        switch language {
-            case .french, .english, .japanese: // Dictionnaires inclus par défaut
-                // Français : Ok je suppose...
-                //   License free : https://github.com/hbenbel/French-Dictionary/blob/master/dictionary/dictionary.txt
-                // Japonais : ok
-                // English : ok (avec mit header) https://github.com/derekchuank/high-frequency-vocabulary
-                // Korean : ? à finir. Attribution de https://github.com/uniglot/korean-word-ipa-dictionary
-                // Chinese : ?
-                // Allemand : ?
-                // Viet : ?
-                baseUrl = Bundle.main.resourceURL?.appendingPathComponent("assets/dict", isDirectory: true)
-            // Sinon possibilité d'ajouter dans _dictionary de iCloud
-            default:
-                baseUrl = FileManager.default.iCloudDocuments?.appendingPathComponent(WordDictionary.dictionaryDirName, isDirectory: true)
-        }
-        guard let urlTmp = baseUrl?.appendingPathComponent("\(language.iso).txt", isDirectory: false) else {
-            printwarning("No dictionary for language \(language).")
-            return nil
-        }
-        self.url = urlTmp
         self.separator = language == .vietnamese ? "\t" : " "
+        switch language {
+                // Cas dictionnaire  "roman - mot ref".
+            case .japanese, .chinese_trad, .chinese_simpl, .vietnamese, .korean:
+                self.scanMethod = .with_roman
+            default:
+                // Cas normal, juste une liste de mots.
+                self.scanMethod = .standard
+        }
+        // Essayer de prendre le dictionnaire dans iCloud en priorité.
+        var url_tmp = FileManager.default.iCloudDocuments?
+            .appendingPathComponent(WordDictionary.dictionaryDirName, isDirectory: true)
+            .appendingPathComponent("\(language.iso).txt", isDirectory: false)
+        if let url = url_tmp, FileManager.default.existence(at: url) == .file {
+            self.url = url
+            return
+        }
+        // Essuite essayer dans les assets.
+        url_tmp = Bundle.main.resourceURL?
+            .appendingPathComponent("assets/dict", isDirectory: true)
+            .appendingPathComponent("\(language.iso).txt", isDirectory: false)
+        if let url = url_tmp, FileManager.default.existence(at: url) == .file {
+            self.url = url
+            return
+        }
+        // Rien trouvé...
+        printwarning("No dictionary file found for \(language).")
+        return nil
+        // Français : Ok je suppose...
+        //   License free : https://github.com/hbenbel/French-Dictionary/blob/master/dictionary/dictionary.txt
+        // Japonais : ok
+        // English : ok (avec mit header) https://github.com/derekchuank/high-frequency-vocabulary
+        // Korean : ? à finir. Attribution de https://github.com/uniglot/korean-word-ipa-dictionary
+        // Chinese : ?
+        // Allemand : ?
+        // Viet : ?
     }
     
     /** Vérifier si un mot existe (lourd). Première utilisation encore plus lourde. (A utiliser dans une thread.) */
@@ -81,7 +94,7 @@ class WordDictionary {
     
     /** Scan le dictionnaire pour trouver des mots pour les leçons. Est fait en parallèle dans la thread dictQueue.
      Il faut avoir définit le delegate qui fera l'affichage du résultat un peu plus tard. */
-    func scan(allowed: String, required: String, maxCount: Int)
+    func scan(allowed: String, required: String, maxCount: Int, showRomans: Bool)
     {
         guard delegate != nil else {
             printerror("Cannot use scan function without delegate.")
@@ -95,7 +108,8 @@ class WordDictionary {
                     results = scanDefault(allowed: allowed, required: required, maxCount: maxCount)
 //                    results = scanFromFile(allowed: allowed, required: required, maxCount: maxCount)
                 case .with_roman:
-                    results = scanWithRoman(allowed: allowed, required: required, maxCount: maxCount)
+                    results = scanWithRoman(allowed: allowed, required: required, maxCount: maxCount,
+                                            showRomans: showRomans)
                 case .as_kana:
                     results = scanAsKana(allowed: allowed, required: required, maxCount: maxCount)
             }
@@ -103,7 +117,7 @@ class WordDictionary {
             // On prende le strong ref ici, car delegate pourrait être parti entre temps...
             if let delegate = delegate {
                 DispatchQueue.main.async {
-                    delegate.displayScan(wordsFound: results, withRoman: showRoman)
+                    delegate.displayScan(wordsFound: results)
                 }
             }
             
@@ -114,10 +128,6 @@ class WordDictionary {
     private func loadWords()
     {
         // 0. Check, init file.
-        guard FileManager.default.existence(at: url) == .file else {
-            printerror("No dictionary file at \(url).")
-            return
-        }
         guard let filePointer:UnsafeMutablePointer<FILE> = fopen(url.path, "r") else {
             printerror("Could not open \(url).")
             return
@@ -145,10 +155,6 @@ class WordDictionary {
     private func loadWordsAndWordToRoman()
     {
         // 0. Check, init file.
-        guard FileManager.default.existence(at: url) == .file else {
-            printerror("No dictionary file at \(url).")
-            return
-        }
         guard let filePointer:UnsafeMutablePointer<FILE> = fopen(url.path, "r") else {
             printerror("Could not open \(url).")
             return
@@ -157,6 +163,7 @@ class WordDictionary {
             fclose(filePointer)
         }
         wordToRoman.removeAll()
+        words.removeAll()
         // Boucle de lecture du dictionnaire
         var lineByteArrayPointer: UnsafeMutablePointer<CChar>? = nil
         var lineCap: Int = 0
@@ -226,10 +233,6 @@ class WordDictionary {
     private func scanFromFile(allowed: String, required: String, maxCount: Int) -> [String]
     {
         // 0. Check, init file.
-        guard FileManager.default.existence(at: url) == .file else {
-            printerror("No dictionary file at \(url).")
-            return []
-        }
         guard let filePointer:UnsafeMutablePointer<FILE> = fopen(url.path, "r") else {
             printerror("Could not open \(url).")
             return []
@@ -280,7 +283,7 @@ class WordDictionary {
         }
         return results
     }
-    private func scanWithRoman(allowed: String, required: String, maxCount: Int) -> [String]
+    private func scanWithRoman(allowed: String, required: String, maxCount: Int, showRomans: Bool) -> [String]
     {
         if wordToRoman.isEmpty {
             loadWordsAndWordToRoman()
@@ -303,7 +306,7 @@ class WordDictionary {
                 }
             }
             // Trouvé !
-            if showRoman {
+            if showRomans {
                 results.append("\(ref) / \(romans)")
             } else {
                 results.append(ref)
@@ -325,7 +328,7 @@ class WordDictionary {
     private func scanAsKana(allowed: String, required: String, maxCount: Int) -> [String]
     {
         if words.isEmpty {
-            loadWords()
+            loadWordsAndWordToRoman()
         }
         let setAllowed = Set(allowed)
         var results: [String] = []
