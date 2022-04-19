@@ -81,7 +81,7 @@ class PopOver : Node {
             self.addFlags(Flag1.show)
             self.openAndShowBranch()
             // Dépassement ? -> Ajustement
-            let dim = self.getAbsPosAndDelta()
+            let dim = self.getPosAndDeltaAbsolute()
             let x_over_left = dim.pos.x - dim.deltas.x + 0.5*PopOver.screen.width.realPos
             let x_over_right = dim.pos.x + dim.deltas.x - 0.5*PopOver.screen.width.realPos
             let x_adj: Float = min(x_over_left, max(x_over_right, 0)) * self.deltaX / dim.deltas.x

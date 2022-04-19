@@ -89,7 +89,11 @@ class StringSurface: Surface //, Openable
 		if ceiledWidth != nil {
 			addFlags(Flag1.stringSurfaceWithCeiledWidth)
 		}
-        piu.color = Color.black // (Text noir par défaut.)
+        if strTex.name.first?.isEmoji ?? false {
+            piu.color = Color.white
+        } else {
+            piu.color = Color.black // (Text noir par défaut.)
+        }
 	}
 	@discardableResult
     convenience init(_ refNode: Node?, cstString: String, fontname: String? = nil,
@@ -116,6 +120,11 @@ class StringSurface: Surface //, Openable
 			return
 		}
 		tex = newTexture
+        if tex.name.first?.isEmoji ?? false {
+            piu.color = Color.white
+        } else {
+            piu.color = Color.black
+        }
 	}
 	/** "Convenience function": Ne change pas la texture. Ne fait que mettre à jour la string de la texture. */
     func updateAsMutableString(_ newString: String, fontname: String? = nil) {
@@ -128,6 +137,11 @@ class StringSurface: Surface //, Openable
 	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
     func updateTextureToConstantString(_ newString: String, fontname: String? = nil) {
 		tex = Texture.getConstantString(newString, fontname: fontname)
+        if tex.name.first?.isEmoji ?? false {
+            piu.color = Color.white
+        } else {
+            piu.color = Color.black
+        }
 	}
     
     override func setWidth(fix: Bool) {

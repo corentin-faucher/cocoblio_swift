@@ -29,6 +29,7 @@ class RootNode : Node {
     // les marges (en pixels)
     var margins: Margins = Margins(top: 5, left: 5, bottom: 5, right: 5)
     var frameSizeInPx = CGSize(width: 800, height: 600)  // (en pixels)
+    var zShift: Float = 0
     private var yShift: CGFloat = 0
     private unowned let parentRoot: RootNode?
     
@@ -57,7 +58,7 @@ class RootNode : Node {
         super.init(other: other)
     }
     func setModelMatrix() {
-        camera.setAsLookAt(model: &piu.model, yShift: Float(yShift))
+        camera.setAsLookAt(model: &piu.model, yShift: Float(yShift), zShift: zShift)
     }
     func setProjectionMatrix(_ projection: inout float4x4) {
         projection.setToPerspective(nearZ: 0.1, farZ: 50, middleZ: camera.z.pos,
@@ -132,12 +133,12 @@ class RootNode : Node {
 
 
 class AppRootBase : RootNode {
-    unowned let metalView: CoqMetalView
-	private(set) var activeScreen: ScreenBase? = nil
-	var selectedNode: Node? = nil
+    final unowned let metalView: CoqMetalView
+	final private(set) var activeScreen: ScreenBase? = nil
+	final var selectedNode: Node? = nil
 	/** Cas particulier de selectedNode. */
-	var grabbedNode: Draggable? = nil
-	var cursor: Cursorable? = nil
+	final var grabbedNode: Draggable? = nil
+	final var cursor: Cursorable? = nil
 	var changeScreenAction: (()->Void)? = nil
 	
 	
@@ -222,9 +223,9 @@ class Camera: Node {
     required init(other: Node) {
         fatalError("init(other:) has not been implemented")
     }
-    func setAsLookAt(model: inout float4x4, yShift: Float) {
+    func setAsLookAt(model: inout float4x4, yShift: Float, zShift: Float) {
         // (avec des rotations, ce serait plutôt eye = pos + yShift * up, et center = center + yShift * up...)
-        model.setToLookAt(eye: [x.pos, y.pos + yShift, z.pos],
+        model.setToLookAt(eye: [x.pos, y.pos + yShift, z.pos + zShift],
                           center: [x_center.pos, y_center.pos + yShift, z_center.pos],
                           up: [x_up.pos, y_up.pos, z_up.pos])
     }

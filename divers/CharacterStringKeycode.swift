@@ -19,12 +19,17 @@ extension Character {
         guard let us = self.unicodeScalars.first else {printerror("Cannot convert char \(self) to UInt32."); return 0}
         return us.value
     }
-    func isAlphaNumeric() -> Bool {
+    var isAlphaNumeric: Bool {
         return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
+    }
+    var isEmoji: Bool {
+        guard let firstScalar = self.unicodeScalars.first else { return false }
+        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
     }
 //    func isLetter() -> Bool {
 //        return String(self).rangeOfCharacter(from: CharacterSet.letters)
 //    }
+    
 }
 
 extension UInt32 {
@@ -147,6 +152,14 @@ enum SpChar {
     static let nobreakSpace: Character = " "
     static let ideographicSpace: Character = "　"
     static let thinSpace: Character = "\u{2009}"
+    static let bottomBracket: Character = "⎵"
+    static let spaceSymbol: Character = "␠"
+    static let underscore: Character = "_"
+    static let openBox: Character = "␣"
+    static let interpunct: Character = "·"
+    static let dot: Character = "•"
+    static let butterfly: Character = "🦋"
+    static let dodo: Character = "🦤"
 }
 
 /** MyKeyCode... */

@@ -191,7 +191,7 @@ class Texture {
                 return
             }
             DispatchQueue.main.async {
-                mtlTexture = newMtlTexture
+                self.mtlTexture = newMtlTexture
             }
         }
 	}
@@ -268,7 +268,7 @@ class Texture {
         FontManager.updateCurrentSize(with: drawableSize)
 		textureLoader = MTKTextureLoader(device: device)
         tempStringTextures = [
-            Texture(name: "a", type: .constantString, fontname: nil),
+            Texture(name: " ", type: .constantString, fontname: nil),
             Texture(name: "abc", type: .constantString, fontname: nil),
             Texture(name: "lorem", type: .constantString, fontname: nil),
             Texture(name: "Lorem ipsum", type: .constantString, fontname: nil),

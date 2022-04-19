@@ -132,7 +132,7 @@ class TextFieldWrapper : Node {
     
     override func open() {
         super.open()
-        let (pos, delta) = getAbsPosAndDelta()
+        let (pos, delta) = getPosAndDeltaAbsolute()
         
         #if os(OSX)
         textField.placeholderString = placeHolder
@@ -150,7 +150,7 @@ class TextFieldWrapper : Node {
         textField.removeFromSuperview()
     }
     override func reshape() {
-        let (pos, delta) = getAbsPosAndDelta()
+        let (pos, delta) = getPosAndDeltaAbsolute()
         let frame = root.getFrameFrom(pos, deltas: delta)
         textField.font = FontManager.currentWithSize(text_relative_height * frame.height)
         textField.frame = frame

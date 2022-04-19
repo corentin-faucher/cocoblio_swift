@@ -234,7 +234,7 @@ extension Node {
                     if sq.goDownP() {
                         continue
                     } else {
-                        printerror("selectableRoot sans desc.")
+                        printerror("selectableRoot sans desc. \(sq.pos)")
                     }
                 }
             }

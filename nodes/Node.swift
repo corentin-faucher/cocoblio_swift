@@ -6,28 +6,18 @@
 //
 import simd
 
-protocol CopyableNode {
-    init(other: Self)
-}
-extension CopyableNode {
-    func copy() -> Self {
-        return Self.init(other: self)
-    }
-}
-
-class Node : CopyableNode {
+class Node : Copyable, Flagable {
     /*-- Fields --*/
-    /** Flags : Les options sur le noeud. */
-    private var flags: Int
-	let id: Int
+    final var flags: Int
+	final let id: Int
     /** Positions, tailles, etc. */
-    var x, y, z, width, height, scaleX, scaleY: SmoothPos
+    final var x, y, z, width, height, scaleX, scaleY: SmoothPos
     /** Demi espace occupé en x. (width * scaleX) / 2 */
-    var deltaX: Float {
+    final var deltaX: Float {
         return width.realPos * scaleX.realPos / 2
     }
     /** Demi espace occupé en y. (height * scaleY) / 2 */
-    var deltaY: Float {
+    final var deltaY: Float {
         return height.realPos * scaleY.realPos / 2
     }
      
@@ -35,31 +25,21 @@ class Node : CopyableNode {
     var piu : Renderer.PerInstanceUniforms
     
     // Liens
-    var firstChild: Node? = nil // Seul firstChild et littleBro sont "strong" pour l'ARC...
-    var littleBro: Node? = nil
-    weak var parent: Node? = nil
-    weak var lastChild: Node? = nil
-    weak var bigBro: Node? = nil
+    final var firstChild: Node? = nil // Seul firstChild et littleBro sont "strong" pour l'ARC...
+    final var littleBro: Node? = nil
+    final weak var parent: Node? = nil
+    final weak var lastChild: Node? = nil
+    final weak var bigBro: Node? = nil
     
 	
 	/*-- Methods --*/
-	/** Retirer des flags au noeud. */
-	func removeFlags(_ toRemove: Int) {
-		flags &= ~toRemove
-	}
-	/** Ajouter des flags au noeud. */
-	func addFlags(_ toAdd: Int) {
-		flags |= toAdd
-	}
-	func addRemoveFlags(_ toAdd: Int, _ toRemove: Int) {
-		flags = (flags | toAdd) & ~toRemove
-	}
-	func containsAFlag(_ flagsRef: Int) -> Bool {
-		return (flags & flagsRef) != 0
-	}
-	func isDisplayActive() -> Bool {
-		return containsAFlag(Flag1.show | Flag1.branchToDisplay)
-	}
+    /** Vérifie si un noeud / branche doit être parcouru pour l'affichage.
+     * Cas particulier de lecture de flags.
+     * Définition différente pour les surface (actif plus longtemps, i.e. tant que visible).
+     */
+    func isDisplayActive() -> Bool {
+        return containsAFlag(Flag1.show | Flag1.branchToDisplay)
+    }
     /*-- Ouverture/ Fermeture --*/
     /** Open "base" ajuste la position (fading et relativeToParent) */
     func open() {
@@ -81,40 +61,51 @@ class Node : CopyableNode {
         setRelatively(fix: false)
     }
     /*-- Fonctions d'accès et Computed properties --*/
-    /// Obtenir la position absolue d'un noeud.
-    func getAbsPos() -> Vector2 {
+    /// Obtenir la position absolue (à la racine) d'un noeud.
+    final func getPosAbsolute() -> Vector2 {
         let sq = Squirrel(at: self)
         while sq.goUpP() {}
         return sq.v
     }
-	func getAbsPosAndDelta() -> (pos: Vector2, deltas: Vector2) {
+    /// Obtenir la position et dimension absolue (à la racine) d'un noeud.
+	final func getPosAndDeltaAbsolute() -> (pos: Vector2, deltas: Vector2) {
 		let sq = Squirrel(at: self, scaleInit: .deltas)
 		while sq.goUpPS() {}
 		return (sq.v, sq.vS)
 	}
-	func getPosInGrandPa(_ grandPa: Node) -> Vector2 {
+    /// Obtenir la position dans le ref d'un parent (on remonte jusqu'à trouver le parent).
+	final func getPosInParent(_ par: Node) -> Vector2 {
 		let sq = Squirrel(at: self)
 		repeat {
-			if let currentParent = sq.pos.parent,
-				currentParent === grandPa
-			{
-					return sq.v
+			if sq.pos.parent === par {
+                return sq.v
 			}
 		} while sq.goUpP()
-		printerror("No grandPa encountered.")
+		printerror("No parent encountered.")
 		return sq.v
 	}
+    /// Obtenir la position et dimension dans le ref d'un parent (on remonte jusqu'à trouver le parent).
+    final func getPosAndDeltaInParent(_ par: Node) -> (pos: Vector2, deltas: Vector2) {
+        let sq = Squirrel(at: self, scaleInit: .deltas)
+        repeat {
+            if sq.pos.parent === par {
+                return (sq.v, sq.vS)
+            }
+        } while sq.goUpPS()
+        printerror("No parent encountered.")
+        return (sq.v, sq.vS)
+    }
     /** relativePosOf: La position obtenue est dans le référentiel du noeud présent,
      *  i.e. au niveau des node.children.
      * (Si node == nil -> retourne absPos tel quel,
      * cas où node est aNode.parent et parent peut être nul.)*/
-    func relativePosOf(absPos: Vector2) -> Vector2 {
+    final func relativePosOf(absPos: Vector2) -> Vector2 {
         let sq = Squirrel(at: self, scaleInit: .scales)
         while sq.goUpPS() {}
         // Maintenant, sq contient la position absolue de theNode.
         return sq.getRelPosOf(absPos)
     }
-    func relativeDeltaOf(absDelta: Vector2) -> Vector2 {
+    final func relativeDeltaOf(absDelta: Vector2) -> Vector2 {
         let sq = Squirrel(at: self, scaleInit: .scales)
         while sq.goUpPS() {}
         return sq.getRelDeltaOf(absDelta)
@@ -210,7 +201,7 @@ class Node : CopyableNode {
     /*-- Effacement (decconect) ---*/
     /** Se retire de sa chaine de frère et met les optionals à nil.
      *  Sera effacé par l'ARC, si n'est pas référencié(swift) ou ramassé par le GC?(Kotlin) */
-    func disconnect() {
+    final func disconnect() {
 		// 1. Retrait
         if let theBigBro = bigBro {
             theBigBro.littleBro = littleBro
@@ -231,7 +222,7 @@ class Node : CopyableNode {
     }
     /** Deconnexion d'un descendant, i.e. Effacement direct.
      *  Retourne "true" s'il y a un descendant a effacer. */
-    @discardableResult func disconnectChild(elder: Bool) -> Bool {
+    @discardableResult final func disconnectChild(elder: Bool) -> Bool {
         guard let child = elder ? firstChild : lastChild else {
             return false
         }
@@ -240,7 +231,7 @@ class Node : CopyableNode {
     }
     /// Deconnexion d'un frère, i.e. Effacement direct.
     /// Retourne "true" s'il y a un frère a effacer.
-    @discardableResult func disconnectBro(big: Bool) -> Bool {
+    @discardableResult final func disconnectBro(big: Bool) -> Bool {
         guard let bro = big ? bigBro : littleBro else {return false}
         bro.disconnect()
         return true
@@ -248,7 +239,7 @@ class Node : CopyableNode {
     
     /*-- Déplacements --*/
     /** Change un frère de place dans sa liste de frère. */
-    func moveWithinBrosTo(bro: Node, asBigBro: Bool) {
+    final func moveWithinBrosTo(bro: Node, asBigBro: Bool) {
         if bro === self {return}
         guard let parent = bro.parent, parent === self.parent else {
             printerror("Pas de parent ou pas commun."); return
@@ -285,7 +276,7 @@ class Node : CopyableNode {
             }
         }
     }
-    func moveAsElderOrCadet(asElder: Bool) {
+    final func moveAsElderOrCadet(asElder: Bool) {
         // 0. Checks
         if asElder && bigBro == nil {
             return
@@ -324,31 +315,31 @@ class Node : CopyableNode {
         
     }
     /** Change de noeud de place (et ajuste sa position relative). */
-    func moveToBro(_ bro: Node, asBigBro: Bool) {
+    final func moveToBro(_ bro: Node, asBigBro: Bool) {
         guard let newParent = bro.parent else {printerror("Bro sans parent."); return}
         setInReferentialOf(node: newParent)
         disconnect()
         connectToBro(bro, asBigbro: asBigBro)
     }
     /** Change de noeud de place (sans ajuster sa position relative). */
-    func simpleMoveToBro(_ bro: Node, asBigBro: Bool) {
+    final func simpleMoveToBro(_ bro: Node, asBigBro: Bool) {
         disconnect()
         connectToBro(bro, asBigbro: asBigBro)
     }
     /** Change de noeud de place (et ajuste sa position relative). */
-    func moveToParent(_ newParent: Node, asElder: Bool) {
+    final func moveToParent(_ newParent: Node, asElder: Bool) {
         setInReferentialOf(node: newParent)
         disconnect()
         connectToParent(newParent, asElder: asElder)
     }
     /** Change de noeud de place (sans ajuster sa position relative). */
-    func simpleMoveToParent(_ newParent: Node, asElder: Bool) {
+    final func simpleMoveToParent(_ newParent: Node, asElder: Bool) {
         disconnect()
         connectToParent(newParent, asElder: asElder)
     }
     /// "Monte" un noeud au niveau du parent. Cas particulier (simplifier) de moveTo(...).
     /// Si c'est une feuille, on ajuste width/height, sinon, on ajuste les scales.
-    @discardableResult func moveUp(asBigBro: Bool) -> Bool {
+    @discardableResult final func moveUp(asBigBro: Bool) -> Bool {
         guard let theParent = parent else {
             printerror("Pas de parent."); return false
         }
@@ -369,7 +360,7 @@ class Node : CopyableNode {
     }
     /// "Descend" dans le référentiel d'un frère. Cas particulier (simplifier) de moveTo(...).
     /// Si c'est une feuille, on ajuste width/height, sinon, on ajuste les scales.
-    func moveDownIn(bro: Node, asElder: Bool) -> Bool {
+    final func moveDownIn(bro: Node, asElder: Bool) -> Bool {
         if bro === self {return false}
         guard let oldParent = bro.parent, oldParent === self.parent else {
             printerror("Pas de parent ou pas commun."); return false
@@ -390,7 +381,7 @@ class Node : CopyableNode {
         return true
     }
     /// Échange de place avec le "node".
-    func permuteWith(_ node: Node) {
+    final func permuteWith(_ node: Node) {
         guard let oldParent = parent else {printerror("Manque parent."); return}
         if node.parent == nil {printerror("Manque parent2."); return}
         
@@ -406,7 +397,7 @@ class Node : CopyableNode {
     
     /*-- Private stuff... --*/
     /** Connect au parent. (Doit être fullyDeconnect -> optionals à nil.) */
-    private func connectToParent(_ parent: Node, asElder: Bool) {
+    private final func connectToParent(_ parent: Node, asElder: Bool) {
 		// Dans tout les cas, on a le parent:
         self.parent = parent
 		
@@ -433,7 +424,7 @@ class Node : CopyableNode {
             parent.lastChild = self
         }
     }
-    private func connectToBro(_ bro: Node, asBigbro: Bool) {
+    private final func connectToBro(_ bro: Node, asBigbro: Bool) {
         if bro.parent == nil {printerror("Boucle sans parents")}
         parent = bro.parent
         if asBigbro {
@@ -461,7 +452,7 @@ class Node : CopyableNode {
         }
     }
     /** Change le référentiel. Pour moveTo de node. */
-    private func setInReferentialOf(node: Node) {
+    private final func setInReferentialOf(node: Node) {
         let sqP = Squirrel(at: self, scaleInit: .ones)
         while sqP.goUpPS() {}
         let sqQ = Squirrel(at: node, scaleInit: .scales)
@@ -485,3 +476,219 @@ class Node : CopyableNode {
 	private static var nodeCounter: Int = 0
 }
 
+/*
+// Structure de base d'un noeud. Contient les liens entre frères, parent, enfants...
+// Superflu a priori... ???
+class NodeBase: Copyable, Flagable {
+    // L'état du noeud, i.e. ensemble de flags binaire. Voir Flag1 pour les flags standards.
+    final var flags: Int
+    // Id du noeud. (un id par noeud en commençant par 0.)
+    final let id: Int
+    
+    // Liens
+    final var firstChild: NodeBase? = nil // Seul firstChild et littleBro sont "strong" pour l'ARC...
+    final var littleBro: NodeBase? = nil
+    final weak var parent: NodeBase? = nil
+    final weak var lastChild: NodeBase? = nil
+    final weak var bigBro: NodeBase? = nil
+    
+    /*-- Init --*/
+    init(flags: Int) {
+        id = NodeBase.nodeCounter
+        NodeBase.nodeCounter &+= 1
+        self.flags = flags
+    }
+    required init(other: NodeBase) {
+        id = NodeBase.nodeCounter
+        NodeBase.nodeCounter &+= 1
+        self.flags = other.flags
+    }
+    
+    /*-----------------------------*/
+    /*-- Connect / disconnect / move ---*/
+    /** Se retire de sa chaine de frère et met les optionals à nil.
+     *  Sera effacé par l'ARC, si n'est pas référencié(swift) ou ramassé par le GC?(Kotlin) */
+    final func disconnect() {
+        // 1. Retrait
+        if let theBigBro = bigBro {
+            theBigBro.littleBro = littleBro
+        } else { // Pas de grand frère -> probablement l'ainé.
+            parent?.firstChild = littleBro
+        }
+        if let theLittleBro = littleBro {
+            theLittleBro.bigBro = bigBro
+        } else { // Pas de petit frère -> probablement le cadet.
+            parent?.lastChild = bigBro
+        }
+        
+        // 2. Déconnexion
+        // (superflu a priori, mais peux éviter des bogue de double déconnexion si oublie de weak par exemple...)
+        parent = nil
+        littleBro = nil
+        bigBro = nil
+    }
+    /** Deconnexion d'un descendant, i.e. Effacement direct.
+     *  Retourne "true" s'il y a un descendant a effacer. */
+    @discardableResult final func disconnectChild(elder: Bool) -> Bool {
+        guard let child = elder ? firstChild : lastChild else {
+            return false
+        }
+        child.disconnect()
+        return true
+    }
+    /// Deconnexion d'un frère, i.e. Effacement direct.
+    /// Retourne "true" s'il y a un frère a effacer.
+    @discardableResult final func disconnectBro(big: Bool) -> Bool {
+        guard let bro = big ? bigBro : littleBro else {return false}
+        bro.disconnect()
+        return true
+    }
+    /** Connect au parent. (Doit être fullyDeconnect -> optionals à nil.) */
+    final func connectToParent(_ parent: NodeBase, asElder: Bool) {
+        // Dans tout les cas, on a le parent:
+        self.parent = parent
+        
+        guard let oldParentFirstChild = parent.firstChild,
+            let oldParentLastChild = parent.lastChild
+        else {
+            // Cas parent pas d'enfants
+            parent.firstChild = self
+            parent.lastChild = self
+            return
+        }
+        // Ajout au début
+        if asElder {
+            // Insertion
+            self.littleBro = oldParentFirstChild
+            // Branchement
+            oldParentFirstChild.bigBro = self
+            parent.firstChild = self
+        } else { // Ajout à la fin de la chaine
+            // Insertion
+            self.bigBro = oldParentLastChild
+            // Branchement
+            oldParentLastChild.littleBro = self
+            parent.lastChild = self
+        }
+    }
+    final func connectToBro(_ bro: NodeBase, asBigbro: Bool) {
+        if bro.parent == nil {printerror("Boucle sans parents")}
+        parent = bro.parent
+        if asBigbro {
+            // Insertion
+            littleBro = bro
+            bigBro = bro.bigBro
+            // Branchement
+            bro.bigBro = self // littleBro.bigBro = self
+            if bigBro != nil {
+                bigBro!.littleBro = self
+            } else {
+                parent?.firstChild = self
+            }
+        } else {
+            // Insertion
+            littleBro = bro.littleBro
+            bigBro = bro
+            // Branchement
+            bro.littleBro = self // bigBro.littleBro = self
+            if littleBro != nil {
+                littleBro!.bigBro = self
+            } else {
+                parent?.lastChild = self
+            }
+        }
+    }
+    
+    /** Change un frère de place dans sa liste de frère. */
+    final func moveWithinBrosTo(bro: NodeBase, asBigBro: Bool) {
+        if bro === self {return}
+        guard let parent = bro.parent, parent === self.parent else {
+            printerror("Pas de parent ou pas commun."); return
+        }
+        // Retrait
+        if parent.firstChild === self {
+            parent.firstChild = littleBro
+        }
+        if parent.lastChild === self {
+            parent.lastChild = bigBro
+        }
+        littleBro?.bigBro = bigBro
+        bigBro?.littleBro = littleBro
+        
+        if asBigBro {
+            // Insertion
+            littleBro = bro
+            bigBro = bro.bigBro
+            // Branchement
+            littleBro?.bigBro = self
+            bigBro?.littleBro = self
+            if bigBro == nil {
+                parent.firstChild = self
+            }
+        } else {
+            // Insertion
+            littleBro = bro.littleBro
+            bigBro = bro
+            // Branchement
+            littleBro?.bigBro = self
+            bigBro?.littleBro = self
+            if littleBro == nil {
+                parent.lastChild = self
+            }
+        }
+    }
+    final func moveAsElderOrCadet(asElder: Bool) {
+        // 0. Checks
+        if asElder && bigBro == nil {
+            return
+        }
+        if !asElder && littleBro == nil {
+            return
+        }
+        guard let theParent = parent else {
+            printerror("Pas de parent."); return
+        }
+        // 1. Retrait
+        if let theBigBro = bigBro {
+            theBigBro.littleBro = littleBro
+        } else {
+            theParent.firstChild = littleBro
+        }
+        if let theLittleBro = littleBro {
+            theLittleBro.bigBro = bigBro
+        } else {
+            theParent.lastChild = bigBro
+        }
+        // 2. Insertion
+        if asElder {
+            bigBro = nil
+            littleBro = theParent.firstChild
+            // Branchement
+            littleBro?.bigBro = self
+            theParent.firstChild = self
+        } else { // Ajout à la fin de la chaine
+            littleBro = nil
+            bigBro = theParent.lastChild
+            // Branchement
+            bigBro?.littleBro = self
+            theParent.lastChild = self
+        }
+        
+    }
+    
+    /** Change de noeud de place (sans ajuster sa position relative). */
+    final func simpleMoveToBro(_ bro: NodeBase, asBigBro: Bool) {
+        disconnect()
+        connectToBro(bro, asBigbro: asBigBro)
+    }
+    /** Change de noeud de place (sans ajuster sa position relative). */
+    final func simpleMoveToParent(_ newParent: NodeBase, asElder: Bool) {
+        disconnect()
+        connectToParent(newParent, asElder: asElder)
+    }
+    
+    /*-- Static --*/
+    private static var nodeCounter: Int = 0
+}
+
+*/
