@@ -56,7 +56,7 @@ class Renderer : NSObject {
 	fileprivate var currentVertexCount: Int = 0
 	// La texture présentement utilisée
 	fileprivate var currentTexture: Texture? = nil
-    private var shaderTimer: Chrono
+    private var shaderTimer: ChronoR
 	// Metal Stuff
 	// fileprivate var commandEncoder: MTLRenderCommandEncoder!
 	private let commandQueue: MTLCommandQueue!
@@ -130,7 +130,7 @@ class Renderer : NSObject {
         /*-- Init de Mesh avec device (gpu) car utilisé pour créer les buffers. --*/
 		Mesh.setDeviceAndInitBasicMeshes(device)
         
-        shaderTimer = Chrono()
+        shaderTimer = ChronoR()
         shaderTimer.start()
         
         super.init()
@@ -199,7 +199,7 @@ extension Renderer: MTKViewDelegate {
         currentTexture = nil
         
         // 1. Check le chrono/sleep.
-        GlobalChrono.update(frequency: view.preferredFramesPerSecond)
+        RenderingChrono.update(frequency: view.preferredFramesPerSecond)
         if shaderTimer.elapsedSec > 2 * .pi + 0.1 {
             shaderTimer.remove(sec: 2 * .pi)
         }
@@ -240,7 +240,7 @@ extension Renderer: MTKViewDelegate {
 		commandBuffer.commit()
         
         // 7. Mettre en pause ? Ne plus caller draw (cette function)
-        if GlobalChrono.shouldSleep, metalView.canPauseWhenResignActive {
+        if RenderingChrono.shouldSleep, metalView.canPauseWhenResignActive {
             view.isPaused = true
         }
 	}

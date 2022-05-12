@@ -22,10 +22,10 @@ extension Character {
     var isAlphaNumeric: Bool {
         return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
     }
-    var isEmoji: Bool {
-        guard let firstScalar = self.unicodeScalars.first else { return false }
-        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
-    }
+//    var isEmoji: Bool {
+//        guard let firstScalar = self.unicodeScalars.first else { return false }
+//        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
+//    }
 //    func isLetter() -> Bool {
 //        return String(self).rangeOfCharacter(from: CharacterSet.letters)
 //    }
@@ -125,6 +125,11 @@ extension String {
     }
     func isLessThan(_ other: String) -> Bool {
         return self.localizedStandardCompare(other) == .orderedAscending
+    }
+    /** Une petite string d'emoji (choisir blanc pour l'affichage). */
+    var isShortEmoji: Bool {
+        guard count < 3, let first = first, let firstScalar = first.unicodeScalars.first else { return false }
+        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
     }
 }
 

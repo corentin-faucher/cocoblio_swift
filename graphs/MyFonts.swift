@@ -9,8 +9,10 @@
 import Foundation
 #if os(OSX)
 import AppKit
+typealias Font = NSFont
 #else
 import UIKit
+typealias Font = UIFont
 #endif
 
 typealias FontInfo = (size_y: CGFloat, size_x: CGFloat)
@@ -68,6 +70,18 @@ enum FontManager {
         return NSFont.systemFontSize
         #else
         return UIFont.systemFontSize
+        #endif
+    }
+    
+    static func printAllAvailableFonts() {
+        #if os(OSX)
+        for family in NSFontManager.shared.availableFontFamilies {
+            print(family)
+        }
+        #else
+        for family in UIFont.familyNames {
+            print(family)
+        }
         #endif
     }
     
@@ -137,6 +151,7 @@ enum FontManager {
         "Hiragino Maru Gothic ProN": "Hiragino MGP",
         "Hiragino Mincho ProN": "Hiragino MP",
         "Klee": "Klee",
+        "OpenDyslexic3": "Op. Dyslex3",
         "Osaka": "Osaka",
         "Toppan Bunkyu Gothic": "Toppan BG",
         "Toppan Bunkyu Midashi Gothic": "Toppan BMG",
@@ -191,6 +206,7 @@ enum FontManager {
         "Hiragino Maru Gothic ProN": (size_y: 1.3, size_x: 0.5),
         "Hiragino Mincho ProN": (size_y: 1.3, size_x: 0.5),
         "Klee": (size_y: 1.3, size_x: 0.2),
+        "OpenDyslexic3": (size_y: 1.4, size_x: 1.0),
         "Osaka": (size_y: 1.3, size_x: 0.5),
         "Toppan Bunkyu Gothic": (size_y: 1.3, size_x: 0.5),
         "Toppan Bunkyu Midashi Gothic": (size_y: 1.3, size_x: 0.5),
@@ -228,6 +244,7 @@ enum FontManager {
             "Hiragino Maru Gothic ProN",
             "Klee",
             "LingWai TC",
+            "OpenDyslexic3",
             "Osaka",
             "Toppan Bunkyu Gothic",
             "Toppan Bunkyu Midashi Gothic",
@@ -264,6 +281,7 @@ enum FontManager {
             "HanziPen SC",
             "Hei",
             "LingWai TC",
+            "OpenDyslexic3",
             "PilGi",
             "PingFang SC",
             "Times New Roman",
@@ -281,6 +299,7 @@ enum FontManager {
             "HanziPen SC",
             "Hei",
             "LingWai TC",
+            "OpenDyslexic3",
             "PilGi",
             "PingFang SC",
             "Times New Roman",
@@ -313,6 +332,7 @@ enum FontManager {
         "Futura",
         "Helvetica",
         "Luciole",
+        "OpenDyslexic3",
         "PilGi",
         "Snell Roundhand",
         "Times New Roman",

@@ -80,7 +80,7 @@ private protocol CurveInfo {
 
 private extension CurveInfo {
     var elapsedSec: Float {
-        return Float(GlobalChrono.elapsedMS32 &- setTime) * 0.001
+        return Float(RenderingChrono.elapsedMS32 &- setTime) * 0.001
     }
     mutating func updateParameters(gamma: Float, k: Float) {
         // 1. Enregistrer delta et pente avant de modifier la courbe.
@@ -92,7 +92,7 @@ private extension CurveInfo {
         // 3. Réévaluer a/b pour nouveau lambda/beta
         setAB(delta: delta, slope: slope)
         // 4. Reset time
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
     }
     mutating func setLambdaBetaType(gamma: Float, k: Float) {
         if gamma == 0 && k == 0 {
@@ -181,13 +181,13 @@ struct SmoothPos : SmoothDimension, CurveInfo {
     init(_ posInit: Float, _ lambda: Float) {
         defPos = posInit
         realPos = posInit
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
         setLambdaBetaType(gamma: 2 * lambda, k: lambda * lambda)
     }
     init(_ posInit: Float) {
         defPos = posInit
         realPos = posInit
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
     }
     
     mutating func set(_ newPos: Float, _ fix: Bool = true, _ setAsDef: Bool = true) {
@@ -199,7 +199,7 @@ struct SmoothPos : SmoothDimension, CurveInfo {
         } else {
             let deltaT = elapsedSec
             setAB(delta: getDelta(deltaT: deltaT) + realPos - newPos, slope: getSlope(deltaT: deltaT))
-            setTime = GlobalChrono.elapsedMS32
+            setTime = RenderingChrono.elapsedMS32
         }
         realPos = newPos
     }
@@ -274,13 +274,13 @@ struct SmoothAngle : SmoothDimension, CurveInfo {
     init(_ posInit: Float, _ lambda: Float) {
         defPos = posInit.toNormalizedAngle()
         realPos = defPos
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
         setLambdaBetaType(gamma: 2 * lambda, k: lambda * lambda)
     }
     init(_ posInit: Float) {
         defPos = posInit.toNormalizedAngle()
         realPos = defPos
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
     }
     
     mutating func set(_ newPos: Float, _ fix: Bool, _ setAsDef: Bool) {
@@ -292,7 +292,7 @@ struct SmoothAngle : SmoothDimension, CurveInfo {
         } else {
             let deltaT = elapsedSec
             setAB(delta: (getDelta(deltaT: deltaT) + realPos - newPos).toNormalizedAngle(), slope: getSlope(deltaT: deltaT))
-            setTime = GlobalChrono.elapsedMS32
+            setTime = RenderingChrono.elapsedMS32
         }
         realPos = newPos.toNormalizedAngle()
     }
@@ -332,13 +332,13 @@ struct SmoothAngleWithDrift : SmoothDimension, CurveInfo {
     init(_ posInit: Float, _ lambda: Float) {
         defPos = posInit.toNormalizedAngle()
         realPos = defPos
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
         setLambdaBetaType(gamma: 2 * lambda, k: lambda * lambda)
     }
     init(_ posInit: Float) {
         defPos = posInit.toNormalizedAngle()
         realPos = defPos
-        setTime = GlobalChrono.elapsedMS32
+        setTime = RenderingChrono.elapsedMS32
     }
     
     mutating func set(_ newPos: Float, _ fix: Bool, _ setAsDef: Bool) {
@@ -352,7 +352,7 @@ struct SmoothAngleWithDrift : SmoothDimension, CurveInfo {
             setAB(
                 delta: (getDelta(deltaT: deltaT) + drift * deltaT + realPos - newPos).toNormalizedAngle(),
                 slope: getSlope(deltaT: deltaT) + drift)
-            setTime = GlobalChrono.elapsedMS32
+            setTime = RenderingChrono.elapsedMS32
         }
         realPos = newPos.toNormalizedAngle()
         drift = 0
@@ -362,7 +362,7 @@ struct SmoothAngleWithDrift : SmoothDimension, CurveInfo {
             setAB(
                 delta: (getDelta(deltaT: deltaT) + drift * deltaT + realPos - newPos).toNormalizedAngle(),
                 slope: getSlope(deltaT: deltaT) + drift - newDrift)
-            setTime = GlobalChrono.elapsedMS32
+            setTime = RenderingChrono.elapsedMS32
             realPos = newPos.toNormalizedAngle()
             drift = newDrift
     }

@@ -45,7 +45,7 @@ class Texture {
 			printerror("N'est pas une texture de string mutable."); return
 		}
 		self.name = string
-		drawAsString()
+		drawAsString(withTmp: false)
 	}
 	    
 	// Private methods
@@ -66,22 +66,22 @@ class Texture {
         } else {
             m = 1; n = 1
             self.fontname = fontname
-            drawAsString()
+            drawAsString(withTmp: true)
         }
     }
-    private init() {
-        self.name = "null"
-        self.type = .png // (pas vrament un png, mais couleur uniforme... compte comme image)
-        m = 1; n = 1
-        fontname = nil
-        // (ptu reste aux valeurs par défaut)
-    }
+//    private init() {
+//        self.name = "null"
+//        self.type = .png // (pas vrament un png, mais couleur uniforme... compte comme image)
+//        m = 1; n = 1
+//        fontname = nil
+//        // (ptu reste aux valeurs par défaut)
+//    }
     
 	deinit {
 //		printdebug("Remove texture \(name)")
 	}
 	
-    private func drawAsString() {
+    private func drawAsString(withTmp: Bool) {
 		// 1. Font et dimension de la string
         #if os(OSX)
         let color = NSColor.white
@@ -133,72 +133,90 @@ class Texture {
         let extraWidth: CGFloat = 0.55 * fontinfo.size_x * font.xHeight
         let contextHeight: CGFloat = 2.00 * fontinfo.size_y * font.xHeight
         let contextWidth =  ceil(strSizes.width) + extraWidth
+        let strHeight = strSizes.height
         // On met tout de suite à jour les dimensions
         scaleY = Float(1 / fontinfo.size_y)  // (overlapping)
         scaleX = Float(strSizes.width / contextWidth)
         setDims(Int(contextWidth), Int(contextHeight))
-        switch name.count {
-            case 0...1:
-                mtlTexture = Texture.tempStringTextures[safe: 0]?.mtlTexture
-            case 2...3:
-                mtlTexture = Texture.tempStringTextures[safe: 1]?.mtlTexture
-            case 4...8:
-                mtlTexture = Texture.tempStringTextures[safe: 2]?.mtlTexture
-            default:
-                mtlTexture = Texture.tempStringTextures[safe: 3]?.mtlTexture
+        // Texture placeholder en attendant de générer la vrai texture.
+        if withTmp {
+            switch name.count {
+                case 0...1:
+                    mtlTexture = Texture.tempStringTextures[safe: 0]?.mtlTexture
+                case 2...3:
+                    mtlTexture = Texture.tempStringTextures[safe: 1]?.mtlTexture
+                case 4...8:
+                    mtlTexture = Texture.tempStringTextures[safe: 2]?.mtlTexture
+                default:
+                    mtlTexture = Texture.tempStringTextures[safe: 3]?.mtlTexture
+            }
         }
-        
-        // Création de la vrai texture dans la thread.
+        // Création de la vrai texture (dans une thread).
         Texture.textureQueue.async { [self] in
-            // 6. Création d'un context CoreGraphics
-            let colorSpace = CGColorSpaceCreateDeviceRGB()
-            guard let context = CGContext(data: nil,
-                                          width: Int(contextWidth), height: Int(contextHeight),
-                                          bitsPerComponent: 8, bytesPerRow: 0,
-                                          space: colorSpace,
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-                else {
-                    printerror("Ne peut charger le CGContext pour : \"\(name)\".")
-                    return
-            }
-            // (lettres remplies avec le contour)
-            context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
-            
-            // 7. Dessiner la string dans le context
-            // (set context CoreGraphics dans context NSGraphics pour dessiner la NSString.)
-            #if os(OSX)
-            NSGraphicsContext.saveGraphicsState()
-            let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
-            NSGraphicsContext.current = nsgcontext
-            // Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
-            let ypos: CGFloat = 0.5 * contextHeight + (Texture.y_string_rel_shift - 0.5) * font.xHeight + font.descender
-            str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
-            NSGraphicsContext.restoreGraphicsState()
-            #else
-            UIGraphicsPushContext(context)
-            // Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
-            context.scaleBy(x: 1, y: -1)
-            let ypos: CGFloat = -strSizes.height - font.descender + (0.5 - Texture.y_string_rel_shift) * font.xHeight - 0.5 * contextHeight
-            str.draw(at: CGPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
-            UIGraphicsPopContext()
-            #endif
-            
-            // 8. Créer une image du context et en faire une texture.
-            let image = context.makeImage()
-            guard let newMtlTexture = try? Texture.textureLoader.newTexture(cgImage: image!, options: nil)
-            else {
-                printerror("cannot generate metal texture of \(name)")
-                return
-            }
-            DispatchQueue.main.async {
-                self.mtlTexture = newMtlTexture
+            if let newMtlTexture = Texture.drawMetalTextureForString(str: str, font: font,
+                    contextWidth: contextWidth, contextHeight: contextHeight,
+                    extraWidth: extraWidth, strHeight: strHeight,
+                    attributes: attributes)
+            {
+                DispatchQueue.main.async {
+                    self.mtlTexture = newMtlTexture
+                }
             }
         }
 	}
+    
+    private static func drawMetalTextureForString(str: NSString, font: Font,
+                                                  contextWidth: CGFloat, contextHeight: CGFloat,
+                                                  extraWidth: CGFloat, strHeight: CGFloat,
+                                                  attributes: [NSAttributedString.Key : Any]) -> MTLTexture?
+    {
+        // 6. Création d'un context CoreGraphics
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: nil,
+                                      width: Int(contextWidth), height: Int(contextHeight),
+                                      bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else {
+                printerror("Ne peut charger le CGContext pour : \"\(str)\".")
+                return nil
+        }
+        // (lettres remplies avec le contour)
+        context.setTextDrawingMode(CGTextDrawingMode.fillStroke)
+        
+        // 7. Dessiner la string dans le context
+        // (set context CoreGraphics dans context NSGraphics pour dessiner la NSString.)
+        #if os(OSX)
+        NSGraphicsContext.saveGraphicsState()
+        let nsgcontext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.current = nsgcontext
+        // Si on place à (0,0) la lettre est coller sur le bord du haut... D'où cet ajustement pour être centré.
+        let ypos: CGFloat = 0.5 * contextHeight + (Texture.y_string_rel_shift - 0.5) * font.xHeight + font.descender
+        str.draw(at: NSPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
+        NSGraphicsContext.restoreGraphicsState()
+        #else
+        UIGraphicsPushContext(context)
+        // Si on laise le scaling à (1, 1) et la pos à (0, 0), la lettre est à l'envers collé en bas...
+        context.scaleBy(x: 1, y: -1)
+        let ypos: CGFloat = -strHeight - font.descender + (0.5 - Texture.y_string_rel_shift) * font.xHeight - 0.5 * contextHeight
+        str.draw(at: CGPoint(x: 0.5 * extraWidth, y: ypos), withAttributes: attributes)
+        UIGraphicsPopContext()
+        #endif
+        
+        // 8. Créer une image du context et en faire une texture.
+        let image = context.makeImage()
+        guard let newMtlTexture = try? Texture.textureLoader.newTexture(cgImage: image!, options: nil)
+        else {
+            printerror("cannot generate metal texture of \(str)")
+            return nil
+        }
+        return newMtlTexture
+    }
+    
 	private func drawAsPng() {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs") else {
             printerror("Ne peut pas charger la surface \(name).")
-            drawAsString()
+            drawAsString(withTmp: false)
             return
         }
         // 1. Si pas de mini, dessiner tout de suite la texture au complet.
@@ -242,11 +260,11 @@ class Texture {
     // Donc, c'est correct ici. Il faut juste s'assurer que Texture.initWith est callé au début pour
     // initialiser le MTKTextureLoader.
     static let y_string_rel_shift: CGFloat = -0.15
-    static let justColor = Texture() // Cas pas besoin de texture. "justColor" est alors un "place holder" pour le tex d'une surface.
     static let defaultPng = Texture(name: "the_cat", type: .png, fontname: nil)
     static let defaultString = Texture(name: "🦆", type: .constantString, fontname: nil)
     static let testFrame = getPng("test_frame")
     static let blackDigits = getPng("digits_black")
+    static let white = getPng("white")
     private static let defaultTiling: Tiling = (m: 1, n: 1)
     static var pngNameToTiling: [String: Tiling] = [
         "bar_in" : (m: 1, n: 1),
@@ -258,6 +276,7 @@ class Texture {
         "switch_back" : (m: 1, n: 1),
         "switch_front" : (m: 1, n: 1),
         "the_cat" : (m: 1, n: 1),
+        "white" : (m: 1, n: 1),
     ]
     
     
@@ -351,7 +370,7 @@ class Texture {
         loaded = true
         for weaktexture in allStringTextures {
             if let texture = weaktexture.value {
-                texture.drawAsString()
+                texture.drawAsString(withTmp: true)
             }
         }
         for (_, weaktexture) in allPngTextures {
@@ -365,7 +384,7 @@ class Texture {
         allStringTextures.strip()
         for weaktexture in allStringTextures {
             if let texture = weaktexture.value {
-                texture.drawAsString()
+                texture.drawAsString(withTmp: true)
             }
         }
     }
@@ -374,7 +393,7 @@ class Texture {
         allLocalizedStringTextures.strip()
         for (_, weaktexture) in allLocalizedStringTextures {
             if let texture = weaktexture.value {
-                texture.drawAsString()
+                texture.drawAsString(withTmp: true)
             }
         }
     }

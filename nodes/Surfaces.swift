@@ -18,11 +18,14 @@ class Surface: Node {
         super.init(refNode, x, y, height, height, lambda: lambda, flags: flags, //|Flag1.isSurface,
                    asParent: asParent, asElderBigbro: asElderBigbro)
     }
+    /** Une surface "couleur" reçoit width et height.
+     * Elle n'a pas de ratio fixé automatiquement avec le png et le tiling.
+     * (Flag1.surfaceDontRespectRatio ajouté par défaut.) */
     @discardableResult
     convenience init(_ refNode: Node?, color: Vector4,
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, lambda: Float = 0,
          flags: Int = 0, mesh: Mesh = .sprite, asParent: Bool = true, asElderBigbro: Bool = false) {
-        self.init(refNode, tex: Texture.justColor, x, y, height, lambda: lambda,
+        self.init(refNode, tex: Texture.white, x, y, height, lambda: lambda,
                   flags: flags | Flag1.surfaceDontRespectRatio, mesh: mesh, asParent: asParent, asElderBigbro: asElderBigbro)
         self.width.set(width)
         piu.color = color
@@ -89,7 +92,7 @@ class StringSurface: Surface //, Openable
 		if ceiledWidth != nil {
 			addFlags(Flag1.stringSurfaceWithCeiledWidth)
 		}
-        if strTex.name.first?.isEmoji ?? false {
+        if strTex.name.isShortEmoji {
             piu.color = Color.white
         } else {
             piu.color = Color.black // (Text noir par défaut.)
@@ -120,7 +123,7 @@ class StringSurface: Surface //, Openable
 			return
 		}
 		tex = newTexture
-        if tex.name.first?.isEmoji ?? false {
+        if tex.name.isShortEmoji {
             piu.color = Color.white
         } else {
             piu.color = Color.black
@@ -133,11 +136,16 @@ class StringSurface: Surface //, Openable
 			return
 		}
 		tex.updateAsMutableString(newString)
+        if tex.name.isShortEmoji {
+            piu.color = Color.white
+        } else {
+            piu.color = Color.black
+        }
 	}
 	/** "Convenience function": Remplace la texture actuel pour une texture de string constant (non mutable). */
     func updateTextureToConstantString(_ newString: String, fontname: String? = nil) {
 		tex = Texture.getConstantString(newString, fontname: fontname)
-        if tex.name.first?.isEmoji ?? false {
+        if tex.name.isShortEmoji {
             piu.color = Color.white
         } else {
             piu.color = Color.black
@@ -199,9 +207,29 @@ class TiledSurface: Surface {
 	}
 }
 
-final class PopDisk : TiledSurface {
+/** Surface avec une mesh "FanMesh" pour afficher une section de disque. */
+class ProgressDisk: TiledSurface {
+    @discardableResult
+    init(_ refNode: Node?, pngTex: Texture,
+                  _ x: Float, _ y: Float, _ height: Float,
+                  lambda: Float = 0, i: Int = 0, flags: Int = 0,
+                  asParent: Bool = true, asElderBigbro: Bool = false
+    ) {
+        super.init(refNode, pngTex: pngTex, x, y, height, lambda: lambda, i: i, flags: flags,
+                   mesh: FanMesh(), asParent: asParent, asElderBigbro: asElderBigbro)
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+    func updateRatio(_ ratio: Float) {
+        (self.mesh as! FanMesh).update(with: ratio)
+    }
+}
+
+/** Disque "timer" qui pop et disparaît après deltaT secondes. */
+final class PopDisk : ProgressDisk {
     private var timer1, timer2: Timer!
-    private var chrono = Chrono()
+    private var chrono = ChronoR()
     private let deltaT: Float
     
     @discardableResult
@@ -210,20 +238,20 @@ final class PopDisk : TiledSurface {
     ) {
         self.deltaT = deltaT
         super.init(refNode, pngTex: pngTex, x, y, height,
-                   lambda: lambda, i: i, flags: flags, mesh: FanMesh())
-        (mesh as! FanMesh).update(with: 0)
+                   lambda: lambda, i: i, flags: flags)
+        updateRatio(0)
         chrono.start()
         self.y.fadeInFromDef(delta: height)
         width.fadeIn(delta: -height * 0.3)
         self.height.fadeIn(delta: -height * 0.3)
         openAndShowBranch()
         
-        timer1 = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] (_) in
-            if let self = self {
-                (self.mesh as! FanMesh).update(with: min(self.chrono.elapsedSec / deltaT, 1))
-            }
+        timer1 = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] (t) in
+            guard let self = self else { t.invalidate(); return }
+            self.updateRatio(min(self.chrono.elapsedSec / deltaT, 1))
         }
-        timer2 = Timer.scheduledTimer(withTimeInterval: Double(deltaT), repeats: false) { [weak self] (_) in
+        timer2 = Timer.scheduledTimer(withTimeInterval: Double(deltaT), repeats: false) { [weak self] (t) in
+            //guard let self = self else { return }
             self?.closeBranch()
             Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
                 self?.disconnect()
@@ -241,9 +269,9 @@ final class PopDisk : TiledSurface {
             }
             return
         }
-        closeBranch()
         timer1.invalidate()
         timer2.invalidate()
+        closeBranch()
         Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
             self?.disconnect()
         }

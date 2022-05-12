@@ -24,7 +24,7 @@ struct InterpolatedAngle {
 	}
 	
 	mutating func push(newPos: Float) {
-		let time = GlobalChrono.elapsedMS
+		let time = RenderingChrono.elapsedMS
 		guard time != vT[lastIndex] else {return}
 		
 		vX[currIndex] = newPos.toNormalizedAngle()

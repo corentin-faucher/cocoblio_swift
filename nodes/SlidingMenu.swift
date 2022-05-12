@@ -37,8 +37,8 @@ class SlidingMenu : Node, Scrollable { // Openable
     private var back: Frame!
     private var vitY = SmoothPos(0, 4) // La vitesse lors du "fling"
 	private var vitYm1: Float = 0   // vitesse au temps précédent
-    private var deltaT = Chrono()   // Pour la distance parcourue
-    private var flingChrono = Chrono() // Temps de "vol"
+    private var deltaT = ChronoR()   // Pour la distance parcourue
+    private var flingChrono = ChronoR() // Temps de "vol"
     private var itemHeight: Float {
         return height.realPos / Float(nDisplayed)
     }

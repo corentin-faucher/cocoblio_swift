@@ -129,7 +129,7 @@ struct SmTrans {
     
     
     //-- Data (private) --
-    private var chrono = SmallChrono()
+    private var chrono = SmallChronoR()
     private var transTime: UInt16 = SmTrans.defTransTime
     private var transState: UInt8 = 0
     private var extraState: UInt8 = 0

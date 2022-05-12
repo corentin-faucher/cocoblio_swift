@@ -10,10 +10,10 @@ import Foundation
 
 fileprivate let sleepTime: Int64 = 16000
 
-// Utilisé pour l'affichage, pas le vrai Chrono
-// Incrémenté à chaque frame de 1/f seconde, i.e. ~16 ms.
-// (pour avoir des animations plus smooth que si on prend le vrai temps...)
-enum GlobalChrono {
+/** Utilisé pour l'affichage, pas le vrai Chrono
+ * Incrémenté à chaque frame de 1/f seconde, i.e. ~16 ms.
+ * (pour avoir des animations plus smooth que si on prend le vrai temps...) */
+enum RenderingChrono {
     private(set) static var elapsedMS: Int64 = 0
     static var elapsedSec: Float {
         get {
@@ -48,8 +48,8 @@ enum GlobalChrono {
     private static var touchTime: Int64 = 0
 }
 
-// Vrai temps de référence, basé sur l'horloge interne.
-enum RealTime {
+/** Chronometre du temps écoulé depuis l'ouverture de l'app. (Vrais ms/sec écoulées) */
+enum AppChrono {
     static var isPaused: Bool = false {
         didSet {
             guard isPaused != oldValue else { return }
@@ -61,20 +61,20 @@ enum RealTime {
     }
     
     private static var time: Int64 = systemTime
-    private static var systemTime: Int64 {
+    fileprivate static var systemTime: Int64 {
         return Int64(Date().timeIntervalSinceReferenceDate * 1000)
     }
 }
 
 
-
-struct Chrono {
+/** Un chronomètre (calcul le temps écoulé) basé sur RenderingChrono (pas le vrai temps +1/f à chaque frame). */
+struct ChronoR {
     init() {
         time = 0
         isActive = false
     }
     mutating func start() {
-        time = GlobalChrono.elapsedMS
+        time = RenderingChrono.elapsedMS
         isActive = true
     }
     mutating func stop() {
@@ -93,7 +93,7 @@ struct Chrono {
     private(set) var isActive: Bool
     /// Le temps écoulé depuis "start()" en millisec.
     var elapsedMS64: Int64 {
-        return isActive ? (GlobalChrono.elapsedMS - time) : time
+        return isActive ? (RenderingChrono.elapsedMS - time) : time
     }
 	var elapsedMS32: Int32 {
 		return Int32(elapsedMS64)
@@ -104,7 +104,7 @@ struct Chrono {
     }
     /// Le temps global où le chrono a commencé (en millisec).
     var startTimeMS: Int64 {
-        return isActive ? time : GlobalChrono.elapsedMS - time;
+        return isActive ? time : RenderingChrono.elapsedMS - time;
     }
     
     mutating func add(millisec: Int64) {
@@ -121,7 +121,7 @@ struct Chrono {
     }
     mutating func remove(millisec: Int64) {
         if (isActive) { // time est le starting time.
-            time = (elapsedMS64 > millisec) ? time + millisec : GlobalChrono.elapsedMS
+            time = (elapsedMS64 > millisec) ? time + millisec : RenderingChrono.elapsedMS
         } else { // time est le temps écoulé.
             time = (time > millisec) ? time - millisec : 0
         }
@@ -136,7 +136,8 @@ struct Chrono {
     private var time: Int64
 }
 
-struct RealChrono {
+/** Un chronomètre basé sur le AppChrono (temps écoulé sans les "pause" de l'app). */
+struct Chrono {
     /// Le chronomètre est activé.
     private(set) var isActive: Bool
     
@@ -145,7 +146,7 @@ struct RealChrono {
         isActive = false
     }
     mutating func start() {
-        time = RealTime.elapsedMS
+        time = AppChrono.elapsedMS
         isActive = true
     }
     mutating func stop() {
@@ -163,7 +164,7 @@ struct RealChrono {
     
     /// Le temps écoulé depuis "start()" en millisec.
     var elapsedMS: Int64 {
-        return isActive ? (RealTime.elapsedMS - time) : time
+        return isActive ? (AppChrono.elapsedMS - time) : time
     }
     var elapsedMS32: Int32 {
         return Int32(elapsedMS)
@@ -172,9 +173,17 @@ struct RealChrono {
     var elapsedSec: Float {
         return Float(elapsedMS) / 1000
     }
+    /// Temps écouler sous la forme hh:mm:ss.
+    var elapsedHMS: String {
+        let s = elapsedMS / 1000
+        let ss = s % 60
+        let m = (s / 60) % 60
+        let h = s / 3600
+        return "\(h):\(String(format: "%02d", m)):\(String(format: "%02d", ss))"
+    }
     /// Le temps global où le chrono a commencé (en millisec).
     var startTimeMS: Int64 {
-        return isActive ? time : (RealTime.elapsedMS - time);
+        return isActive ? time : (AppChrono.elapsedMS - time);
     }
     
     
@@ -192,7 +201,7 @@ struct RealChrono {
     }
     mutating func remove(millisec: Int64) {
         if (isActive) { // time est le starting time.
-            time = (elapsedMS > millisec) ? time + millisec : RealTime.elapsedMS
+            time = (elapsedMS > millisec) ? time + millisec : AppChrono.elapsedMS
         } else { // time est le temps écoulé.
             time = (time > millisec) ? time - millisec : 0
         }
@@ -208,24 +217,24 @@ struct RealChrono {
     private var time: Int64
 }
 
-/// Chrono pour debugging... (toujours actif)
-struct ChronoChecker {
+/// Chrono pour debugging... Pour voir le temps pris par divers instructions...
+class ChronoChecker {
     init(_ name: String? = nil) {
-        time = RealTime.elapsedMS
+        time = AppChrono.elapsedMS
         count = 0
         str = "🦤 \(name ?? "timer"): "
     }
-    mutating func tic(_ message: String? = nil) {
+    func tic(_ message: String? = nil) {
         count += 1
         str += "\(message ?? String(count)) \(elapsedMS), "
     }
-    mutating func print() {
+    func print() {
         str += "ended \(elapsedMS)."
         Swift.print(str)
     }
     /// Le temps écoulé depuis "start()" en millisec.
     var elapsedMS: Int64 {
-        return RealTime.elapsedMS - time
+        return AppChrono.elapsedMS - time
     }
     var elapsedMS32: Int32 {
         return Int32(elapsedMS)
@@ -242,71 +251,12 @@ struct ChronoChecker {
     private var count: Int
 }
 
-
-struct CountDown {
+/** Un compte à rebours basé sur le AppChrono. */
+struct Countdown {
     private(set) var isActive: Bool
     var isRinging: Bool {
         if isActive {
-            return ((GlobalChrono.elapsedMS - time) > ringTimeMS)
-        } else {
-            return (time > ringTimeMS)
-        }
-    }
-    var ringTimeMS: Int64
-    var ringTimeSec: Float {
-        get {
-            return Float(ringTimeMS) / 1000
-        }
-        set(newRingTimeSec) {
-            ringTimeMS = Int64(newRingTimeSec * 1000)
-        }
-    }
-	var elapsedMS64: Int64 {
-		return isActive ? (GlobalChrono.elapsedMS - time) : time
-	}
-	var remainingMS: Int64 {
-		let elapsed = elapsedMS64
-		if elapsed > ringTimeMS {
-			return 0
-		} else {
-			return ringTimeMS - elapsed
-		}
-	}
-	var remainingSec: Double {
-		return Double(remainingMS) / 1000
-	}
-    
-    init(ringMillisec: Int64) {
-        isActive = false
-        time = 0
-        ringTimeMS = ringMillisec
-    }
-    init(ringSec: Float) {
-        isActive = false
-        time = 0
-        let ringSecPos = max(ringSec, 0)
-        ringTimeMS = Int64(ringSecPos*1000)
-    }
-    
-    mutating func start() {
-        time = GlobalChrono.elapsedMS
-        isActive = true
-    }
-    mutating func stop() {
-        isActive = false
-        time = 0
-    }
-    
-    // Membres privés
-    private var time: Int64
-}
-
-
-struct RealCountDown {
-    private(set) var isActive: Bool
-    var isRinging: Bool {
-        if isActive {
-            return ((RealTime.elapsedMS - time) > ringTimeMS)
+            return ((AppChrono.elapsedMS - time) > ringTimeMS)
         } else {
             return (time > ringTimeMS)
         }
@@ -321,7 +271,7 @@ struct RealCountDown {
         }
     }
     var elapsedMS64: Int64 {
-        return isActive ? (RealTime.elapsedMS - time) : time
+        return isActive ? (AppChrono.elapsedMS - time) : time
     }
     var remainingMS: Int64 {
         let elapsed = elapsedMS64
@@ -348,7 +298,7 @@ struct RealCountDown {
     }
     
     mutating func start() {
-        time = RealTime.elapsedMS
+        time = AppChrono.elapsedMS
         isActive = true
     }
     mutating func stop() {
@@ -360,20 +310,79 @@ struct RealCountDown {
     private var time: Int64
 }
 
-
-struct SmallChrono {
-    var elapsedMS16: UInt16 {
-        return GlobalChrono.elapsedMS16 &- startTime
+/** Un compte à rebours basé sur le SystemTime (vrai temps de l'OS sans tenir compte des pause/resume de l'app).. */
+struct CountdownS {
+    private(set) var isActive: Bool
+    var isRinging: Bool {
+        if isActive {
+            return ((AppChrono.systemTime - time) > ringTimeMS)
+        } else {
+            return (time > ringTimeMS)
+        }
     }
-    var elapsedSec: Float {
-        return Float(GlobalChrono.elapsedMS16 &- startTime)/1000
+    var ringTimeMS: Int64
+    var ringTimeSec: Float {
+        get {
+            return Float(ringTimeMS) / 1000
+        }
+        set(newRingTimeSec) {
+            ringTimeMS = Int64(newRingTimeSec * 1000)
+        }
+    }
+    var elapsedMS64: Int64 {
+        return isActive ? (AppChrono.systemTime - time) : time
+    }
+    var remainingMS: Int64 {
+        let elapsed = elapsedMS64
+        if elapsed > ringTimeMS {
+            return 0
+        } else {
+            return ringTimeMS - elapsed
+        }
+    }
+    var remainingSec: Double {
+        return Double(remainingMS) / 1000
+    }
+    
+    init(ringMillisec: Int64) {
+        isActive = false
+        time = 0
+        ringTimeMS = ringMillisec
+    }
+    init(ringSec: Double) {
+        isActive = false
+        time = 0
+        let ringSecPos = max(ringSec, 0)
+        ringTimeMS = Int64(ringSecPos*1000)
     }
     
     mutating func start() {
-        startTime = GlobalChrono.elapsedMS16
+        time = AppChrono.systemTime
+        isActive = true
+    }
+    mutating func stop() {
+        isActive = false
+        time = 0
+    }
+    
+    // Membres privés
+    private var time: Int64
+}
+
+/** Version simplifié de ChronoR. Time sur juste 16 bits -> moins de 32 sec. */
+struct SmallChronoR {
+    var elapsedMS16: UInt16 {
+        return RenderingChrono.elapsedMS16 &- startTime
+    }
+    var elapsedSec: Float {
+        return Float(RenderingChrono.elapsedMS16 &- startTime)/1000
+    }
+    
+    mutating func start() {
+        startTime = RenderingChrono.elapsedMS16
     }
     mutating func setElapsedTo(newTimeMS: UInt16) {
-        startTime = GlobalChrono.elapsedMS16 &- newTimeMS
+        startTime = RenderingChrono.elapsedMS16 &- newTimeMS
     }
     
     // Membre privé

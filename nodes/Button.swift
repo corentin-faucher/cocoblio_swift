@@ -160,7 +160,7 @@ protocol Draggable : Node {
 class SecureButton : Node, Draggable {
     private weak var pop_disk: PopDisk? = nil
     private var isHolding: Bool = false
-    private var countdown: CountDown
+    private var countdown: Countdown
     private var disk_timer: Timer? = nil
     private let popTex: Texture
     private let popI: Int
@@ -178,7 +178,7 @@ class SecureButton : Node, Draggable {
     {
         self.popTex = popTex
         self.popI = popI
-        self.countdown = CountDown(ringSec: holdTimeInSec)
+        self.countdown = Countdown(ringSec: holdTimeInSec)
         self.failPopStringTex = failPopStringTexture
         self.failPopFrameTex = failPopFrameTexture
         self.failPopRatio = failPopRatio
