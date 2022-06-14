@@ -22,6 +22,10 @@ extension Character {
     var isAlphaNumeric: Bool {
         return String(self).rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil
     }
+    var isDigit: Bool {
+        return digitCharacters.contains(self)
+    }
+    
 //    var isEmoji: Bool {
 //        guard let firstScalar = self.unicodeScalars.first else { return false }
 //        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
@@ -29,8 +33,10 @@ extension Character {
 //    func isLetter() -> Bool {
 //        return String(self).rangeOfCharacter(from: CharacterSet.letters)
 //    }
-    
 }
+
+fileprivate let digitCharacters: [Character] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
 
 extension UInt32 {
     func toCharacter() -> Character {

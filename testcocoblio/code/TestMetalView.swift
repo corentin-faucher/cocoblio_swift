@@ -7,6 +7,7 @@
 //
 
 import MetalKit
+import GameController
 
 class MetalView: MTKView, CoqMetalView {
     var root: AppRootBase!
@@ -40,7 +41,8 @@ class MetalView: MTKView, CoqMetalView {
                 isPaused = true
                 return
             }
-            GlobalChrono.isPaused = isPaused
+            AppChrono.isPaused = isPaused
+            RenderingChrono.isPaused = isPaused
         }
     }
     
@@ -71,6 +73,36 @@ class MetalView: MTKView, CoqMetalView {
         root.margins = Margins(top: headerHeight, left: 0, bottom: 0, right: 0)
         root.frameSizeInPx = frame.size
         root.updateFrame()
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name.GCControllerDidBecomeCurrent, object: nil, queue: nil) { [self] _ in
+            guard let controller = GCController.current, let root = self.root as? AppRoot, let bonhomme = root.bonhomme else {
+                printerror("no controller or no root?"); return
+            }
+            print("🐱 Controller current detected \(controller.debugDescription)")
+            if let motion = controller.motion {
+                print("Motion found")
+                motion.valueChangedHandler = { (motion: GCMotion) in
+                    print("motion \(motion)")
+                }
+            }
+            if let haptics = controller.haptics {
+                print("haptic \(haptics.supportedLocalities)")
+//                haptics.createEngine(withLocality: .handles)
+            }
+            guard let gamepad = controller.extendedGamepad else {
+                printerror("No gamepad"); return
+            }
+            gamepad.rightTrigger.pressedChangedHandler = { (_: GCControllerButtonInput, value: Float, pressed: Bool) in
+                self.isPaused = false
+                bonhomme.action(x: gamepad.rightThumbstick.xAxis.value, y: gamepad.rightThumbstick.yAxis.value, speed: 5)
+            }
+            gamepad.leftThumbstick.valueChangedHandler = { (direct: GCControllerDirectionPad, x: Float, y: Float) in
+                self.isPaused = false
+                bonhomme.acc.x = 2*x
+                bonhomme.acc.y = 2*y
+                print("leftThumbStick : \(x), \(y).")
+            }
+        }
     }
     
     func setBackground(color: Vector4, isDark: Bool) {
@@ -93,36 +125,45 @@ class MetalView: MTKView, CoqMetalView {
     }
     
     override func keyDown(with event: NSEvent) {
+        if let controller = GCController.current {
+            print("Controller \(controller.battery?.batteryLevel ?? 0)")
+            if let gamepat = controller.extendedGamepad {
+                print("button a \(gamepat.buttonA.isPressed)")
+            }
+        }
+        print("Controller \(GCController.controllers())")
         self.isPaused = false
 //        let key = KeyData(keycode: event.keyCode, keymod: event.modifierFlags.rawValue, isVirtual: false, char: event.characters?.first)
 //        keyAction(key: key)
-        guard let root = root as? AppRoot, let particle = root.particle else {
+        guard let root = root as? AppRoot, let bonhomme = root.bonhomme else {
             printerror("bad root")
             return
         }
         switch event.keyCode {
             case Keycode.leftArrow:
-                particle.acc.x = -1
+                bonhomme.acc.x = -1
             case Keycode.rightArrow:
-                particle.acc.x = 1
+                bonhomme.acc.x = 1
             case Keycode.upArrow:
-                particle.acc.y = 1
+                bonhomme.acc.y = 1
             case Keycode.downArrow:
-                particle.acc.y = -1
+                bonhomme.acc.y = -1
+            case Keycode.space:
+                bonhomme.action(x: 0, y: 0, speed: 2)
             default: break
         }
     }
     override func keyUp(with event: NSEvent) {
         self.isPaused = false
-        guard let root = root as? AppRoot, let particle = root.particle else {
+        guard let root = root as? AppRoot, let bonhomme = root.bonhomme else {
             printerror("bad root")
             return
         }
         switch event.keyCode {
             case Keycode.leftArrow, Keycode.rightArrow:
-                particle.acc.x = 0
+                bonhomme.acc.x = 0
             case Keycode.upArrow, Keycode.downArrow:
-                particle.acc.y = 0
+                bonhomme.acc.y = 0
             default: break
         }
     }

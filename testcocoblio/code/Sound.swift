@@ -23,7 +23,7 @@ enum Sound : String, CaseIterable {
         var bestIndex: Int = 0
         var bestRemaining: Int64 = 20000
         for (index, expiredTime) in Sound.expiredTimes.enumerated() {
-            let remainingTime = expiredTime - GlobalChrono.elapsedMS
+            let remainingTime = expiredTime - AppChrono.elapsedMS
             // Ok, trouvé un fini.
             if remainingTime <= 0 {
                 bestIndex = index
@@ -41,7 +41,7 @@ enum Sound : String, CaseIterable {
         
         // Mise à jour du expiredTime (en ms)
         let durationSec = Double(buffer.frameLength) / buffer.format.sampleRate
-        Sound.expiredTimes[bestIndex] = GlobalChrono.elapsedMS + Int64(durationSec * 1000)
+        Sound.expiredTimes[bestIndex] = AppChrono.elapsedMS + Int64(durationSec * 1000)
         
         // Préparation du player et pitchControl
         if audioPlayer.isPlaying {
@@ -110,7 +110,7 @@ enum Sound : String, CaseIterable {
         for _ in 0..<Sound.numberOfPlayers {
             let audioPlayer = AVAudioPlayerNode()
             let pitchControler = AVAudioUnitTimePitch()
-            expiredTimes.append(GlobalChrono.elapsedMS)
+            expiredTimes.append(AppChrono.elapsedMS)
             audioPlayers.append(audioPlayer)
             pitchControls.append(pitchControler)
             engine.attach(audioPlayer)

@@ -9,16 +9,18 @@
 import Foundation
 
 class AppRoot: AppRootBase {
-    var particle: Particle!
+    var bonhomme: Bonhomme!
     override init(view: CoqMetalView) {
         super.init(view: view)
         
-        Texture.pngNameToTiling.putIfAbsent(key: "tiles_sol", value: (8, 9))
-        let tile = Texture.getPng("tiles_sol")
-        let cat = Texture.defaultPng
+        Texture.pngNameToTiling.putIfAbsent(key: "tiles", value: (3, 3))
+        Texture.pngNameToTiling.putIfAbsent(key: "monstres", value: (3, 1))
+        let tileTex = Texture.getPng("tiles")
+        let monstresTex = Texture.getPng("monstres")
         
-        let grid = Grid(ref: self, m: 30, n: 20, height: 2, tileTex: tile)
-        particle = Particle(grid: grid, ref: self, tex: cat, 0, 0, 0.2)
+        let grid = Grid(ref: self, m: 30, n: 20, height: 2, tileTex: tileTex)
+        bonhomme = Bonhomme(grid: grid, ref: self, tex: monstresTex, 0, 0, 0.2)
+        bonhomme.updateTile(2, 0)
         openAndShowBranch()
     }
     
@@ -27,6 +29,9 @@ class AppRoot: AppRootBase {
     }
     
     override func willDrawFrame() {
-        particle.update()
+        Particle.setDeltaT()
+        forEachTypedNodeInBranch { (part: Particle) in
+            part.update()
+        }
     }
 }

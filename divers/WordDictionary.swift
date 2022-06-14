@@ -89,7 +89,7 @@ class WordDictionary {
         if words.isEmpty {
             loadWords()
         }
-        return words.contains(word)
+        return words.contains(word.lowercased())
     }
     
     /** Scan le dictionnaire pour trouver des mots pour les leçons. Est fait en parallèle dans la thread dictQueue.
