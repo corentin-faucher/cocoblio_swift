@@ -157,16 +157,25 @@ enum Language : LanguageInfo, CaseIterable {
 			printwarning("Using fored language \(language).")
 			return language
 		}
-		if var langISO = Locale.current.languageCode {
-			if langISO == "zh" {
-				langISO = langISO + "-" + (Locale.current.scriptCode ?? "")
-			}
-			if let language = Language(iso: langISO) {
-				return language
-			}
-		}
-		printwarning("Language not found. Taking default: \(defaultLanguage).")
-		return defaultLanguage
+        guard var langISO = Locale.current.languageCode else {
+            printerror("Locale language not defined. Taking default: \(defaultLanguage).")
+            return defaultLanguage
+        }
+        // Cas du chinois
+        if langISO == "zh" {
+            langISO = langISO + "-" + (Locale.current.scriptCode ?? "Hans")
+            if let language = Language(iso: langISO) {
+                return language
+            }
+            printwarning("Not finding locale chinese \(langISO).")
+            return .chinese_simpl
+        }
+        // Sinon vérifier si définie parmis les 13 autres langues...
+        guard let language = Language(iso: langISO) else {
+            printwarning("Language \(langISO) not implemented. Taking default: \(defaultLanguage).")
+            return defaultLanguage
+        }
+        return language
 	}
     
 	/*-- Private stuff... --*/
