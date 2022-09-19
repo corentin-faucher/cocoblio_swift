@@ -154,6 +154,10 @@ class AppRootBase : RootNode {
 	func willDrawFrame() {
         // (pass)
 	}
+    
+    func didResume(after sleepingTimeSec: Float) {
+        // (pass)
+    }
 	
     final func changeActiveScreenTo(_ newScreen: ScreenBase?) {
 		// 0. Cas réouverture

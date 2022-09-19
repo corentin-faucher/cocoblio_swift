@@ -15,9 +15,16 @@ fileprivate let sleepTime: Int64 = 16000
  * (pour avoir des animations plus smooth que si on prend le vrai temps...) */
 enum RenderingChrono {
     private(set) static var elapsedMS: Int64 = 0
+    private static var elapsedAngleMS: Int64 = 0
     static var elapsedSec: Float {
         get {
             return Float(elapsedMS)/1000
+        }
+    }
+    /** Un temps écoulé qui reste toujours entre 0 et 24pi. (Pour les sin/cos) */
+    static var elapsedAngle: Float {
+        get {
+            return Float(elapsedAngleMS)/1000
         }
     }
     static var elapsedMS16: UInt16 {
@@ -30,6 +37,7 @@ enum RenderingChrono {
         didSet {
             if !isPaused {
                 touchTime = elapsedMS
+                touchAngleMS = elapsedAngleMS
             }
         }
     }
@@ -42,10 +50,16 @@ enum RenderingChrono {
         guard !isPaused else { return }
         let deltaT = Int64(1000/Float(frequency))
         elapsedMS += deltaT
+        elapsedAngleMS += deltaT
+        if elapsedAngleMS > angleLoopTimeMS {
+            elapsedAngleMS -= angleLoopTimeMS
+        }
     }
     
     // Membres privés
     private static var touchTime: Int64 = 0
+    private static var touchAngleMS: Int64 = 0
+    private static let angleLoopTimeMS: Int64 = Int64(24000 * Float.pi)
 }
 
 /** Chronometre du temps écoulé depuis l'ouverture de l'app. (Vrais ms/sec écoulées) */
@@ -53,14 +67,30 @@ enum AppChrono {
     static var isPaused: Bool = false {
         didSet {
             guard isPaused != oldValue else { return }
+            // Mise en pause
+            if isPaused {
+                startSleepTimeMS = systemTime
+            }
+            // Sortie de pause
+            else {
+                lastSleepTimeMS = systemTime - startSleepTimeMS
+            }
+            // Temps écoulé ou temps de pause...
             time = systemTime - time
         }
     }
     static var elapsedMS: Int64 {
         return isPaused ? time : (systemTime - time)
     }
-    
+    // Durée de la dernière pause en secondes.
+    static var lastSleepTimeSec: Float {
+        return Float(lastSleepTimeMS) / 1000
+    }
+    /** Si isPause : temps total écoulé sans pause, sinon c'est le systemTime au départ (et sans pause).
+     * i.e. isPause == true : time == elapsedTime,  isPause == false : time == systemTime - elapsedTime. */
     private static var time: Int64 = systemTime
+    private static var lastSleepTimeMS: Int64 = 0
+    private static var startSleepTimeMS: Int64 = 0
     fileprivate static var systemTime: Int64 {
         return Int64(Date().timeIntervalSinceReferenceDate * 1000)
     }
@@ -136,7 +166,8 @@ struct ChronoR {
     private var time: Int64
 }
 
-/** Un chronomètre basé sur le AppChrono (temps écoulé sans les "pause" de l'app). */
+/** Un chronomètre basé sur le AppChrono (temps écoulé sans les "pause" de l'app).
+ * N'est pas actif à l'ouverture. */
 struct Chrono {
     /// Le chronomètre est activé.
     private(set) var isActive: Bool

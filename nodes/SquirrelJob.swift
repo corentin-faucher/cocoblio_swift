@@ -78,6 +78,16 @@ extension Node {
         }
     }
     
+    func forEachTypedChild<T: Node>(_ block: (T) -> Void) {
+        guard let firstChild = firstChild else { return }
+        let sq = Squirrel(at: firstChild)
+        repeat {
+            if let typed = sq.pos as? T {
+                block(typed)
+            }
+        } while sq.goRight();
+    }
+    
     /** Retirer des flags à la loop de frère où se situe le noeud présent.  Inutile ? */
     /*
     func removeBroLoopFlags(_ flags: Int) {

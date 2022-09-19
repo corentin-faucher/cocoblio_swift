@@ -147,7 +147,8 @@ class TextViewWrapper : Node {
     {
         // 0. Init textView, scrollView
         #if os(OSX)
-        if scrollable {
+        #warning("check scroll view...")
+        if scrollable, #available(macOS 10.14, *) {
             scrollView = MyTextView.scrollableTextView()// NSTextView.scrollableTextView()
             scrollView?.setCorners()
             textView = scrollView?.documentView as! MyTextView

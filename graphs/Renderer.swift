@@ -56,7 +56,8 @@ class Renderer : NSObject {
 	fileprivate var currentVertexCount: Int = 0
 	// La texture présentement utilisée
 	fileprivate var currentTexture: Texture? = nil
-    private var shaderTimer: ChronoR
+    /** Timer qui loop entre 0 et 4 pi (à utiliser pour les objets/effets qui tournent (avec sin/cos...). */
+//    private(set) var radianTimer: ChronoR
 	// Metal Stuff
 	// fileprivate var commandEncoder: MTLRenderCommandEncoder!
 	private let commandQueue: MTLCommandQueue!
@@ -130,9 +131,6 @@ class Renderer : NSObject {
         /*-- Init de Mesh avec device (gpu) car utilisé pour créer les buffers. --*/
 		Mesh.setDeviceAndInitBasicMeshes(device)
         
-        shaderTimer = ChronoR()
-        shaderTimer.start()
-        
         super.init()
     }
     func initClearColor(rgb: Vector4) {
@@ -200,11 +198,8 @@ extension Renderer: MTKViewDelegate {
         
         // 1. Check le chrono/sleep.
         RenderingChrono.update(frequency: view.preferredFramesPerSecond)
-        if shaderTimer.elapsedSec > 2 * .pi + 0.1 {
-            shaderTimer.remove(sec: 2 * .pi)
-        }
         // 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
-        PerFrameUniforms.pfu.time = shaderTimer.elapsedSec
+        PerFrameUniforms.pfu.time = RenderingChrono.elapsedAngle
         root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
         // 3. Action du game engine avant l'affichage.
         root.willDrawFrame()
