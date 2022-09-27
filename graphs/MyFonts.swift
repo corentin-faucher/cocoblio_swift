@@ -185,7 +185,14 @@ enum FontManager {
     }
     #endif
     
-    static private let fontSizeRatio: CGFloat = 0.065 // Hauteur de string à ~1/15 de la hauteur de l'écran.
+    /** Hauteur de string à ~1/15 de la hauteur de l'écran. */
+    static private let fontSizeRatio: CGFloat = {
+        if #unavailable(iOS 13.0) {
+            return 0.045
+        } else {
+            return 0.065
+        }
+    }()
     static private let minFontSize: CGFloat = 12
     static private let maxFontSize: CGFloat = 144
     static private let fontInfoDic: [String: FontInfo] = [

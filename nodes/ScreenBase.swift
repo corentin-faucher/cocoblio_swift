@@ -19,6 +19,9 @@ protocol KeyResponder : ScreenBase {
 	func keyUp(key: KeyboardKey)
 	func modifiersChangedTo(_ newModifiers: UInt)
 }
+protocol CharResponder : ScreenBase {
+    func charAction(_ char: Character)
+}
 
 class ScreenBase : Node
 {

@@ -41,7 +41,9 @@ fileprivate let text_relative_height: CGFloat = 0.65
 class MyTextField : UITextField {
     init() {
         super.init(frame: CGRect())
-        backgroundColor = .systemBackground
+        if #available(iOS 13.0, *) {
+            backgroundColor = .systemBackground
+        }
         borderStyle = .roundedRect
         autocorrectionType = .no
         autocapitalizationType = .none

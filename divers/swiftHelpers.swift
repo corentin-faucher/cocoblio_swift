@@ -23,6 +23,12 @@ func printdebug(_ message: String, function: String = #function, file: String = 
 	print("🐞 Debug.: \(message) in \(function) of file \((file as NSString).lastPathComponent)")
 	#endif
 }
+func printfulldebug(_ message: String) {
+    #if DEBUG
+    print("🐔 Deb.Info.: \(message).")
+    Thread.callStackSymbols.forEach{print($0)}
+    #endif
+}
 
 func printnoln(_ message: String) {
 	print(message, terminator: "")
@@ -179,6 +185,7 @@ extension KotlinLikeScope {
 }
 
 extension Optional where Wrapped: KotlinLikeScope {
+    @discardableResult
 	@inline(__always) func also(_ block: (Wrapped) -> Void) -> Self? {
 		guard let self = self else {return nil}
 		block(self)

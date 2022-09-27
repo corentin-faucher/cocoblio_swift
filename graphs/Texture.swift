@@ -54,7 +54,7 @@ class Texture {
         self.type = type
         
         if type == .png {
-            if let tiling = Texture.pngNameToTiling[name] {
+            if let tiling = Texture.tilingOfPngNamed[name] {
                 m = tiling.m; n = tiling.n
                 ptu.dim = (m: Float(m), n: Float(n))
             } else {
@@ -214,14 +214,19 @@ class Texture {
     }
     
 	private func drawAsPng() {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs") else {
+        let pngUrl: URL
+        if let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: Texture.pngsDirName) {
+            pngUrl = url
+        } else if let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: Texture.defaultPngsDirName) {
+            pngUrl = url
+        } else {
             printerror("Ne peut pas charger la surface \(name).")
             drawAsString(withTmp: false)
             return
         }
         // 1. Si pas de mini, dessiner tout de suite la texture au complet.
         guard let mini = Texture.miniMtlTextureNamed[name] else {
-            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: url,
+            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: pngUrl,
                                              options:  [MTKTextureLoader.Option.SRGB : false])
             else {
                 printerror("Cannot init mtltexture")
@@ -235,7 +240,7 @@ class Texture {
         mtlTexture = mini
         setDims(mini.width, mini.height)
         Texture.textureQueue.async {
-            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: url,
+            guard let newMtlTexture = try? Texture.textureLoader.newTexture(URL: pngUrl,
                                                                  options:  [MTKTextureLoader.Option.SRGB : false
                                                                            ])
             else {
@@ -255,6 +260,7 @@ class Texture {
     
 	
 	/*-- Static fields --*/
+    static private(set) var loaded: Bool = false
     // Textures accessibles par défaut...
     // ** Les variables globales/static en swift sont initialisées de façon "lazy".
     // Donc, c'est correct ici. Il faut juste s'assurer que Texture.initWith est callé au début pour
@@ -265,20 +271,6 @@ class Texture {
     static let testFrame = getPng("test_frame")
     static let blackDigits = getPng("digits_black")
     static let white = getPng("white")
-    private static let defaultTiling: Tiling = (m: 1, n: 1)
-    static var pngNameToTiling: [String: Tiling] = [
-        "bar_in" : (m: 1, n: 1),
-        "digits_black" : (m: 12, n: 2),
-        "test_frame" : (m: 1, n: 1),
-        "scroll_bar_back" : (m: 1, n: 3),
-        "scroll_bar_front" : (m: 1, n: 3),
-        "sliding_menu_back" : (m: 1, n: 1),
-        "switch_back" : (m: 1, n: 1),
-        "switch_front" : (m: 1, n: 1),
-        "the_cat" : (m: 1, n: 1),
-        "white" : (m: 1, n: 1),
-    ]
-    
     
     
 	/*-- Static method --*/
@@ -292,14 +284,27 @@ class Texture {
             Texture(name: "lorem", type: .constantString, fontname: nil),
             Texture(name: "Lorem ipsum", type: .constantString, fontname: nil),
         ]
-        for (name, _) in pngNameToTiling {
-            tryToAddMiniTextureFor(name)
-        }
+        // Textures de pngs par défaut (pas de mini pour les textures par defaut,
+        // voir valeurs initiales de -> tilingOfPngNamed.
+        defaultPngTextures = tilingOfPngNamed.map { getPng($0.key) }
 		loaded = true
 	}
-    static private let textureQueue = DispatchQueue(label: "texture.queue")
-    private static var textureLoader: MTKTextureLoader!
-    static private(set) var loaded: Bool = false
+    /** Ajoute le tiling pour un nom de png et tente de précharger sa "mini". */
+    static func addPngTilingsAndMinis(_ tilingOfPng: [String: Tiling]) {
+        for (name, tiling) in tilingOfPng {
+            tilingOfPngNamed.putIfAbsent(key: name, value: tiling, showWarning: true)
+            // Ajout du mini?
+            guard miniMtlTextureNamed[name] == nil,
+                  let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs_mini")
+            else { continue }
+            guard let miniTex = try? textureLoader.newTexture(URL: url, options: [MTKTextureLoader.Option.SRGB : false])
+            else {
+                printerror("Cannot create mini-texture \(name).")
+                continue
+            }
+            miniMtlTextureNamed[name] = miniTex
+        }
+    }
     /** La texture d'une string mutable n'est pas partagé.
     * Pour une string non mutable (constant), on garde une weak reference pour éviter les duplicas. */
     static func getConstantString(_ string: String, fontname: String? = nil) -> Texture {
@@ -336,17 +341,6 @@ class Texture {
         allPngTextures[pngName] = WeakElement(newPng)
         temporyAddStrongRef(pngName, newPng)
         return newPng
-    }
-    static func tryToAddMiniTextureFor(_ name: String) {
-        guard miniMtlTextureNamed[name] == nil, let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "pngs_mini")
-        else { return }
-        guard let miniTex = try? textureLoader.newTexture(URL: url,
-                                         options: [MTKTextureLoader.Option.SRGB : false])
-        else {
-            printerror("Cannot create texture \(name)")
-            return
-        }
-        miniMtlTextureNamed[name] = miniTex
     }
     // Chargement et libération des textures (lors de pauses)
     static func suspend() {
@@ -399,20 +393,47 @@ class Texture {
     }
     
     /*-- Private stuff...  --*/
-    private static func temporyAddStrongRef(_ name:String, _ tex: Texture) {
-        guard allTexturesStrong[name] == nil else { return }
-        allTexturesStrong[name] = tex
-        Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
-            allTexturesStrong.removeValue(forKey: name)
+    private static let pngsDirName: String = {
+        if #unavailable(iOS 13.0) {
+            return "pngs_small"
+        } else {
+            return "pngs"
         }
-    }
+    }()
+    private static let defaultPngsDirName: String = "pngs"
+    private static let textureQueue = DispatchQueue(label: "texture.queue")
+    private static var textureLoader: MTKTextureLoader!
+    // Le tiling associé à un png (init avec les "defaultPngTextures").
+    private static var tilingOfPngNamed: [String: Tiling] = [
+        "bar_in" : (m: 1, n: 1),
+        "digits_black" : (m: 12, n: 2),
+        "scroll_bar_back" : (m: 1, n: 3),
+        "scroll_bar_front" : (m: 1, n: 3),
+        "sliding_menu_back" : (m: 1, n: 1),
+        "switch_back" : (m: 1, n: 1),
+        "switch_front" : (m: 1, n: 1),
+        "test_frame" : (m: 1, n: 1),
+        "the_cat" : (m: 1, n: 1),
+        "white" : (m: 1, n: 1),
+    ]
+    // Strong ref. des png par defaut (pour quelles reste en mémoire)
+    private static var defaultPngTextures: [Texture] = []
     // Les str temporaire en attendant que la vrai string soit créée.
     private static var tempStringTextures: [Texture] = []
     // Les "minis" en attendant que la vrai texture soit chargé.
     private static var miniMtlTextureNamed: [String: MTLTexture] = [:]
+    
+    private static func temporyAddStrongRef(_ name:String, _ tex: Texture) {
+        guard tempStrongTextureRefs[name] == nil else { return }
+        tempStrongTextureRefs[name] = tex
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+            tempStrongTextureRefs.removeValue(forKey: name)
+        }
+    }
     // Liste strong de toutes les textures. Pour éviter les efface/création à répétition.
     // pas sûr que c'est une bonne solution...
-    private static var allTexturesStrong: [String: Texture] = [:]
+    private static var tempStrongTextureRefs: [String: Texture] = [:]
+//    private static var tempStrongTexture: [String: (Timer, Texture)] = [:]
     // On garde une référence pour libérer l'espace et pour le resizing des strings.
     private static var allStringTextures: [WeakElement<Texture>] = []
     // On garde aussi les liste des constant et localized pour éviter les duplicats

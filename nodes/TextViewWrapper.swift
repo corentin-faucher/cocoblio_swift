@@ -80,8 +80,12 @@ import UIKit
 
 extension UIColor {
     static var myTextColor: UIColor {
-        return UIColor { (traits) -> UIColor in
-            return traits.userInterfaceStyle == .dark ? .lightText : .darkText
+        if #available(iOS 13.0, *) {
+            return UIColor { (traits) -> UIColor in
+                return traits.userInterfaceStyle == .dark ? .lightText : .darkText
+            }
+        } else {
+            return .darkText
         }
     }
 }
@@ -147,8 +151,8 @@ class TextViewWrapper : Node {
     {
         // 0. Init textView, scrollView
         #if os(OSX)
-        #warning("check scroll view...")
-        if scrollable, #available(macOS 10.14, *) {
+//        #warning("check scroll view...")
+        if scrollable {
             scrollView = MyTextView.scrollableTextView()// NSTextView.scrollableTextView()
             scrollView?.setCorners()
             textView = scrollView?.documentView as! MyTextView

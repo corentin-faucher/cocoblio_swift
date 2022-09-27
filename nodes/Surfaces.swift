@@ -278,6 +278,33 @@ final class PopDisk : ProgressDisk {
     }
 }
 
+final class PopSurface: TiledSurface {
+    @discardableResult
+    init?(over ref: Node, pngTex: Texture, time: Double,
+         x_rel: Float, y_rel: Float, h_rel: Float,
+         lambda: Float = 0, i: Int = 0, flags: Int = 0)
+    {
+        let sq = Squirrel(at: ref,
+                          relPos: Vector2(ref.x.realPos, ref.y.realPos),
+                          scaleInit: .deltas)
+        while sq.goUpPS() {}
+        let w = 2*sq.vS.y
+        super.init(PopOver.screen, pngTex: pngTex,
+                   sq.v.x + x_rel * w, sq.v.y + y_rel * w, h_rel * w,  // Facteur 2 parce que scale est init sur delta.
+                   lambda: lambda, i: i, flags: flags | Flag1.poping)
+        openAndShowBranch()
+        Timer.scheduledTimer(withTimeInterval: time, repeats: false) { [weak self] (t) in
+            self?.closeBranch()
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
+                self?.disconnect()
+            }
+        }
+    }
+    required init(other: Node) {
+        fatalError("init(other:) has not been implemented")
+    }
+}
+
 class LanguageSurface: Surface
 {
 	@discardableResult

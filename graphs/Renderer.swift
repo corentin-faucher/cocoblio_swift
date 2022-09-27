@@ -5,9 +5,17 @@
 //  Created by Corentin Faucher on 2018-10-25.
 //  Copyright © 2018 Corentin Faucher. All rights reserved.
 //
+
 import MetalKit
 import CoreGraphics
 
+/** Le renderer, délégué d'une vue Metal (MTKView) en charge de l'affichage.
+ * -> voir draw(in view: MTKView).
+ * *** Note : macOS 10.14 est nécessaire, car on n'utilise que Metal.
+ * Sinon il faudrait implémenter OpenGL en plus... :(
+ * (Un viel ordi (avec 10.13) va boguer lors de la création du gpu, i.e. device = MTLCreateSystemDefaultDevice().)
+ */
+@available(macOS 10.14, iOS 12, *)  // Nécésite Metal (pas d'OpenGL)
 class Renderer : NSObject {
 	/*-- Struct related to Renderer --*/
     /** Les propriétés d'affichage d'un objet/instance (un noeud typiquement). */

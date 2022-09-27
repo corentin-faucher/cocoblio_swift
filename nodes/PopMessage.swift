@@ -119,7 +119,7 @@ class PopOver : Node {
         return screen.width.realPos * 0.95
     }
     fileprivate static var defaultFrameTex: Texture!
-    fileprivate static var screen: ScreenBase!
+    private(set) static var screen: ScreenBase!
     
 }
 

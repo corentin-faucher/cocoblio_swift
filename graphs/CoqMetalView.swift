@@ -29,11 +29,9 @@ protocol CoqMetalView : MTKView {
     // Pour la détection du scrolling dans iOS...
     func addScrollingViewIfNeeded(with slidingMenu: SlidingMenu)
     func removeScrollingView()
-//    #if os(OSX)
-//    var asAppleView: NSView { get }
-//    #else
-//    var asAppleView: UIView { get }
-//    #endif
+    // Pour la détection des "keyDown" d'un clavier bluetooth dans iOS < 13.4.
+    func activateDummyTextfield()
+    func deactivateDummyTextfield()
 }
 
 extension CoqMetalView {
