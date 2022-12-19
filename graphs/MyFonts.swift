@@ -15,8 +15,6 @@ import UIKit
 typealias Font = UIFont
 #endif
 
-typealias FontInfo = (size_y: CGFloat, size_x: CGFloat)
-
 enum FontManager {
     static private(set) var current = getSystemFont(ofSize: 24) {
         didSet {
@@ -25,27 +23,27 @@ enum FontManager {
             }
         }
     }
-    static var currentInfo: FontInfo = defaultInfo
+    static var currentSpreading: CGSize = defaultSpreading
     
     static func setCurrent(to fontname: String) {
         let fontnames = getFontNamesForCurrentLanguage()
         guard fontnames.contains(fontname) else {
             printerror("Font \(fontname) not valid for language \(Language.current).")
-            currentInfo = defaultInfo
+            currentSpreading = defaultSpreading
             current = getSystemFont(ofSize: current.pointSize)
             return
         }
         guard let font = getFont(name: fontname) else {
             printerror("Cannot generate font \(fontname).")
-            currentInfo = defaultInfo
+            currentSpreading = defaultSpreading
             current = getSystemFont(ofSize: current.pointSize)
             return
         }
-        if let info = fontInfoDic[fontname] {
-            currentInfo = info
+        if let spreading = spreadingOfFont[fontname] {
+            currentSpreading = spreading
         } else {
-            printerror("No info for \(fontname).")
-            currentInfo = defaultInfo
+            printerror("No spreading for \(fontname).")
+            currentSpreading = defaultSpreading
         }
         current = font
     }
@@ -60,8 +58,8 @@ enum FontManager {
         setCurrent(to: name)
     }
     
-    static func getFontInfo(_ fontname: String) -> FontInfo {
-        return fontInfoDic[fontname] ?? defaultInfo
+    static func getFontSpreading(_ fontname: String) -> CGSize {
+        return spreadingOfFont[fontname] ?? defaultSpreading
     }
     
     static func getSystemFontSize() -> CGFloat
@@ -96,7 +94,7 @@ enum FontManager {
     #endif
     
     static func getFontNamesForCurrentLanguage() -> [String] {
-        if let names = availableFontNamesByLanguage[Language.current] {
+        if let names = availableFontNamesForLanguage[Language.current] {
             return names
         } else {
             return defaultAvailableFontNames
@@ -195,50 +193,50 @@ enum FontManager {
     }()
     static private let minFontSize: CGFloat = 12
     static private let maxFontSize: CGFloat = 144
-    static private let fontInfoDic: [String: FontInfo] = [
-        "American Typewriter": (size_y: 1.2, size_x: 1.0),
-        "Chalkboard SE": (size_y: 1.25, size_x: 1),
-        "Chalkduster": (size_y: 1.55, size_x: 1.2),
-        "Comic Sans MS": (size_y: 1.45, size_x: 1),
-        "Courier": (size_y: 1.3, size_x: 0.5),
-        "Futura": (size_y: 1.4, size_x: 0.0),
-        "Helvetica": (size_y: 1.1, size_x: 0.3),
-        "Luciole": (size_y: 1.3, size_x: 0.6),
-        "Snell Roundhand": (size_y: 1.85, size_x: 6),
-        "Times New Roman": (size_y: 1.3, size_x: 0.8),
-        "Verdana": (size_y: 1.2, size_x: 0.5),
-        "Nanum Gothic": (size_y: 1.3, size_x: 0.2),
-        "Nanum Pen Script": (size_y: 1.3, size_x: 0.2),
-        "BM Kirang Haerang": (size_y: 1.3, size_x: 0),
-        "GungSeo": (size_y: 1.3, size_x: 0.8),
-        "PilGi": (size_y: 1.6, size_x: 0.3),
-        "Hiragino Maru Gothic ProN": (size_y: 1.3, size_x: 0.5),
-        "Hiragino Mincho ProN": (size_y: 1.3, size_x: 0.5),
-        "Klee": (size_y: 1.3, size_x: 0.2),
-        "OpenDyslexic3": (size_y: 1.4, size_x: 1.0),
-        "Osaka": (size_y: 1.3, size_x: 0.5),
-        "Toppan Bunkyu Gothic": (size_y: 1.3, size_x: 0.5),
-        "Toppan Bunkyu Midashi Gothic": (size_y: 1.3, size_x: 0.5),
-        "Toppan Bunkyu Midashi Mincho": (size_y: 1.3, size_x: 0.5),
-        "Toppan Bunkyu Mincho": (size_y: 1.3, size_x: 0.5),
-        "Tsukushi A Round Gothic": (size_y: 1.3, size_x: 0.5),
-        "Tsukushi B Round Gothic": (size_y: 1.3, size_x: 0.5),
-        "YuKyokasho Yoko": (size_y: 1.3, size_x: 0.5),
-        "YuMincho": (size_y: 1.3, size_x: 0.5),
-        "Apple SD Gothic Neo": (size_y: 1.3, size_x: 0.5),
-        "Apple LiSung": (size_y : 1.3, size_x: 0.8),
-        "Baoli SC": (size_y : 1.3, size_x: 0.1),
-        "GB18030 Bitmap": (size_y : 1, size_x: 0.5),
-        "HanziPen SC": (size_y : 1.3, size_x: 0.5),
-        "Hei": (size_y : 1.3, size_x: 0.25),
-        "LingWai TC": (size_y : 1.2, size_x: 0.9),
-        "AppleMyungjo": (size_y : 1.25, size_x: 0.5),
-        "PingFang SC": (size_y : 1.3, size_x: 0.5),
-        "Weibei SC": (size_y : 1.3, size_x: 0.5),
-        "Farah": (size_y: 1.3, size_x: 0.5),
+    static private let spreadingOfFont: [String: CGSize] = [
+        "American Typewriter": CGSize(width: 1.0, height: 1.2),
+        "Chalkboard SE": CGSize(width: 1, height: 1.25),
+        "Chalkduster": CGSize(width: 1.2, height: 1.55),
+        "Comic Sans MS": CGSize(width: 1, height: 1.45),
+        "Courier": CGSize(width: 0.5, height: 1.3),
+        "Futura": CGSize(width: 0.0, height: 1.4),
+        "Helvetica": CGSize(width: 0.3, height: 1.1),
+        "Luciole": CGSize(width: 0.6, height: 1.3),
+        "Snell Roundhand": CGSize(width: 6, height: 1.85),
+        "Times New Roman": CGSize(width: 0.8, height: 1.3),
+        "Verdana": CGSize(width: 0.5, height: 1.2),
+        "Nanum Gothic": CGSize(width: 0.2, height: 1.3),
+        "Nanum Pen Script": CGSize(width: 0.2, height: 1.3),
+        "BM Kirang Haerang": CGSize(width: 0, height: 1.3),
+        "GungSeo": CGSize(width: 0.8, height: 1.3),
+        "PilGi": CGSize(width: 0.3, height: 1.6),
+        "Hiragino Maru Gothic ProN": CGSize(width: 0.5, height: 1.3),
+        "Hiragino Mincho ProN": CGSize(width: 0.5, height: 1.3),
+        "Klee": CGSize(width: 0.2, height: 1.3),
+        "OpenDyslexic3": CGSize(width: 1.0, height: 1.4),
+        "Osaka": CGSize(width: 0.5, height: 1.3),
+        "Toppan Bunkyu Gothic": CGSize(width: 0.5, height: 1.3),
+        "Toppan Bunkyu Midashi Gothic": CGSize(width: 0.5, height: 1.3),
+        "Toppan Bunkyu Midashi Mincho": CGSize(width: 0.5, height: 1.3),
+        "Toppan Bunkyu Mincho": CGSize(width: 0.5, height: 1.3),
+        "Tsukushi A Round Gothic": CGSize(width: 0.5, height: 1.3),
+        "Tsukushi B Round Gothic": CGSize(width: 0.5, height: 1.3),
+        "YuKyokasho Yoko": CGSize(width: 0.5, height: 1.3),
+        "YuMincho": CGSize(width: 0.5, height: 1.3),
+        "Apple SD Gothic Neo": CGSize(width: 0.5, height: 1.3),
+        "Apple LiSung": CGSize(width: 0.8, height: 1.3),
+        "Baoli SC": CGSize(width: 0.1, height: 1.3),
+        "GB18030 Bitmap": CGSize(width: 0.5, height: 1),
+        "HanziPen SC": CGSize(width: 0.5, height: 1.3),
+        "Hei": CGSize(width: 0.25, height: 1.3),
+        "LingWai TC": CGSize(width: 0.9, height: 1.2),
+        "AppleMyungjo": CGSize(width: 0.5, height: 1.25),
+        "PingFang SC": CGSize(width: 0.5, height: 1.3),
+        "Weibei SC": CGSize(width: 0.5, height: 1.3),
+        "Farah": CGSize(width: 0.5, height: 1.3),
     ]
-    static private let defaultInfo: FontInfo = (1.3, 1.0)
-    static private let availableFontNamesByLanguage: [Language : [String]] = [
+    static private let defaultSpreading = CGSize(width: 1.3, height: 1.0)
+    static private let availableFontNamesForLanguage: [Language : [String]] = [
         .arabic : [
             "American Typewriter",
             "Courier",

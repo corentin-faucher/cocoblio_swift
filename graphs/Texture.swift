@@ -90,7 +90,7 @@ class Texture {
         let color = UIColor.white
         let font: UIFont
         #endif
-        let fontinfo: FontInfo
+        let spreading: CGSize
         if let fontname = fontname {
             if let fonttmp = FontManager.getFont(name: fontname) {
                 font = fonttmp
@@ -98,10 +98,10 @@ class Texture {
                 printerror("Cannot load font \(fontname).")
                 font = FontManager.current
             }
-            fontinfo = FontManager.getFontInfo(fontname)
+            spreading = FontManager.getFontSpreading(fontname)
         } else {
             font = FontManager.current
-            fontinfo = FontManager.currentInfo
+            spreading = FontManager.currentSpreading
         }
 		
 		// 2. Paragraph style
@@ -130,12 +130,12 @@ class Texture {
             printerror("str width 0?")
             return
         }
-        let extraWidth: CGFloat = 0.55 * fontinfo.size_x * font.xHeight
-        let contextHeight: CGFloat = 2.00 * fontinfo.size_y * font.xHeight
+        let extraWidth: CGFloat = 0.55 * spreading.width * font.xHeight
+        let contextHeight: CGFloat = 2.00 * spreading.height * font.xHeight
         let contextWidth =  ceil(strSizes.width) + extraWidth
         let strHeight = strSizes.height
         // On met tout de suite à jour les dimensions
-        scaleY = Float(1 / fontinfo.size_y)  // (overlapping)
+        scaleY = Float(1 / spreading.height)  // (overlapping)
         scaleX = Float(strSizes.width / contextWidth)
         setDims(Int(contextWidth), Int(contextHeight))
         // Texture placeholder en attendant de générer la vrai texture.

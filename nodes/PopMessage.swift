@@ -8,15 +8,15 @@
 import Foundation
 
 /** Noeud temporaire qui s'autodétruit.
- Si parent == nil, alors le PopOver est directement dans le screen. */
-class PopOver : Node {
+ Si parent == nil, alors le Popover est directement dans le screen. */
+class Popover : Node {
     private var abort: Bool = false
     private let fadePos: Vector2
     private let fadeScale: Vector2
     private let appearTime: Double
     private let disappearTime: Double
     
-    // PopOver directement dans le "front" screen.
+    // Popover directement dans le "front" screen.
     @discardableResult
     init?(_ x: Float, _ y: Float, width: Float, height: Float,
           fadePos: Vector2, fadeScale: Vector2,
@@ -31,13 +31,13 @@ class PopOver : Node {
         self.appearTime = appearTime
         self.disappearTime = disappearTime
         
-        super.init(PopOver.screen, x, y, width, height,
+        super.init(Popover.screen, x, y, width, height,
                    lambda: 4, flags: Flag1.hidden | Flag1.notToAlign)
         
         startTimer()
     }
     
-    // PopOver situé sur un noeud de référence. Si inScreen, seulement la position est prise du refNode.
+    // Popover situé sur un noeud de référence. Si inScreen, seulement la position est prise du refNode.
     // Toutes les dimensions sont dens le référentiel de ref.
     @discardableResult
     init?(over ref: Node, inScreen: Bool,
@@ -59,7 +59,7 @@ class PopOver : Node {
             while sq.goUpPS() {}
             self.fadePos = fadePos * sq.vS
             self.fadeScale = fadeScale * sq.vS
-            super.init(PopOver.screen,
+            super.init(Popover.screen,
                        sq.v.x, sq.v.y,
                        sq.vS.x * width, sq.vS.y * height,
                        lambda: 4, flags: Flag1.hidden | Flag1.notToAlign)
@@ -73,7 +73,7 @@ class PopOver : Node {
         startTimer()
     }
     required init(other: Node) {
-        fatalError("init(other:) not available for PopOver nodes.")
+        fatalError("init(other:) not available for Popover nodes.")
     }
     private func startTimer() {
         Timer.scheduledTimer(withTimeInterval: appearTime, repeats: false) { [weak self] (_) in
@@ -81,12 +81,12 @@ class PopOver : Node {
             self.addFlags(Flag1.show)
             self.openAndShowBranch()
             // Dépassement ? -> Ajustement
-            let dim = self.getPosAndDeltaAbsolute()
-            let x_over_left = dim.pos.x - dim.deltas.x + 0.5*PopOver.screen.width.realPos
-            let x_over_right = dim.pos.x + dim.deltas.x - 0.5*PopOver.screen.width.realPos
+            let dim = self.positionAndDeltaAbsolute()
+            let x_over_left = dim.pos.x - dim.deltas.x + 0.5*Popover.screen.width.realPos
+            let x_over_right = dim.pos.x + dim.deltas.x - 0.5*Popover.screen.width.realPos
             let x_adj: Float = min(x_over_left, max(x_over_right, 0)) * self.deltaX / dim.deltas.x
-            let y_over_bottom = dim.pos.y - dim.deltas.y + 0.5*PopOver.screen.height.realPos
-            let y_over_top    = dim.pos.y + dim.deltas.y - 0.5*PopOver.screen.height.realPos
+            let y_over_bottom = dim.pos.y - dim.deltas.y + 0.5*Popover.screen.height.realPos
+            let y_over_top    = dim.pos.y + dim.deltas.y - 0.5*Popover.screen.height.realPos
             let y_adj: Float = min(y_over_bottom, max(y_over_top, 0)) * self.deltaY / dim.deltas.y
             
             // Effet d'apparition
@@ -125,7 +125,7 @@ class PopOver : Node {
 
 
 /** Message temporaire (s'autodédruit) */
-final class PopMessage : PopOver {
+final class PopMessage : Popover {
     @discardableResult
     init?(strTex: Texture, frameTex: Texture?,
         _ x: Float, _ y: Float, width: Float, height: Float,
@@ -136,7 +136,7 @@ final class PopMessage : PopOver {
         if let frameTex = frameTex {
             frame = frameTex
         } else {
-            guard let frameTex = PopOver.defaultFrameTex else {
+            guard let frameTex = Popover.defaultFrameTex else {
                 printerror("default frame texture not init.")
                 return nil
             }
@@ -160,7 +160,7 @@ final class PopMessage : PopOver {
         if let frameTex = frameTex {
             frame = frameTex
         } else {
-            guard let frameTex = PopOver.defaultFrameTex else {
+            guard let frameTex = Popover.defaultFrameTex else {
                 printerror("default frame texture not init.")
                 return nil
             }
@@ -181,7 +181,7 @@ final class PopMessage : PopOver {
     convenience init?(string: String)
     {
         self.init(strTex: Texture.getConstantString(string), frameTex: nil,
-                  0, 0, width: PopOver.maxWidth, height: 0.2,
+                  0, 0, width: Popover.maxWidth, height: 0.2,
                   fadePos: Vector2(0, -0.1), fadeScale: Vector2(-0.5, -0.5),
                   appearTime: 0.1, disappearTime: 2.5)
     }

@@ -162,7 +162,6 @@ class GraphMesh: Mesh {
     func updateZ(with f: (Float, Float)->Float) {
         for i in 0..<(m+1) {
             for j in 0..<(n+1) {
-                vertices[i*(n+1) + j].uv = (Float(i) / Float(m), Float(j) / Float(n))
                 let x = Float(i) / Float(m) - 0.5
                 let y = Float(j) / Float(n) - 0.5
                 vertices[i*(n+1) + j].position.2 = f(x,y)

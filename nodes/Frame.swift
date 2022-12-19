@@ -37,7 +37,6 @@ class Bar : Surface {
                                  (( 0.5000,-0.5, 0), (1.000,1), (0,0,1))],
                                         indices: [],
                                         primitive: .triangleStrip))
-        self.width.set(delta * 4)
 		update(width: width, fix: true)
 	}
 	required init(other: Node) {
@@ -156,11 +155,11 @@ class Frame : Surface {
 				smallDeltaX = width/2
 				smallDeltaY = height/2
 		}
-		
+        self.width.set(2 * (smallDeltaX + delta), fix)
+        self.height.set(2 * (smallDeltaY + delta), fix)
+        
 		let xPos = 0.5 * smallDeltaX / (smallDeltaX + delta)
 		let yPos = 0.5 * smallDeltaY / (smallDeltaY + delta)
-		self.width.set(2 * (smallDeltaX + delta), fix)
-		self.height.set(2 * (smallDeltaY + delta), fix)
 		
 		mesh.vertices[4].position.0 = -xPos
 		mesh.vertices[5].position.0 = -xPos
@@ -191,7 +190,7 @@ class Frame : Surface {
     @discardableResult
     func addLittleBroString(strTex: Texture, framedWidth: Float, framedHeight: Float) -> StringSurface
     {
-        if framedHeight < 3 * delta, framedWidth < 3 * delta {
+        if framedHeight < 3 * delta || framedWidth < 3 * delta {
             printwarning("Frame too small.")
         }
         let str = StringSurface(self, strTex: strTex, 0, 0,

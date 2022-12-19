@@ -23,7 +23,17 @@ func printdebug(_ message: String, function: String = #function, file: String = 
 	print("🐞 Debug.: \(message) in \(function) of file \((file as NSString).lastPathComponent)")
 	#endif
 }
-func printfulldebug(_ message: String) {
+
+func printhere(function: String = #function, file: String = #file, line: Int = #line) {
+    #if DEBUG
+    print("🐶 Now in \(function) of \((file as NSString).lastPathComponent) line \(line).")
+    #endif
+}
+func printleave(function: String = #function) {
+    print("🐰 Leaving \(function)...")
+}
+
+func printfullstack(_ message: String) {
     #if DEBUG
     print("🐔 Deb.Info.: \(message).")
     Thread.callStackSymbols.forEach{print($0)}

@@ -36,18 +36,18 @@ class Button : Node {
 }
 
 // Protocol general de passer au-dessus d'un noeud
-protocol Overable : Node {
-    func startOvering()
-    func stopOvering()
+protocol Hoverable : Node {
+    func startHovering()
+    func stopHovering()
     /// Crée un popover
     func showPopMessage()
     /// Met à jour la string à afficher dans le popover. En mode static, crée le noeud popover.
     func setPopString(_ newStrTex: Texture?)
 }
 
-// Overable avec pop-over
-// implémentation par défaut de Overable : Un simple FramedString qui apparaît au dessus.
-fileprivate protocol OverablePopOver : Overable {
+// Hoverable avec pop-over
+// implémentation par défaut de Hoverable : Un simple FramedString qui apparaît au dessus.
+fileprivate protocol HoverablePopover : Hoverable {
     /// La texture du texte popover.
     var popStringTex: Texture? { get set }
     /// La texture du frame du texte popover.
@@ -64,8 +64,8 @@ fileprivate protocol OverablePopOver : Overable {
     var popInScreen: Bool { get }
 }
 
-extension OverablePopOver {
-    func startOvering() {
+extension HoverablePopover {
+    func startHovering() {
         // (pas encore de popMessage)
         guard popMessageWeak == nil else { return }
         popTimerWeak?.invalidate()
@@ -75,7 +75,7 @@ extension OverablePopOver {
             self.showPopMessage()
         }
     }
-    func stopOvering() {
+    func stopHovering() {
         popTimerWeak?.invalidate()
     }
     func showPopMessage()
@@ -117,7 +117,7 @@ extension OverablePopOver {
     }
 }
 
-class ButtonOverable : Button, OverablePopOver {
+class ButtonHoverable : Button, HoverablePopover {
     fileprivate var popStringTex: Texture?
     fileprivate let popFrameTex: Texture
     fileprivate weak var popTimerWeak: Timer?
@@ -160,7 +160,7 @@ protocol Draggable : Node {
 class SecureButton : Node, Draggable {
     private weak var pop_disk: PopDisk? = nil
     private var isHolding: Bool = false
-    private var countdown: Countdown
+    private let holdTimeSec: Float
     private var disk_timer: Timer? = nil
     private let popTex: Texture
     private let popI: Int
@@ -176,9 +176,9 @@ class SecureButton : Node, Draggable {
          _ x: Float, _ y: Float, _ height: Float,
          lambda: Float = 0, flags: Int = 0)
     {
+        self.holdTimeSec = holdTimeInSec
         self.popTex = popTex
         self.popI = popI
-        self.countdown = Countdown(ringSec: holdTimeInSec)
         self.failPopStringTex = failPopStringTexture
         self.failPopFrameTex = failPopFrameTexture
         self.failPopRatio = failPopRatio
@@ -193,14 +193,13 @@ class SecureButton : Node, Draggable {
     }
     
     func grab(relPosInit posInit: Vector2) {
-        countdown.start()
         let h = height.realPos
         if let disk = pop_disk {
             disk.disconnect()
         }
-        let disk = PopDisk(self, pngTex: popTex, deltaT: countdown.ringTimeSec, -h/2, 0, h, lambda: 10, i: popI)
+        let disk = PopDisk(self, pngTex: popTex, deltaT: holdTimeSec, -h/2, 0, h, lambda: 10, i: popI)
         pop_disk = disk
-        disk_timer = Timer.scheduledTimer(withTimeInterval: Double(countdown.ringTimeSec), repeats: false) { [weak self] _ in
+        disk_timer = Timer.scheduledTimer(withTimeInterval: Double(holdTimeSec), repeats: false) { [weak self] _ in
             guard let self = self else { return }
             self.pop_disk?.disconnect()
             self.pop_disk = nil
@@ -229,7 +228,7 @@ class SecureButton : Node, Draggable {
     }
 }
 
-class SecureButtonWithPopover : SecureButton, OverablePopOver {
+class SecureButtonWithPopover : SecureButton, HoverablePopover {
     var popStringTex: Texture?
     let popFrameTex: Texture
     weak var popTimerWeak: Timer?
@@ -270,7 +269,7 @@ class SwitchButton : Node, Draggable {
     private var back: TiledSurface!
     private var nub: TiledSurface!
     var isOn: Bool
-    var didDrag = false
+    private var didDrag = false
     
     init(_ refNode: Node?, isOn: Bool,
          _ x: Float, _ y: Float, _ height: Float,
@@ -350,13 +349,17 @@ class DummySwitchButton : Button {
         scaleX.set(height)
         scaleY.set(height)
         
-        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = Color.gray2
-        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = Color.gray3
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1
+        ).piu.color = Color.gray2
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1
+        ).piu.color = Color.gray3
     }
     required init(other: Node) {
         super.init(other: other)
-        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1).piu.color = Color.gray2
-        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1).piu.color = Color.gray3
+        TiledSurface(self, pngTex: Texture.getPng("switch_back"), 0, 0, 1
+        ).piu.color = Color.gray2
+        TiledSurface(self, pngTex: Texture.getPng("switch_front"), 0, 0, 1
+        ).piu.color = Color.gray3
     }
 }
 

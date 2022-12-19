@@ -28,10 +28,9 @@ class SlidingMenu : Node, Scrollable { // Openable
     var openPos: Int = 0            // Position du sliding menu à l'ouverture (premier élement en haut par défaut)
     
 	private unowned let metalView: CoqMetalView
-	private let nDisplayed: Int     // Nombre d'items affichés (sans dérouler), e.g. 4.
-    private var nItems: Int = 0     // Nombre d'items dans le menu, e.g. 10.
+	private let displayedCount: Int     // Nombre d'items affichés (sans dérouler), e.g. 4.
+    private var totalCount: Int = 0     // Nombre d'items dans le menu, e.g. 10.
     private let spacing: Float      // Espacement -> ~1
-    private var menuGrabPosY: Float? = nil
     private var menu: Node!         // Le menu qui "glisse" sur le noeud racine.
 	private var scrollBar: SlidingMenuScrollBar!
     private var back: Frame!
@@ -40,7 +39,7 @@ class SlidingMenu : Node, Scrollable { // Openable
     private var deltaT = ChronoR()   // Pour la distance parcourue
     private var flingChrono = ChronoR() // Temps de "vol"
     private var itemHeight: Float {
-        return height.realPos / Float(nDisplayed)
+        return height.realPos / Float(displayedCount)
     }
     
     @discardableResult
@@ -49,7 +48,7 @@ class SlidingMenu : Node, Scrollable { // Openable
         spacing: Float, flags: Int=0)
     {
 		self.metalView = metalView
-        self.nDisplayed = nDisplayed
+        self.displayedCount = nDisplayed
         self.spacing = spacing
         super.init(refNode,
                    x, y, width, height, lambda: 10,
@@ -59,7 +58,8 @@ class SlidingMenu : Node, Scrollable { // Openable
 		let scrollBarWidth = max(width, height) * 0.025
         back = Frame(self, framing: .inside, delta: scrollBarWidth, texture: Texture.getPng("sliding_menu_back"), flags: 0)
         back.update(width: width, height: height, fix: true)
-        menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height, lambda: 20, flags: Flag1.selectableRoot)
+        menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height,
+                    lambda: 20, flags: Flag1.selectableRoot)
         menu.tryToAddFrame()
 		scrollBar = SlidingMenuScrollBar(parent: self, width: scrollBarWidth)
         tryToAddFrame()
@@ -68,7 +68,7 @@ class SlidingMenu : Node, Scrollable { // Openable
 	{
         let toCloneMenu = other as! SlidingMenu
 		metalView = toCloneMenu.metalView
-        nDisplayed = toCloneMenu.nDisplayed
+        displayedCount = toCloneMenu.displayedCount
         spacing = toCloneMenu.spacing
         super.init(other: other)
         makeSelectable()
@@ -78,19 +78,19 @@ class SlidingMenu : Node, Scrollable { // Openable
     }
     
     func getItemRelativeWidth() -> Float {
-        return menu.width.realPos / height.realPos * Float(nDisplayed) * spacing
+        return menu.width.realPos / height.realPos * Float(displayedCount) * spacing
     }
     
     /** Remplissage : Ajout d'un noeud. (Déplace le noeud avec simpleMoveToParent). */
     func addItemInMenu(_ node: Node) {
         node.simpleMoveToParent(menu, asElder: false)        
-        nItems += 1
+        totalCount += 1
     }
     func removeAllItemsInMenu() {
         while let child = menu.firstChild {
             child.disconnect()
         }
-        nItems = 0
+        totalCount = 0
     }
 	
 	/** (pour UIScrollView) OffsetRatio : Déroulement des UIScrollView par rapport au haut. */
@@ -158,12 +158,10 @@ class SlidingMenu : Node, Scrollable { // Openable
         if(!menu.containsAFlag(Flag1.hidden)) {
             menu.addFlags(Flag1.show)
         }
-        // 0. Cas pas de changements pour le IntRange,
         flingChrono.stop()
         deltaT.stop()
-        
         // 1. Ajustement de la scroll bar
-        if scrollBar.setNubHeightWithRelHeight(Float(nDisplayed) / max(1, Float(nItems))) {
+        if scrollBar.setNubHeightWithRelHeight(Float(displayedCount) / max(1, Float(totalCount))) {
             back.removeFlags(Flag1.hidden)
         } else {
             back.addFlags(Flag1.hidden)
@@ -204,8 +202,6 @@ class SlidingMenu : Node, Scrollable { // Openable
         super.close()
 		metalView.removeScrollingView()
 	}
-	
-	
     
     private func checkFling() {
 		guard flingChrono.isActive else {return}
@@ -272,12 +268,13 @@ class SlidingMenu : Node, Scrollable { // Openable
             round((yCandIn - DeltaY)/itemHeight) * itemHeight + DeltaY
             : yCandIn
         menu.y.set(max(min(yCand, DeltaY), -DeltaY), fix, false)
+        let y_rel = menu.y.realPos / DeltaY
 		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
     }
 	/** Le déplacement maximal du menu en y. nil si n <= nD. */
 	private func getMenuDeltaYMax() -> Float? {
-        guard nItems > nDisplayed else { return nil }
-		return 0.5 * itemHeight * Float(nItems - nDisplayed)
+        guard totalCount > displayedCount else { return nil }
+		return 0.5 * itemHeight * Float(totalCount - displayedCount)
 	}
 }
 

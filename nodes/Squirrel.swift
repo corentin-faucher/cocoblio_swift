@@ -12,6 +12,7 @@ class Squirrel {
         case ones
         case scales
 		case deltas
+//        case sizes   // Inutile ? -> mieux "deltas"...
     }
     /*-- Données de bases et computed properties --*/
     /// Position dans l'arbre (noeud) de l'écureuil.
@@ -24,14 +25,6 @@ class Squirrel {
     var isIn: Bool {
         return (fabsf(v.x - pos.x.realPos) <= pos.deltaX) &&
             (fabsf(v.y - pos.y.realPos) <= pos.deltaY)
-    }
-    /** Convertir une position en position relative par rapport
-     *  a la position présente (et scaling présent) */
-    func getRelPosOf(_ pos: Vector2) -> Vector2 {
-        return Vector2((pos.x - v.x) / vS.x, (pos.y - v.y) / vS.y)
-    }
-    func getRelDeltaOf(_ delta: Vector2) -> Vector2 {
-        return Vector2(delta.x / vS.x, delta.y / vS.y)
     }
     
     /*-- Constructeurs... --*/
@@ -61,8 +54,8 @@ class Squirrel {
         switch scaleInit {
         case .ones: vS = Vector2(1,1)
         case .scales: vS = Vector2(pos.scaleX.realPos, pos.scaleY.realPos)
-            //        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
-			case .deltas: vS = Vector2(pos.deltaX, pos.deltaY)
+//        case .sizes: vS = Vector2(pos.width.realPos, pos.height.realPos)
+        case .deltas: vS = Vector2(pos.deltaX, pos.deltaY)
         }
     }
     
@@ -251,5 +244,14 @@ class Squirrel {
     }
 }
 
-
+extension Vector2 {
+    /** Convertir une position en position relative
+     *  a la position présente (et scaling présent) */
+    func inReferentialOf(_ sq: Squirrel) -> Vector2 {
+        return Vector2((x - sq.v.x) / sq.vS.x, (y - sq.v.y) / sq.vS.y)
+    }
+    //    func getRelDeltaOf(_ delta: Vector2) -> Vector2 {
+    //        return Vector2(delta.x / vS.x, delta.y / vS.y)
+    //    }
+}
 

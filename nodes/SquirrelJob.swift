@@ -214,7 +214,7 @@ extension Node {
     
     /// Recherche d'un noeud selectionnable dans "root". Retourne nil si rien trouvé.
     func searchBranchForSelectable(absPos: Vector2, nodeToAvoid: Node?) -> Node? {
-        let relPos = parent?.relativePosOf(absPos: absPos) ?? absPos
+        let relPos = absPos.inReferentialOf(parent)
         return searchBranchForSelectablePrivate(relPos: relPos, nodeToAvoid: nodeToAvoid)
     }
     

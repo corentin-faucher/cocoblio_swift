@@ -25,6 +25,9 @@ extension Character {
     var isDigit: Bool {
         return digitCharacters.contains(self)
     }
+    var isLatin: Bool {
+        return String(self).rangeOfCharacter(from: CharacterSet.uppercaseLetters.union(.lowercaseLetters)) != nil
+    }
     
 //    var isEmoji: Bool {
 //        guard let firstScalar = self.unicodeScalars.first else { return false }

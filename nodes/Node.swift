@@ -62,19 +62,19 @@ class Node : Copyable, Flagable {
     }
     /*-- Fonctions d'accès et Computed properties --*/
     /// Obtenir la position absolue (à la racine) d'un noeud.
-    final func getPosAbsolute() -> Vector2 {
+    final func positionAbsolute() -> Vector2 {
         let sq = Squirrel(at: self)
         while sq.goUpP() {}
         return sq.v
     }
     /// Obtenir la position et dimension absolue (à la racine) d'un noeud.
-	final func getPosAndDeltaAbsolute() -> (pos: Vector2, deltas: Vector2) {
+	final func positionAndDeltaAbsolute() -> (pos: Vector2, deltas: Vector2) {
 		let sq = Squirrel(at: self, scaleInit: .deltas)
 		while sq.goUpPS() {}
 		return (sq.v, sq.vS)
 	}
     /// Obtenir la position dans le ref d'un parent (on remonte jusqu'à trouver le parent).
-	final func getPosInParent(_ par: Node) -> Vector2 {
+	final func positionInParent(_ par: Node) -> Vector2 {
 		let sq = Squirrel(at: self)
 		repeat {
 			if sq.pos.parent === par {
@@ -84,8 +84,8 @@ class Node : Copyable, Flagable {
 		printerror("No parent encountered.")
 		return sq.v
 	}
-    /// Obtenir la position et dimension dans le ref d'un parent (on remonte jusqu'à trouver le parent).
-    final func getPosAndDeltaInParent(_ par: Node) -> (pos: Vector2, deltas: Vector2) {
+    /// Obtenir la position et dimension dans le ref d'un (grand)parent (on remonte jusqu'à trouver le parent).
+    final func positionAndDeltaInParent(_ par: Node) -> (pos: Vector2, deltas: Vector2) {
         let sq = Squirrel(at: self, scaleInit: .deltas)
         repeat {
             if sq.pos.parent === par {
@@ -95,24 +95,10 @@ class Node : Copyable, Flagable {
         printerror("No parent encountered.")
         return (sq.v, sq.vS)
     }
-    /** relativePosOf: La position obtenue est dans le référentiel du noeud présent,
-     *  i.e. au niveau des node.children.
-     * (Si node == nil -> retourne absPos tel quel,
-     * cas où node est aNode.parent et parent peut être nul.)*/
-    final func relativePosOf(absPos: Vector2) -> Vector2 {
-        let sq = Squirrel(at: self, scaleInit: .scales)
-        while sq.goUpPS() {}
-        // Maintenant, sq contient la position absolue de theNode.
-        return sq.getRelPosOf(absPos)
-    }
-    final func relativeDeltaOf(absDelta: Vector2) -> Vector2 {
-        let sq = Squirrel(at: self, scaleInit: .scales)
-        while sq.goUpPS() {}
-        return sq.getRelDeltaOf(absDelta)
-    }
+
     /*-- Constructeurs... */
-    /** Noeud "vide" et "seul" */
-    init(parent: Node?) {
+    /** Noeud "vide" et "seul" (inutile) */
+    /*init(parent: Node?) {
 		id = Node.nodeCounter
 		Node.nodeCounter &+= 1
 		
@@ -128,7 +114,7 @@ class Node : Copyable, Flagable {
         if let theParent = parent {
             connectToParent(theParent, asElder: false)
         }
-    }
+    }*/
     /** Création d'un node child/bro. */
     init(_ refNode: Node?,
          _ x: Float, _ y: Float, _ width: Float, _ height: Float, lambda: Float = 0,
@@ -474,6 +460,21 @@ class Node : Copyable, Flagable {
     static var showFrame = false
 	
 	private static var nodeCounter: Int = 0
+}
+
+extension Vector2 {
+    /** relativePosOf: La position obtenue est dans le référentiel du noeud présent,
+     *  i.e. au niveau des node.children.
+     * (Si node == nil -> retourne absPos tel quel,
+     * cas où node est aNode.parent et parent peut être nul.)*/
+    func inReferentialOf(_ node: Node?) -> Vector2 {
+        guard let node = node else { return self }
+        let sq = Squirrel(at: node, scaleInit: .scales)
+        while sq.goUpPS() {}
+        // Maintenant, sq contient la position absolue de theNode.
+        return inReferentialOf(sq)
+//      if(asDelta) ->  return sq.getRelDeltaOf(self)  // Jamais eu besoin... ?
+    }
 }
 
 /*

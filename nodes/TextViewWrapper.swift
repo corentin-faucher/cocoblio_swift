@@ -297,7 +297,7 @@ class TextViewWrapper : Node {
     
     override func open() {
         super.open()
-        let (pos, delta) = getPosAndDeltaAbsolute()
+        let (pos, delta) = positionAndDeltaAbsolute()
         let frame = root.getFrameFrom(pos, deltas: delta)
         #if os(OSX)
         if let scrollView = scrollView {
@@ -327,7 +327,7 @@ class TextViewWrapper : Node {
     }
     
     override func reshape() {
-        let (pos, delta) = getPosAndDeltaAbsolute()
+        let (pos, delta) = positionAndDeltaAbsolute()
         let frame = root.getFrameFrom(pos, deltas: delta)
         #if os(OSX)
         if let scrollView = scrollView {
