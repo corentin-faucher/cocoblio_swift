@@ -235,14 +235,14 @@ final class PopDisk : ProgressDisk {
     @discardableResult
     init(_ refNode: Node, pngTex: Texture, deltaT: Float,
           _ x: Float, _ y: Float, _ height: Float,
-          lambda: Float, i: Int, flags: Int = 0
+         lambda: Float, i: Int, down: Bool
     ) {
         self.deltaT = deltaT
         super.init(refNode, pngTex: pngTex, x, y, height,
-                   lambda: lambda, i: i, flags: flags)
+                   lambda: lambda, i: i)
         updateRatio(0)
         chrono.start()
-        self.y.fadeInFromDef(delta: height)
+        self.y.fadeInFromDef(delta: down ? -height : height)
         width.fadeIn(delta: -height * 0.3)
         self.height.fadeIn(delta: -height * 0.3)
         openAndShowBranch()

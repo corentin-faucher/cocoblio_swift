@@ -268,8 +268,7 @@ class SlidingMenu : Node, Scrollable { // Openable
             round((yCandIn - DeltaY)/itemHeight) * itemHeight + DeltaY
             : yCandIn
         menu.y.set(max(min(yCand, DeltaY), -DeltaY), fix, false)
-        let y_rel = menu.y.realPos / DeltaY
-		scrollBar.setNubRelY(menu.y.realPos / DeltaY)
+        scrollBar.setNubRelY(menu.y.realPos / DeltaY)
     }
 	/** Le déplacement maximal du menu en y. nil si n <= nD. */
 	private func getMenuDeltaYMax() -> Float? {

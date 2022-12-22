@@ -28,6 +28,13 @@ extension Character {
     var isLatin: Bool {
         return String(self).rangeOfCharacter(from: CharacterSet.uppercaseLetters.union(.lowercaseLetters)) != nil
     }
+    // Hanzi / Kanji
+    var isIdeogram: Bool {
+        let unicode = self.toUInt32()
+        // Commence aux 0x3400 CJK Unified Ideographs Extension A
+        // Finit avant les 0xA000 "Yi Syllables" (pas de ponctuations chinoises)
+        return (unicode >= 0x3400) && (unicode < 0xA000)
+    }
     
 //    var isEmoji: Bool {
 //        guard let firstScalar = self.unicodeScalars.first else { return false }

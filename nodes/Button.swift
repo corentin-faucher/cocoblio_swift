@@ -167,6 +167,7 @@ class SecureButton : Node, Draggable {
     private let failPopStringTex: Texture
     private let failPopFrameTex: Texture
     private let failPopRatio: Float
+    var discDown: Bool = false
     
     init(_ refNode: Node?,
          holdTimeInSec: Float, popTex: Texture, popI: Int,
@@ -197,7 +198,7 @@ class SecureButton : Node, Draggable {
         if let disk = pop_disk {
             disk.disconnect()
         }
-        let disk = PopDisk(self, pngTex: popTex, deltaT: holdTimeSec, -h/2, 0, h, lambda: 10, i: popI)
+        let disk = PopDisk(self, pngTex: popTex, deltaT: holdTimeSec, discDown ? 0 : -h/2, 0, h, lambda: 10, i: popI, down: discDown)
         pop_disk = disk
         disk_timer = Timer.scheduledTimer(withTimeInterval: Double(holdTimeSec), repeats: false) { [weak self] _ in
             guard let self = self else { return }
