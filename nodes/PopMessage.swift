@@ -178,10 +178,10 @@ final class PopMessage : Popover {
         fatalError("init(other:) has not been implemented")
     }
     @discardableResult
-    convenience init?(string: String)
+    convenience init?(string: String, y: Float = 0)
     {
         self.init(strTex: Texture.getConstantString(string), frameTex: nil,
-                  0, 0, width: Popover.maxWidth, height: 0.2,
+                  0, y, width: Popover.maxWidth, height: 0.2,
                   fadePos: Vector2(0, -0.1), fadeScale: Vector2(-0.5, -0.5),
                   appearTime: 0.1, disappearTime: 2.5)
     }
