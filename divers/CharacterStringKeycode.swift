@@ -35,6 +35,37 @@ extension Character {
         // Finit avant les 0xA000 "Yi Syllables" (pas de ponctuations chinoises)
         return (unicode >= 0x3400) && (unicode < 0xA000)
     }
+    /** Retourne la version standard d'un charactère. e.g. « -> " ou ？ -> ?.  */
+    func toNormalized(forceLower: Bool) -> Character {
+        if isNewline {
+            return SpChar.return_
+        }
+        if self == "、" {
+            if Language.currentIs(.japanese) {
+                return ","
+            } else {
+                return "\\"
+            }
+        }
+        if let normalized = normalizedCharOf[self] {
+            return normalized
+        }
+        if forceLower {
+            return Character(self.lowercased())
+        }
+        return self
+    }
+    
+    /** Version simplifié de toNormalized. (pas pour langue asiatique) */
+    var loweredAndNormalized: Character {
+        if isNewline {
+            return SpChar.return_
+        }
+        if let normalized = limitedNormalizedCharOf[self] {
+            return normalized
+        }
+        return Character(self.lowercased())
+    }
     
 //    var isEmoji: Bool {
 //        guard let firstScalar = self.unicodeScalars.first else { return false }
@@ -46,6 +77,87 @@ extension Character {
 }
 
 fileprivate let digitCharacters: [Character] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+fileprivate let normalizedCharOf: [Character: Character] = [
+    SpChar.ideographicSpace : SpChar.space,
+    SpChar.nobreakSpace : SpChar.space,
+    "，" : ",",
+    "。" : ".",
+    "；" : ";",
+    "：" : ":",
+    "—" : "-",  // "EM Dash"
+    "–" : "-",  // "EN Dash"
+    "ー" : "-", // (Prolongation pour Katakana)
+    "・" : "/",
+    "！" : "!",
+    "？" : "?",
+    "’" : "'",
+    "«" : "\"",
+    "»" : "\"",
+    "“" : "\"", // Left double quotation mark
+    "”" : "\"", // Right double quotation mark (ça paraît pas mais ils sont différents...)
+    "（" : "(",
+    "）" : ")",
+    "「" : "[",
+    "」" : "]",
+    "『" : "{",
+    "』" : "}",
+    "《" : "<",
+    "》" : ">",
+    "［" : "[",
+    "］" : "]",
+    "｛" : "{",
+    "｝" : "}",
+    "【" : "[",
+    "】" : "]",
+    "％" : "%",
+    "＊" : "*",
+    "／" : "/",
+    "｜" : "|",
+    "＝" : "=",
+    "－" : "-",  // Tiret chinois, different du katakana "ー" plus haut.
+]
+
+
+fileprivate let limitedNormalizedCharOf: [Character: Character] = [
+    SpChar.nobreakSpace : SpChar.space,
+    "’" : "'",
+    "«" : "\"",
+    "»" : "\"",
+    "“" : "\"", // Left double quotation mark
+    "”" : "\"", // Right double quotation mark (ça paraît pas mais ils sont différents...)
+    "—" : "-",  // "EM Dash"
+    "–" : "-",  // "EN Dash"
+    // Le reste est pour le chinois et japonais...
+//    SpChar.ideographicSpace : SpChar.space,
+//    "，" : ",",
+//    "。" : ".",
+//    "；" : ";",
+//    "：" : ":",
+//    "ー" : "-", // (Prolongation pour Katakana)
+//    "・" : "/",
+//    "！" : "!",
+//    "？" : "?",
+//    "（" : "(",
+//    "）" : ")",
+//    "「" : "[",
+//    "」" : "]",
+//    "『" : "{",
+//    "』" : "}",
+//    "《" : "<",
+//    "》" : ">",
+//    "［" : "[",
+//    "］" : "]",
+//    "｛" : "{",
+//    "｝" : "}",
+//    "【" : "[",
+//    "】" : "]",
+//    "％" : "%",
+//    "＊" : "*",
+//    "／" : "/",
+//    "｜" : "|",
+//    "＝" : "=",
+//    "－" : "-",  // Tiret chinois, different du katakana "ー" plus haut.
+]
 
 
 extension UInt32 {
@@ -298,7 +410,7 @@ enum Modifier {
     static let commandShift = command | shift
 }
 
-let keypadKeycodeToChar: [UInt16:Character] = [
+let charOfKeypadKeycode: [UInt16:Character] = [
     0x41 : ".",
     0x43 : "*",
     0x45 : "+",
