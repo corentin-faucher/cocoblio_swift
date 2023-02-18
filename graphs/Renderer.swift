@@ -72,6 +72,8 @@ class Renderer : NSObject {
 	private let pipelineState: MTLRenderPipelineState!
 	private let samplerState: MTLSamplerState!
 	private let depthStencilState: MTLDepthStencilState?
+    
+//    private var testChrono = Chrono()
 	
 	
 	/*-- Methods --*/
@@ -246,6 +248,10 @@ extension Renderer: MTKViewDelegate {
         if RenderingChrono.shouldSleep, metalView.canPauseWhenResignActive {
             view.isPaused = true
         }
+//        if testChrono.elapsedMS > 19 {
+//            printdebug("long frame time: \(testChrono.elapsedMS).")
+//        }
+//        testChrono.start()
 	}
 	
 }
