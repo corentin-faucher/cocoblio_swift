@@ -134,6 +134,17 @@ extension Dictionary {
 	}
 }
 
+// Superflu ? Dictionnaire pour compter...
+extension Dictionary where Value == Int {
+    mutating func increment(_ key: Key) {
+        if let value = self[key] {
+            self[key] = value + 1
+        } else {
+            self[key] = 1
+        }
+    }
+}
+
 extension Array where Element : Strippable {
 	mutating func strip() {
 		self = self.filter { nil != $0.value }

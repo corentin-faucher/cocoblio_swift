@@ -168,6 +168,11 @@ extension Node {
             }
         }
     }
+    final func unhideAndTryToOpen() {
+        removeFlags(Flag1.hidden)
+        guard let parent = parent, parent.containsAFlag(Flag1.show) else { return }
+        openAndShowBranch()
+    }
     
     /// Enlever "show" aux noeud de la branche (sauf les exposed) et appliquer la close().
     func closeBranch() {
@@ -190,6 +195,11 @@ extension Node {
                 } else if sq.pos === self {return}
             }
         }
+    }
+    final func hideAndTryToClose() {
+        addFlags(Flag1.hidden)
+        guard containsAFlag(Flag1.show) else { return }
+        closeBranch()
     }
     
     func reshapeBranch() {

@@ -15,8 +15,8 @@ protocol Enterable : ScreenBase {
 	func enterAction()
 }
 protocol KeyResponder : ScreenBase {
-	func keyDown(key: KeyboardKey)
-	func keyUp(key: KeyboardKey)
+	func keyDown(key: KeyboardInput)
+	func keyUp(key: KeyboardInput)
 	func modifiersChangedTo(_ newModifiers: UInt)
 }
 protocol CharResponder : ScreenBase {

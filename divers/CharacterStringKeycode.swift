@@ -261,18 +261,18 @@ extension String {
     }
 }
 
-protocol KeyboardKey {
+protocol KeyboardInput {
     var keycode: UInt16 { get }
     var keymod: UInt { get }
     var isVirtual: Bool { get }
     var char: Character? { get }
 }
 
-struct KeyData : KeyboardKey {
-    var keycode: UInt16
-    var keymod: UInt
-    var isVirtual: Bool
-    var char: Character?
+struct KeyboardInputStruct : KeyboardInput {
+    let keycode: UInt16
+    let keymod: UInt
+    let isVirtual: Bool
+    let char: Character?
 }
 
 /** Les char spéciaux et "importans" */
@@ -303,6 +303,7 @@ enum MKC {
     static let return_ = 53
     static let tab = 54
     // Keycodes de contrôle
+    static let firstExtraMKC = 55
     static let capsLock = 60
     static let control = 61
     static let shift = 62
@@ -316,8 +317,9 @@ enum MKC {
     static let escape = 70
     static let eisu = 71
     static let kana = 72
-    // Pour les "autres" non définie (e.g. fn, kana...)
-    static let empty = 99
+    // Pour les "autres" non définie (e.g. fn, quelconque...)
+    static let empty = 73
+    static let totalMKC = 74
 }
 
 enum Keycode {

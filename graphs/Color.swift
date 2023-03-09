@@ -24,6 +24,7 @@ enum Color {
     static let red_coquelicot: Vector4 = [1, 0.2, 0, 1]
     static let red_orange2: Vector4 = [1, 0.4, 0.4, 1]
     static let red_coral: Vector4 = [1, 0.5, 0.3, 1]
+    static let red_dark: Vector4 = [0.2, 0.1, 0.1, 1]
     static let orange: Vector4 = [1, 0.6, 0, 1]
     static let orange_amber: Vector4 = [1, 0.5, 0, 1]
     static let orange_bronze: Vector4 = [0.8, 0.5, 0.2, 1]
@@ -44,13 +45,39 @@ enum Color {
     static let blue: Vector4 = [0, 0.25, 1, 1]
     static let blue_sky: Vector4 = [0.40, 0.70, 1, 1]
     static let blue_sky2: Vector4 = [0.55, 0.77, 1, 1]
+    static let blue_pale: Vector4 = [0.8, 0.9, 1, 1]
     static let blue_azure: Vector4 = [0.00, 0.50, 1, 1]
+    static let blue_strong: Vector4 = [0, 0, 1, 1]
     static let purple: Vector4 = [0.8, 0, 0.8, 1]
     static let purble_china_pink: Vector4 = [0.87, 0.44, 0.63, 1]
     static let purble_electric_indigo: Vector4 = [0.44, 0.00, 1, 1]
     static let purble_blue_violet: Vector4 = [0.54, 0.17, 0.89, 1]
     
-    
+}
+
+extension Float {
+    /** Convertie un float [0, 1] en gradient de couleur de bleu (0 et moins) à rouge (1 et plus),
+     * en passant par vert, jaune, orange. */
+    func toColor() -> Vector4 {
+        switch self {
+            case ..<0.0:
+                return Color.blue_pale
+            case ..<0.3:
+                let alpha = self / 0.3
+                return alpha * Color.green_spring + (1 - alpha) * Color.blue_pale
+            case ..<0.5:
+                let alpha = (self - 0.3) / 0.2
+                return alpha * Color.yellow_cadmium + (1 - alpha) * Color.green_spring
+            case ..<0.8:
+                let alpha = (self - 0.5) / 0.3
+                return alpha * Color.red + (1 - alpha) * Color.yellow_cadmium
+            case ..<1.0:
+                let alpha = (self - 0.8) / 0.2
+                return alpha * Color.red_dark + (1 - alpha) * Color.red
+            default:
+                return Color.red
+        }
+    }
 }
 
 extension Vector4 {
