@@ -28,6 +28,8 @@ enum Flag1 {
     /*-- Pour les ajustement de height/width du parent ou du frame --*/
     static let giveSizesToBigBroFrame = 1<<9
     static let giveSizesToParent = 1<<10
+    /** Frame qui prend la taille de sont parent. */
+    static let frameOfParent = 1<<11
 	
 	/*-- Pour les screens --*/
     static let dontAlignScreenElements = 1<<11

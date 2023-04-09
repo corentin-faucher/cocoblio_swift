@@ -56,8 +56,9 @@ class SlidingMenu : Node, Scrollable { // Openable
         makeSelectable()
         
 		let scrollBarWidth = max(width, height) * 0.025
-        back = Frame(self, framing: .inside, delta: scrollBarWidth, texture: Texture.getPng("sliding_menu_back"), flags: 0)
-        back.update(width: width, height: height, fix: true)
+        back = Frame(self, framing: .inside, delta: scrollBarWidth,
+                     texture: Texture.getPng("sliding_menu_back"),
+                     flags: Flag1.frameOfParent)
         menu = Node(self, -scrollBarWidth / 2, 0, width - scrollBarWidth, height,
                     lambda: 20, flags: Flag1.selectableRoot)
         menu.tryToAddFrame()

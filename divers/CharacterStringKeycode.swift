@@ -392,6 +392,43 @@ enum Keycode {
     #endif
     // Dummy "empty" (touche "vide" ne faisant rien)
     static let empty: UInt16 = 0xFF
+    
+    #if os(OSX)
+    static let ofMKC: [Int: UInt16] = [
+        0:0x12,  1:0x13,  2:0x14,  3:0x15,  4:0x17,  5:0x16,  6:0x1A,  7:0x1C,  8:0x19,  9:0x1D,  10:0x1B, 11:0x18, // 1, 2, 3, ...
+        12:0x0C, 13:0x0D, 14:0x0E, 15:0x0F, 16:0x11, 17:0x10, 18:0x20, 19:0x22, 20:0x1F, 21:0x23, 22:0x21, 23:0x1E, // Q, W, E, ...
+        24:0x00, 25:0x01, 26:0x02, 27:0x03, 28:0x05, 29:0x04, 30:0x26, 31:0x28, 32:0x25, 33:0x29, 34:0x27,        // A, S, D, ...
+        35:0x06, 36:0x07, 37:0x08, 38:0x09, 39:0x0B, 40:0x2D, 41:0x2E, 42:0x2B, 43:0x2F, 44:0x2C,                // Z, X, D, ...
+        45:0x32, 46:0x0A, 47:0x5E, 48:0x5D, 49:0x2A, 50:0x2A, MKC.space:Keycode.space,
+        // Extras: ANSI_Grave, ISO_Section, JIS_Underscore, JIS_Yen, ANSI_Backslash, ISO_Backslash, Space
+        // Le Keycode de backslash est le même pour ANSI et ISO sous macOS.
+        /*-- Space et le dernier "standard" keycode. */
+        /*-- Ensuite ce sont les "extended" keycodes... (modifiers, control, special...) */
+        MKC.delete:Keycode.delete, MKC.return_:Keycode.return_, MKC.escape:Keycode.escape, MKC.tab:Keycode.tab,
+        MKC.capsLock:Keycode.capsLock, MKC.control:Keycode.control, MKC.shift:Keycode.shift, MKC.option:Keycode.option,
+        MKC.command:Keycode.command, MKC.rightControl:Keycode.rightControl, MKC.rightShift:Keycode.rightShift,
+        MKC.rightOption: Keycode.rightOption, MKC.rightCommand: Keycode.rightCommand,
+        MKC.eisu: Keycode.JIS_Eisu, MKC.kana: Keycode.JIS_kana,
+        MKC.empty: Keycode.empty,
+    ]
+    #else
+    static let ofMKC: [Int : UInt16] = [
+        0:0x1E,  1:0x1F,  2:0x20,  3:0x21,  4:0x22,    5:0x23,  6:0x24,  7:0x25,  8:0x26,  9:0x27,  10:0x2D, 11:0x2E, // 1, 2, 3, ...
+        12:0x14, 13:0x1A, 14:0x08, 15:0x15, 16:0x17,   17:0x1C, 18:0x18, 19:0x0C, 20:0x12, 21:0x13, 22:0x2F, 23:0x30, // Q, W, E, ...
+        24:0x04, 25:0x16, 26:0x07, 27:0x09, 28:0x0A,   29:0x0B, 30:0x0D, 31:0x0E, 32:0x0F, 33:0x33, 34:0x34,          // A, S, D, ...
+        35:0x1D, 36:0x1B, 37:0x06, 38:0x19, 39:0x05,   40:0x11, 41:0x10, 42:0x36, 43:0x37, 44:0x38,                      // Z, X, D, ...
+        45:0x35, 46:0x64, 47:0x87, 48:0x89, 49:0x31, 50:0x32, MKC.space:Keycode.space,
+        // Extras: ANSI_Grave/ISO_EnBasAGauche, ISO_Section, JIS_Underscore, JIS_Yen, ANSI_Backslash, ISO_Backslash, Space
+        /*-- Space et le dernier "standard" keycode. */
+        /*-- Ensuite ce sont les "extended" keycodes... (modifiers, control, special...) */
+        MKC.delete:Keycode.delete, MKC.return_:Keycode.return_, MKC.escape:Keycode.escape, MKC.tab:Keycode.tab,
+        MKC.capsLock:Keycode.capsLock, MKC.control:Keycode.control, MKC.shift:Keycode.shift, MKC.option:Keycode.option,
+        MKC.command:Keycode.command, MKC.rightControl:Keycode.rightControl, MKC.rightShift:Keycode.rightShift,
+        MKC.rightOption: Keycode.rightOption, MKC.rightCommand: Keycode.rightCommand,
+        MKC.eisu: Keycode.JIS_Eisu, MKC.kana: Keycode.JIS_kana,
+        MKC.empty: Keycode.empty,
+    ]
+    #endif
 }
 
 enum Modifier {

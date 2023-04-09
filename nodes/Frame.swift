@@ -140,7 +140,15 @@ class Frame : Surface {
         self.init(parent, framing: framing, delta: delta, texture: texture, width: nil, height: nil, lambda: lambda, flags: flags)
     }
     
-	func update(width: Float, height: Float, fix: Bool) {
+    override func open() {
+        guard containsAFlag(Flag1.frameOfParent), let parent = parent else { return }
+        update(width: parent.width.realPos, height: parent.height.realPos, fix: true)
+    }
+    override func reshape() {
+        guard containsAFlag(Flag1.frameOfParent), let parent = parent else { return }
+        update(width: parent.width.realPos, height: parent.height.realPos, fix: false)
+    }
+	private func update(width: Float, height: Float, fix: Bool) {
 		guard width >= 0, height >= 0 else { printerror("width < 0 or height < 0"); return }
 		let smallDeltaX: Float
 		let smallDeltaY: Float
@@ -187,6 +195,7 @@ class Frame : Surface {
             parent.setRelatively(fix: fix)
 		}
 	}
+    
     @discardableResult
     func addLittleBroString(strTex: Texture, framedWidth: Float, framedHeight: Float) -> StringSurface
     {

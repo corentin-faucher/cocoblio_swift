@@ -199,6 +199,15 @@ extension Float {
         }
         return pow10 * 5
     }
+    /**-- Fonction "coupé", "en S", i.e.  __/
+     *                                   /    */
+    func truncated(delta: Float) -> Float {
+        if self > 0 {
+            return max(0, self - delta)
+        } else {
+            return min(0, self + delta)
+        }
+    }
 }
 
 extension Int {
