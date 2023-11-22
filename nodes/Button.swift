@@ -47,7 +47,7 @@ protocol Hoverable : Node {
 
 // Hoverable avec pop-over
 // implémentation par défaut de Hoverable : Un simple FramedString qui apparaît au dessus.
-fileprivate protocol HoverablePopover : Hoverable {
+fileprivate protocol HoverableWithPopover : Hoverable {
     /// La texture du texte popover.
     var popStringTex: Texture? { get set }
     /// La texture du frame du texte popover.
@@ -64,7 +64,7 @@ fileprivate protocol HoverablePopover : Hoverable {
     var popInScreen: Bool { get }
 }
 
-extension HoverablePopover {
+extension HoverableWithPopover {
     func startHovering() {
         // (pas encore de popMessage)
         guard popMessageWeak == nil else { return }
@@ -117,7 +117,7 @@ extension HoverablePopover {
     }
 }
 
-class ButtonHoverable : Button, HoverablePopover {
+class ButtonWithPopover : Button, HoverableWithPopover {
     fileprivate var popStringTex: Texture?
     fileprivate let popFrameTex: Texture
     fileprivate weak var popTimerWeak: Timer?
@@ -229,7 +229,7 @@ class SecureButton : Node, Draggable {
     }
 }
 
-class SecureButtonWithPopover : SecureButton, HoverablePopover {
+class SecureButtonWithPopover : SecureButton, HoverableWithPopover {
     var popStringTex: Texture?
     let popFrameTex: Texture
     weak var popTimerWeak: Timer?

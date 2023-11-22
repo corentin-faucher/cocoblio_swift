@@ -45,7 +45,7 @@ class RootNode : Node {
             self.parentRoot = parentRoot
         } else {
             if parentRoot != nil {
-                printwarning("Pas besoin de parent root si ist la root absolue.")
+                printwarning("Pas besoin de parent root si c'est la root absolue.")
             }
             self.parentRoot = nil
         }

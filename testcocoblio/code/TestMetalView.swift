@@ -117,6 +117,14 @@ class MetalView: MTKView, CoqMetalView {
         // pass
     }
     
+    func activateDummyTextfield() {
+        // pass
+    }
+    
+    func deactivateDummyTextfield() {
+        // pass
+    }
+    
     override func mouseMoved(with event: NSEvent) {
         self.isPaused = false
     }

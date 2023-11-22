@@ -75,7 +75,7 @@ extension Float {
                 let alpha = (self - 0.8) / 0.2
                 return alpha * Color.red_dark + (1 - alpha) * Color.red
             default:
-                return Color.red
+                return Color.red_dark
         }
     }
 }

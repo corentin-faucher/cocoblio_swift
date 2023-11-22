@@ -198,8 +198,9 @@ extension Node {
     }
     final func hideAndTryToClose() {
         addFlags(Flag1.hidden)
-        guard containsAFlag(Flag1.show) else { return }
-        closeBranch()
+        if containsAFlag(Flag1.show) {
+            closeBranch()
+        }
     }
     
     func reshapeBranch() {

@@ -187,7 +187,9 @@ extension Float {
     func toInt() -> Int {
         return Int(self)
     }
-    
+    /** Retourne la plus grosse "subdivision" pour le nombre présent en base 10.
+     * Le premier chiffre peut être : 1, 2 ou 5. Utile pour les axes de graphiques.
+     * e.g.: 792 -> 500, 192 -> 100, 385 -> 200. */
     func toRoundedSubDiv() -> Float {
         let pow10 = powf(10, floorf(log10f(self)))
         let mantissa = self / pow10

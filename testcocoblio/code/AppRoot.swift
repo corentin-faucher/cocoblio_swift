@@ -12,9 +12,7 @@ class AppRoot: AppRootBase {
     var bonhomme: Bonhomme!
     override init(view: CoqMetalView) {
         super.init(view: view)
-        
-        Texture.pngNameToTiling.putIfAbsent(key: "tiles", value: (3, 3))
-        Texture.pngNameToTiling.putIfAbsent(key: "monstres", value: (3, 1))
+        Texture.addPngTilingsAndMinis(["tiles": (3, 3), "monstres" : (3, 1)])
         let tileTex = Texture.getPng("tiles")
         let monstresTex = Texture.getPng("monstres")
         

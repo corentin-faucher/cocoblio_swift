@@ -47,7 +47,7 @@
 		8360C39326E118AF00D89A0E /* ArrayAndData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38C26E118AF00D89A0E /* ArrayAndData.swift */; };
 		8360C39426E118AF00D89A0E /* AppDelegateMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */; };
 		8360C39B26E1403100D89A0E /* iCloudDriveManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */; };
-		839FAD25271C921500B6B549 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839FAD24271C921500B6B549 /* Color.swift */; };
+		839F928C2A21670800DF724D /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839F928B2A21670800DF724D /* Color.swift */; };
 		83BA6F3227F4A65F00706716 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BA6F3127F4A65F00706716 /* Grid.swift */; };
 		83BA6F3427F4D2FE00706716 /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BA6F3327F4D2FE00706716 /* Scene.swift */; };
 		83BA6F3627F4DA5500706716 /* AppRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BA6F3527F4DA5500706716 /* AppRoot.swift */; };
@@ -99,7 +99,7 @@
 		8360C38C26E118AF00D89A0E /* ArrayAndData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArrayAndData.swift; sourceTree = "<group>"; };
 		8360C38D26E118AF00D89A0E /* AppDelegateMacOS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegateMacOS.swift; sourceTree = "<group>"; };
 		8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iCloudDriveManager.swift; sourceTree = "<group>"; };
-		839FAD24271C921500B6B549 /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
+		839F928B2A21670800DF724D /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
 		83BA6F3127F4A65F00706716 /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		83BA6F3327F4D2FE00706716 /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
 		83BA6F3527F4DA5500706716 /* AppRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoot.swift; sourceTree = "<group>"; };
@@ -177,6 +177,7 @@
 		8360C35126E1185B00D89A0E /* graphs */ = {
 			isa = PBXGroup;
 			children = (
+				839F928B2A21670800DF724D /* Color.swift */,
 				831B472C27C008CE00069DA7 /* Mesh.swift */,
 				8360C35326E1185B00D89A0E /* MyFonts.swift */,
 				8360C35426E1185B00D89A0E /* CoqMetalView.swift */,
@@ -226,7 +227,6 @@
 			isa = PBXGroup;
 			children = (
 				831B472A27BFF9FA00069DA7 /* CharacterStringKeycode.swift */,
-				839FAD24271C921500B6B549 /* Color.swift */,
 				8360C39A26E1403100D89A0E /* iCloudDriveManager.swift */,
 				8360C38726E118AF00D89A0E /* Language.swift */,
 				8360C38826E118AF00D89A0E /* FileManagerHelpers.swift */,
@@ -333,7 +333,6 @@
 				8360C39326E118AF00D89A0E /* ArrayAndData.swift in Sources */,
 				8360C37726E1185B00D89A0E /* SlidingMenu.swift in Sources */,
 				8360C38226E1185B00D89A0E /* PopMessage.swift in Sources */,
-				839FAD25271C921500B6B549 /* Color.swift in Sources */,
 				8360C38526E1185B00D89A0E /* Node.swift in Sources */,
 				83074ACF23EB048800D35712 /* Shaders.metal in Sources */,
 				8360C39426E118AF00D89A0E /* AppDelegateMacOS.swift in Sources */,
@@ -349,6 +348,7 @@
 				8360C38F26E118AF00D89A0E /* FileManagerHelpers.swift in Sources */,
 				8360C38326E1185B00D89A0E /* Button.swift in Sources */,
 				8360C38126E1185B00D89A0E /* TextViewWrapper.swift in Sources */,
+				839F928C2A21670800DF724D /* Color.swift in Sources */,
 				831B472D27C008CE00069DA7 /* Mesh.swift in Sources */,
 				8360C37A26E1185B00D89A0E /* Flag1.swift in Sources */,
 				8360C38E26E118AF00D89A0E /* Language.swift in Sources */,

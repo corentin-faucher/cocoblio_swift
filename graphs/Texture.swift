@@ -137,6 +137,7 @@ class Texture {
         // On met tout de suite à jour les dimensions
         scaleY = Float(1 / spreading.height)  // (overlapping)
         scaleX = Float(strSizes.width / contextWidth)
+//        printdebug("scaleX \(scaleX), scaleY \(scaleY) pour \(self.name).")
         setDims(Int(contextWidth), Int(contextHeight))
         // Texture placeholder en attendant de générer la vrai texture.
         if withTmp {

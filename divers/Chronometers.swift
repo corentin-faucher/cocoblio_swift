@@ -46,11 +46,10 @@ enum RenderingChrono {
         return elapsedMS - touchTime > sleepTime
     }
     
-    static func update(frequency: Int) {
+    static func update(deltaTMS: Int64) {
         guard !isPaused else { return }
-        let deltaT = Int64(1000/Float(frequency))
-        elapsedMS += deltaT
-        elapsedAngleMS += deltaT
+        elapsedMS += deltaTMS
+        elapsedAngleMS += deltaTMS
         if elapsedAngleMS > angleLoopTimeMS {
             elapsedAngleMS -= angleLoopTimeMS
         }

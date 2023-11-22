@@ -58,6 +58,10 @@ class Renderer : NSObject {
 	private var smR: SmoothPos = SmoothPos(1, 8)
 	private var smG: SmoothPos = SmoothPos(1, 8)
 	private var smB: SmoothPos = SmoothPos(1, 8)
+    
+    private var smDeltaT: SmoothPos = SmoothPos(16, 10)
+    private var deltaTchrono: Chrono = Chrono()
+    
 	// Present frame stuff: command encoder, used mesh, used texture.
 	fileprivate var currentMesh: Mesh? = nil
 	fileprivate var currentPrimitiveType: MTLPrimitiveType = .triangle
@@ -207,7 +211,9 @@ extension Renderer: MTKViewDelegate {
         currentTexture = nil
         
         // 1. Check le chrono/sleep.
-        RenderingChrono.update(frequency: view.preferredFramesPerSecond)
+        smDeltaT.pos = Float(min(50, max(5, deltaTchrono.elapsedMS)))
+        RenderingChrono.update(deltaTMS: Int64(smDeltaT.pos))
+        deltaTchrono.start()
         // 2. Mise à jour des paramètres de la frame (matrice de projection et temps pour les shaders)
         PerFrameUniforms.pfu.time = RenderingChrono.elapsedAngle
         root.setProjectionMatrix(&PerFrameUniforms.pfu.projection)
