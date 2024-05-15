@@ -66,38 +66,20 @@ extension Array where Element == UInt32 {
 	}
 }
 
-
-extension Array {
-	/** Acces array element "safely". */
-	subscript (safe index: Index) -> Element? {
-		return indices.contains(index) ? self[index] : nil
-	}
-	
-	/** Convertion de l'array en structure Data. */
+// TODO : Dans une future version il y aura `BitwiseCopyable` pour les struct de données
+// Encodable en `Data`... ?? 
+extension Array { //  where Element : BitwiseCopyable.
+    /** Convertion de l'array en structure Data. */
 	func toData() -> Data {
 		let size = count * MemoryLayout<Element>.size
 		return Data(bytes: self, count: size)
 	}
-	
-	/** Helper... (un peu superflu) Convert type (for instance as a "UInt32" array to be encoded). */
+    /** Helper... (un peu superflu) Convert type (for instance as a "UInt32" array to be encoded). */
 	func serialized<T>(to type: T.Type) -> [T] {
 		let data = toData()
 		return data.toArray(type: T.self)
-	}
-
-	
-	/** Brise un array en "sous-arrays" (morceaux). On perd le restant de la division.
-    /-- Retourne un array de petits arrays. */
-	func chunked(by chunkSize: Int, showWarning: Bool = true) -> [[Element]] {
-		if showWarning, self.count % chunkSize != 0 {
-			printwarning("array.count not divisible by \(chunkSize).")
-		}
-		return stride(from: 0, to: (self.count/chunkSize)*chunkSize, by: chunkSize).map {
-			Array(self[$0..<Swift.min($0+chunkSize, self.count)])
-		}
-	}
-	
-	/** Création à partir d'un fichier encodé. */
+	} 
+ 	/** Création à partir d'un fichier encodé. */
 	init?(contentsOf url: URL, encodedWith key: UInt32) {
 		guard let data = try? Data(contentsOf: url) else {
 			return nil
@@ -107,7 +89,6 @@ extension Array {
 			.serialized(to: Element.self)
 		self.init(decoded)
 	}
-	
 	/** Écriture dans un fichier encodé. */
 	func write(to url: URL, encodedWith key: UInt32) {
 		let data = self.serialized(to: UInt32.self)
@@ -115,12 +96,31 @@ extension Array {
 			.toData()
 		do { try data.write(to: url) }
         catch { printerror(error.localizedDescription) }
+	}   
+}
+
+
+extension Array {
+	/** Acces array element "safely". */
+	subscript (safe index: Index) -> Element? {
+		return indices.contains(index) ? self[index] : nil
 	}
+    /** Brise un array en "sous-arrays" (morceaux). On perd le restant de la division.
+    /-- Retourne un array de petits arrays. */
+	func chunked(by chunkSize: Int, showWarning: Bool = true) -> [[Element]] {
+		if showWarning, self.count % chunkSize != 0 {
+            printwarning("array.count \(self.count) not divisible by \(chunkSize).")
+		}
+		return stride(from: 0, to: (self.count/chunkSize)*chunkSize, by: chunkSize).map {
+			Array(self[$0..<Swift.min($0+chunkSize, self.count)])
+		}
+	}   
 }
 
 
 /*-- Data --*/
 extension Data {
+    // Ici aussi <T:BitwiseCopyable> ?
 	init<T>(fromStruct value: T) {
 		var value = value
 		self.init(bytes: &value, count: MemoryLayout<T>.size)

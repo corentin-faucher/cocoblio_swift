@@ -82,10 +82,10 @@ class ICloudDriveManager {
     }
 	
 	@objc func didUpdate() {
-		var isUpdating = false
+		var isUpdating = false       
 		metadataquery?.enumerateResults { (item: Any, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
-			let metadataItem = item as! NSMetadataItem
-			let url = metadataItem.value(forAttribute: NSMetadataItemURLKey) as! URL
+			guard let metadataItem = item as? NSMetadataItem else { return }
+			guard let url = metadataItem.value(forAttribute: NSMetadataItemURLKey) as? URL else { return }
 			switch metadataItem.value(forAttribute: NSMetadataUbiquitousItemDownloadingStatusKey) as? String {
 				case NSMetadataUbiquitousItemDownloadingStatusCurrent:
 					// Cas "OK".

@@ -278,15 +278,18 @@ struct KeyboardInputStruct : KeyboardInput {
 /** Les char spéciaux et "importans" */
 enum SpChar {
     static let delete: Character = "\u{8}"
+    static let deleteSymbol: Character = "␈"
     static let tab: Character = "\t"
+    static let tabSymbol: Character = "␉"
     static let return_: Character = "\r"
+    static let returnSymbol: Character = "␍"
 //    static let newline: Character = "\n"
     static let space: Character = " "
+    static let spaceSymbol: Character = "␠"
     static let nobreakSpace: Character = " "
     static let ideographicSpace: Character = "　"
     static let thinSpace: Character = "\u{2009}"
     static let bottomBracket: Character = "⎵"
-    static let spaceSymbol: Character = "␠"
     static let underscore: Character = "_"
     static let openBox: Character = "␣"
     static let interpunct: Character = "·"
@@ -297,6 +300,18 @@ enum SpChar {
 
 /** MyKeyCode... */
 enum MKC {
+    // Keycodes ordinaire, ligne du clavier standard externe...
+    // 0 ~11 -> ligne de 1,2,...
+    // 12~23 -> ligne de q,w,...
+    // 24~34 -> ligne de a,s,...
+    // 35~44 -> ligne de z,x,...
+    // Keycodes dépendant du type de clavier (iso, ansi, jis)
+    static let ansi_grave = 45      // en haut à gauche sur ansi
+    static let iso_section = 46     // en haut à gauche sur iso
+    static let jis_underscore = 47  // en bas à droite sur jis
+    static let jis_yen = 48         // en haut à droite sur jis
+    static let ansi_backslash = 49
+    static let iso_backslash = 50
     static let space = 51 // (Fait parti des Keycode "ordinaire")
     // Keycodes spéciaux ayant une string associable
     static let delete = 52
@@ -398,7 +413,7 @@ enum Keycode {
         0:0x12,  1:0x13,  2:0x14,  3:0x15,  4:0x17,  5:0x16,  6:0x1A,  7:0x1C,  8:0x19,  9:0x1D,  10:0x1B, 11:0x18, // 1, 2, 3, ...
         12:0x0C, 13:0x0D, 14:0x0E, 15:0x0F, 16:0x11, 17:0x10, 18:0x20, 19:0x22, 20:0x1F, 21:0x23, 22:0x21, 23:0x1E, // Q, W, E, ...
         24:0x00, 25:0x01, 26:0x02, 27:0x03, 28:0x05, 29:0x04, 30:0x26, 31:0x28, 32:0x25, 33:0x29, 34:0x27,        // A, S, D, ...
-        35:0x06, 36:0x07, 37:0x08, 38:0x09, 39:0x0B, 40:0x2D, 41:0x2E, 42:0x2B, 43:0x2F, 44:0x2C,                // Z, X, D, ...
+        35:0x06, 36:0x07, 37:0x08, 38:0x09, 39:0x0B, 40:0x2D, 41:0x2E, 42:0x2B, 43:0x2F, 44:0x2C,                // Z, X, ...
         45:0x32, 46:0x0A, 47:0x5E, 48:0x5D, 49:0x2A, 50:0x2A, MKC.space:Keycode.space,
         // Extras: ANSI_Grave, ISO_Section, JIS_Underscore, JIS_Yen, ANSI_Backslash, ISO_Backslash, Space
         // Le Keycode de backslash est le même pour ANSI et ISO sous macOS.
@@ -416,7 +431,7 @@ enum Keycode {
         0:0x1E,  1:0x1F,  2:0x20,  3:0x21,  4:0x22,    5:0x23,  6:0x24,  7:0x25,  8:0x26,  9:0x27,  10:0x2D, 11:0x2E, // 1, 2, 3, ...
         12:0x14, 13:0x1A, 14:0x08, 15:0x15, 16:0x17,   17:0x1C, 18:0x18, 19:0x0C, 20:0x12, 21:0x13, 22:0x2F, 23:0x30, // Q, W, E, ...
         24:0x04, 25:0x16, 26:0x07, 27:0x09, 28:0x0A,   29:0x0B, 30:0x0D, 31:0x0E, 32:0x0F, 33:0x33, 34:0x34,          // A, S, D, ...
-        35:0x1D, 36:0x1B, 37:0x06, 38:0x19, 39:0x05,   40:0x11, 41:0x10, 42:0x36, 43:0x37, 44:0x38,                      // Z, X, D, ...
+        35:0x1D, 36:0x1B, 37:0x06, 38:0x19, 39:0x05,   40:0x11, 41:0x10, 42:0x36, 43:0x37, 44:0x38,                      // Z, X, ...
         45:0x35, 46:0x64, 47:0x87, 48:0x89, 49:0x31, 50:0x32, MKC.space:Keycode.space,
         // Extras: ANSI_Grave/ISO_EnBasAGauche, ISO_Section, JIS_Underscore, JIS_Yen, ANSI_Backslash, ISO_Backslash, Space
         /*-- Space et le dernier "standard" keycode. */

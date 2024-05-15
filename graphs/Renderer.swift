@@ -107,7 +107,7 @@ class Renderer : NSObject {
         renderPipelineDescriptor.fragmentFunction = library?.makeFunction(name: "fragment_function")
         renderPipelineDescriptor.depthAttachmentPixelFormat = metalView.depthStencilPixelFormat
         let colorAtt: MTLRenderPipelineColorAttachmentDescriptor = renderPipelineDescriptor.colorAttachments[0]
-		colorAtt.pixelFormat = metalView.colorPixelFormat //.bgra8Unorm
+		colorAtt.pixelFormat = metalView.colorPixelFormat // .bgra8Unorm //
         colorAtt.isBlendingEnabled = true
         colorAtt.rgbBlendOperation = .add
         #if os(OSX)
@@ -130,14 +130,14 @@ class Renderer : NSObject {
         samplerState = device.makeSamplerState(descriptor: samplerDescr)
 		
 		/*-- Depth (si besoin) --*/
-		if withDepth {
-			let depthStencilDescriptor = MTLDepthStencilDescriptor()
-			depthStencilDescriptor.depthCompareFunction = .less
-			depthStencilDescriptor.isDepthWriteEnabled = true
-			depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
-		} else {
+//		if withDepth {
+//			let depthStencilDescriptor = MTLDepthStencilDescriptor()
+//			depthStencilDescriptor.depthCompareFunction = .less
+//			depthStencilDescriptor.isDepthWriteEnabled = true
+//			depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
+//		} else {
 			depthStencilState = nil
-		}
+//		}
         
         /*-- Init des Texture avec device (gpu) car utilisé pour loader les pngs. --*/
 		Texture.initWith(device: device, drawableSize: metalView.drawableSize)
