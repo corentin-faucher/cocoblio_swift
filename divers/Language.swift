@@ -112,6 +112,7 @@ enum Language : LanguageInfo, CaseIterable {
 			// Lecture de droite à gauche (pour l'instant c'est juste l'arabe...)
 			currentIsRightToLeft = (current == .arabic)
 			currentDirectionFactor = currentIsRightToLeft ? -1 : 1
+            currentUseMaruCheck = (Language.current == .japanese) || (Language.current == .korean)
             let bcp_tmp = "\(Locale.current.languageCode ?? "en")-\(Locale.current.regionCode ?? "US")"
             if current.rawValue.bcp_47.contains(bcp_tmp) {
                 currentBCP_47 = bcp_tmp
@@ -148,6 +149,8 @@ enum Language : LanguageInfo, CaseIterable {
 	}
     /** Écriture en arabe. */
     static private(set) var currentIsRightToLeft = (Language.current == .arabic)
+    /// Utilise un maru `◯` au lieu du check `✓` pour une bonne réponse (japonaise et corréen).
+    static private(set) var currentUseMaruCheck = (Language.current == .japanese) || (Language.current == .korean)
     /** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
     static private(set) var currentDirectionFactor: Float = (Language.current == .arabic) ? -1 : 1
     static private(set) var currentBCP_47: String = Language.current.rawValue.bcp_47[0]
