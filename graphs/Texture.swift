@@ -153,8 +153,24 @@ class Texture {
             }
         }
         // Création de la vrai texture (dans une thread).
+        let stringToDraw: String = str as String
         Texture.textureQueue.async { [self] in
-            if let newMtlTexture = Texture.drawMetalTextureForString(str: str, font: font,
+        // Il faut définir la variable font dans la thread ??
+            #if os(OSX)
+            let font: NSFont
+            #else
+            let font: UIFont
+            #endif
+            if let fontname = fontname {
+                if let fonttmp = FontManager.getFont(name: fontname) {
+                    font = fonttmp
+                } else {
+                    font = FontManager.current
+                }
+            } else {
+                font = FontManager.current
+            }
+            if let newMtlTexture = Texture.drawMetalTextureForString(str: stringToDraw, font: font,
                     contextWidth: contextWidth, contextHeight: contextHeight,
                     extraWidth: extraWidth, strHeight: strHeight,
                     attributes: attributes)
@@ -166,7 +182,7 @@ class Texture {
         }
 	}
     
-    private static func drawMetalTextureForString(str: NSString, font: Font,
+    private static func drawMetalTextureForString(str: String, font: Font,
                                                   contextWidth: CGFloat, contextHeight: CGFloat,
                                                   extraWidth: CGFloat, strHeight: CGFloat,
                                                   attributes: [NSAttributedString.Key : Any]) -> MTLTexture?

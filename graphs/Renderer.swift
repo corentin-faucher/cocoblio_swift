@@ -173,7 +173,7 @@ extension Renderer: MTKViewDelegate {
         
         #if os(OSX)
         guard let window = view.window else {printerror("No window."); return}
-        guard let root = metalView.root else { printerror("No root"); return }
+        guard let root = metalView.root else { return }
         let headerHeight = window.styleMask.contains(.fullScreen) ? 22 : window.frame.height - window.contentLayoutRect.height
         root.margins = Margins(top: headerHeight, left: 0, bottom: 0, right: 0)
         root.frameSizeInPx = metalView.frame.size

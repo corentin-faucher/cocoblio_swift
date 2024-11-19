@@ -26,12 +26,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	func applicationWillResignActive(_ notification: Notification) {
 		guard metalView.canPauseWhenResignActive else { return }
-		Sound.suspend()
+//		Sound.suspend() // Ne fait pas une grosse différence pour la mémoire, mais une grosse différence pour le temps de changement... ?
 		Texture.suspend()
         metalView.isSuspended = true
 	}
 
     func applicationDidResignActive(_ notification: Notification) {
+    }
+    func applicationWillBecomeActive(_ notification: Notification) {
     }
     func applicationDidBecomeActive(_ notification: Notification) {
 		if !Texture.loaded {

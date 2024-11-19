@@ -66,9 +66,7 @@ extension Array where Element == UInt32 {
 	}
 }
 
-// TODO : Dans une future version il y aura `BitwiseCopyable` pour les struct de données
-// Encodable en `Data`... ?? 
-extension Array { //  where Element : BitwiseCopyable.
+extension Array where Element : BitwiseCopyable {
     /** Convertion de l'array en structure Data. */
 	func toData() -> Data {
 		let size = count * MemoryLayout<Element>.size
@@ -120,8 +118,7 @@ extension Array {
 
 /*-- Data --*/
 extension Data {
-    // Ici aussi <T:BitwiseCopyable> ?
-	init<T>(fromStruct value: T) {
+	init<T:BitwiseCopyable>(fromStruct value: T) {
 		var value = value
 		self.init(bytes: &value, count: MemoryLayout<T>.size)
 	}
@@ -132,7 +129,7 @@ extension Data {
 		}
 		return self.withUnsafeBytes { $0.load(as: T.self) }
 	}
-	init<T>(fromArray array: Array<T>) {
+	init<T:BitwiseCopyable>(fromArray array: Array<T>) {
 		let size = array.count * MemoryLayout<T>.size
 		self.init(bytes: array, count: size)
 	}
