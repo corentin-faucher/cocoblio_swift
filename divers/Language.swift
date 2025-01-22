@@ -60,6 +60,9 @@ struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
             case "vi":
                 id = 14
                 bcp_47 = ["en-US"] // Pas de vietnamien ? vi-VN...
+            case "nb":
+                id = 15
+                bcp_47 = ["en-US"]
             default:
                 printerror("Language non définie: \(value)")
                 id = 1
@@ -83,6 +86,7 @@ enum Language : LanguageInfo, CaseIterable {
     case italian = "it"
     case japanese = "ja"
 	case korean = "ko"
+    case norwegian = "nb"
     case portuguese = "pt"
     case russian = "ru"
     case swedish = "sv"
