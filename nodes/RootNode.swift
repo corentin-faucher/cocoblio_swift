@@ -135,6 +135,7 @@ class RootNode : Node {
 class AppRootBase : RootNode {
     final unowned let metalView: CoqMetalView
 	final private(set) var activeScreen: ScreenBase? = nil
+    final private(set) var lastActiveScreenType: ScreenBase.Type? = nil
 	final var selectedNode: Node? = nil
 	/** Cas particulier de selectedNode. */
 	final var grabbedNode: Draggable? = nil
@@ -193,12 +194,15 @@ class AppRootBase : RootNode {
     
     private final func closeActiveScreen() {
         if let lastScreen = activeScreen {
+            lastActiveScreenType = type(of: lastScreen)
             lastScreen.closeBranch()
             if !lastScreen.containsAFlag(Flag1.persistentScreen) {
                 Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { (_) in
                     lastScreen.disconnect()
                 }
             }
+        } else {
+            lastActiveScreenType = nil
         }
         activeScreen = nil
     }
