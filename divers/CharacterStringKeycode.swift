@@ -80,21 +80,23 @@ fileprivate let digitCharacters: [Character] = ["0", "1", "2", "3", "4", "5", "6
 fileprivate let normalizedCharOf: [Character: Character] = [
     SpChar.ideographicSpace : SpChar.space,
     SpChar.nobreakSpace : SpChar.space,
+    "“" : "\"", // Left double quotation mark
+    "”" : "\"", // Right double quotation mark (ça paraît pas mais ils sont différents...)
+    "’" : "'",
+    "«" : "\"",
+    "»" : "\"",
+    "—" : "-",  // "EM Dash"
+    "–" : "-",  // "EN Dash"
+// japanese/chinese
     "，" : ",",
     "。" : ".",
     "；" : ";",
     "：" : ":",
-    "—" : "-",  // "EM Dash"
-    "–" : "-",  // "EN Dash"
     "ー" : "-", // (Prolongation pour Katakana)
+    "－" : "-",  // Tiret chinois, different du katakana "ー".
     "・" : "/",
     "！" : "!",
     "？" : "?",
-    "’" : "'",
-    "«" : "\"",
-    "»" : "\"",
-    "“" : "\"", // Left double quotation mark
-    "”" : "\"", // Right double quotation mark (ça paraît pas mais ils sont différents...)
     "（" : "(",
     "）" : ")",
     "「" : "[",
@@ -114,7 +116,11 @@ fileprivate let normalizedCharOf: [Character: Character] = [
     "／" : "/",
     "｜" : "|",
     "＝" : "=",
-    "－" : "-",  // Tiret chinois, different du katakana "ー" plus haut.
+// Arabic
+    "؛": ";",
+    ":": ":",
+    "۔": ".",
+    "،": ",",
 ]
 
 

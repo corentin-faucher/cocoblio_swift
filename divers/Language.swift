@@ -63,6 +63,9 @@ struct LanguageInfo : Equatable, ExpressibleByStringLiteral {
             case "nb":
                 id = 15
                 bcp_47 = ["en-US"]
+            case "ur":
+                id = 16
+                bcp_47 = ["en-US"]
             default:
                 printerror("Language non définie: \(value)")
                 id = 1
@@ -90,6 +93,7 @@ enum Language : LanguageInfo, CaseIterable {
     case portuguese = "pt"
     case russian = "ru"
     case swedish = "sv"
+    case urdu = "ur"
     case vietnamese = "vi"
     case chinese_simpl = "zh-Hans"
     case chinese_trad = "zh-Hant"
@@ -109,14 +113,20 @@ enum Language : LanguageInfo, CaseIterable {
     static let defaultLanguage = english
     /** Action supplémentaire lors du chagement de langue. */
     static var changeLanguageAction: (()->Void)? = nil
+    /** Écriture en arabe. */
+    static private(set) var currentIsRightToLeft: Bool = Language.current == .arabic || Language.current == .urdu
+    /// Utilise un maru `◯` au lieu du check `✓` pour une bonne réponse (japonaise et corréen).
+    static private(set) var currentUseMaruCheck: Bool = (Language.current == .japanese) || (Language.current == .korean)
+    /** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
+    static private(set) var currentDirectionFactor: Float = (Language.current == .arabic || Language.current == .urdu) ? -1 : 1
     /// Langue actuel et son setter.
 	static var current: Language = getSystemLanguage() {
 		didSet {
 			guard current != oldValue else {return}
+            currentUseMaruCheck = (Language.current == .japanese) || (Language.current == .korean) 
 			// Lecture de droite à gauche (pour l'instant c'est juste l'arabe...)
-			currentIsRightToLeft = (current == .arabic)
+            currentIsRightToLeft = Language.current == .arabic || Language.current == .urdu
 			currentDirectionFactor = currentIsRightToLeft ? -1 : 1
-            currentUseMaruCheck = (Language.current == .japanese) || (Language.current == .korean)
             let bcp_tmp = "\(Locale.current.languageCode ?? "en")-\(Locale.current.regionCode ?? "US")"
             if current.rawValue.bcp_47.contains(bcp_tmp) {
                 currentBCP_47 = bcp_tmp
@@ -151,12 +161,6 @@ enum Language : LanguageInfo, CaseIterable {
 	static func currentIs(_ language: Language) -> Bool {
 		return current == language
 	}
-    /** Écriture en arabe. */
-    static private(set) var currentIsRightToLeft = (Language.current == .arabic)
-    /// Utilise un maru `◯` au lieu du check `✓` pour une bonne réponse (japonaise et corréen).
-    static private(set) var currentUseMaruCheck = (Language.current == .japanese) || (Language.current == .korean)
-    /** +1 si lecture de gauche à droite et -1 si on lit de droite à gauche (arabe). */
-    static private(set) var currentDirectionFactor: Float = (Language.current == .arabic) ? -1 : 1
     static private(set) var currentBCP_47: String = Language.current.rawValue.bcp_47[0]
     /** Langue de l'OS. */
 	static func getSystemLanguage() -> Language {

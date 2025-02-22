@@ -150,6 +150,7 @@ enum FontManager {
         "Hiragino Maru Gothic ProN": "Hiragino MGP",
         "Hiragino Mincho ProN": "Hiragino MP",
         "Klee": "Klee",
+        "Noto Nastaliq Urdu": "Noto Urdu",
         "OpenDyslexic3": "Op. Dyslex3",
         "Osaka": "Osaka",
         "Toppan Bunkyu Gothic": "Toppan BG",
@@ -194,7 +195,7 @@ enum FontManager {
     static private let minFontSize: CGFloat = 12
     static private let maxFontSize: CGFloat = 144
     static private let spreadingOfFont: [String: CGSize] = [
-        "American Typewriter": CGSize(width: 1.0, height: 1.2),
+        "American Typewriter": CGSize(width: 1.0, height: 1.35),
         "Chalkboard SE": CGSize(width: 1, height: 1.25),
         "Chalkduster": CGSize(width: 1.2, height: 1.55),
         "Comic Sans MS": CGSize(width: 1, height: 1.45),
@@ -207,6 +208,7 @@ enum FontManager {
         "Verdana": CGSize(width: 0.5, height: 1.2),
         "Nanum Gothic": CGSize(width: 0.2, height: 1.3),
         "Nanum Pen Script": CGSize(width: 0.2, height: 1.3),
+        "Noto Nastaliq Urdu": CGSize(width: 0.5, height: 2.5),
         "BM Kirang Haerang": CGSize(width: 0, height: 1.3),
         "GungSeo": CGSize(width: 0.8, height: 1.3),
         "PilGi": CGSize(width: 0.3, height: 1.6),
@@ -238,6 +240,13 @@ enum FontManager {
     static private let defaultSpreading = CGSize(width: 1.3, height: 1.0)
     static private let availableFontNamesForLanguage: [Language : [String]] = [
         .arabic : [
+            "American Typewriter",
+            "Courier",
+            "Farah",
+//            "Noto Nastaliq Urdu",
+        ],
+        .urdu : [
+            "Noto Nastaliq Urdu",
             "American Typewriter",
             "Courier",
             "Farah",
